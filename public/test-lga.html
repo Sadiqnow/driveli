@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test LGA API</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <h1>Test LGA API</h1>
+    
+    <div>
+        <h2>Select State:</h2>
+        <select id="state-select">
+            <option value="">Choose a state</option>
+            <option value="1">State ID 1</option>
+            <option value="2">State ID 2</option>
+        </select>
+    </div>
+    
+    <div>
+        <h2>LGAs:</h2>
+        <select id="lga-select">
+            <option value="">Select state first</option>
+        </select>
+    </div>
+    
+    <div>
+        <h2>Debug Output:</h2>
+        <div id="debug" style="background: #f5f5f5; padding: 10px; border: 1px solid #ddd; white-space: pre-line;"></div>
+    </div>
+    
+    <script>
+        function log(message) {
+            console.log(message);
+            $('#debug').append(message + '\n');
+        }
+        
+        $('#state-select').on('change', function() {
+            const stateId = $(this).val();
+            const lgaSelect = $('#lga-select');
+            
+            log('State selected: ' + stateId);
+            
+            if (!stateId) {
+                lgaSelect.html('<option value="">Select state first</option>');
+                return;
+            }
+            
+            lgaSelect.html('<option value="">Loading...</option>');
+            
+            const url = '/api/states/' + stateId + '/lgas';
+            log('Fetching: ' + url);
+            
+            fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => {
+                log('Response status: ' + response.status);
+                log('Response headers: ' + JSON.stringify([...response.headers.entries()]));
+                return response.text();
+            })
+            .then(data => {
+                log('Raw response: ' + data);
+                
+                try {
+                    const jsonData = JSON.parse(data);
+                    log('Parsed JSON: ' + JSON.stringify(jsonData, null, 2));
+                    
+                    if (jsonData.success && jsonData.data) {
+                        lgaSelect.html('<option value="">Select LGA</option>');
+                        jsonData.data.forEach(lga => {
+                            lgaSelect.append('<option value="' + lga.id + '">' + lga.name + '</option>');
+                        });
+                        log('SUCCESS: Loaded ' + jsonData.data.length + ' LGAs');
+                    } else {
+                        log('ERROR: ' + (jsonData.message || 'Unknown error'));
+                        lgaSelect.html('<option value="">Error: ' + (jsonData.message || 'Unknown error') + '</option>');
+                    }
+                } catch (e) {
+                    log('JSON Parse Error: ' + e.message);
+                    lgaSelect.html('<option value="">JSON parse error</option>');
+                }
+            })
+            .catch(error => {
+                log('Fetch Error: ' + error.message);
+                lgaSelect.html('<option value="">Fetch error: ' + error.message + '</option>');
+            });
+        });
+        
+        log('Page loaded, ready to test API');
+    </script>
+</body>
+</html>

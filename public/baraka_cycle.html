@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Baraka-Circle Wireframes</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f7fa;
+            padding: 20px;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .section {
+            margin-bottom: 40px;
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .section h2 {
+            color: #2c5282;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 8px;
+        }
+
+        .wireframe-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .phone {
+            width: 300px;
+            height: 600px;
+            background: #fff;
+            border: 3px solid #333;
+            border-radius: 25px;
+            padding: 20px;
+            position: relative;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .phone::before {
+            content: '';
+            width: 60px;
+            height: 4px;
+            background: #333;
+            position: absolute;
+            top: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-radius: 2px;
+        }
+
+        .screen {
+            height: 100%;
+            background: #f8fafc;
+            border-radius: 15px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .screen-title {
+            font-weight: bold;
+            font-size: 14px;
+            color: #2d3748;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #e2e8f0;
+            margin-bottom: 15px;
+        }
+
+        .header-title {
+            font-weight: bold;
+            color: #2d3748;
+        }
+
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            font-size: 10px;
+            color: #718096;
+            margin-bottom: 10px;
+        }
+
+        .nav-tabs {
+            display: flex;
+            background: #edf2f7;
+            border-radius: 8px;
+            padding: 4px;
+            margin-bottom: 15px;
+        }
+
+        .nav-tab {
+            flex: 1;
+            text-align: center;
+            padding: 8px;
+            font-size: 12px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .nav-tab.active {
+            background: #4299e1;
+            color: white;
+        }
+
+        .card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+        }
+
+        .circle-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-label {
+            font-size: 12px;
+            color: #4a5568;
+            margin-bottom: 5px;
+        }
+
+        .input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .button {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
+
+        .button-primary {
+            background: #4299e1;
+            color: white;
+        }
+
+        .button-secondary {
+            background: #edf2f7;
+            color: #4a5568;
+        }
+
+        .list-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .list-item:last-child {
+            border-bottom: none;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #48bb78;
+            border-radius: 4px;
+        }
+
+        .badge {
+            background: #48bb78;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+        }
+
+        .icon {
+            width: 40px;
+            height: 40px;
+            background: #edf2f7;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #4a5568;
+            font-weight: bold;
+        }
+
+        .flow-description {
+            background: #f7fafc;
+            border-left: 4px solid #4299e1;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 style="text-align: center; color: #2c5282; margin-bottom: 30px;">Baraka-Circle Mobile App Wireframes</h1>
+
+        <div class="section">
+            <h2>1. Authentication & Onboarding Flow</h2>
+            <div class="flow-description">
+                <strong>User Journey:</strong> New user registration with KYC/NIN verification for Shariah-compliant identity verification
+            </div>
+            <div class="wireframe-grid">
+                <div class="phone">
+                    <div class="screen">
+                        <div class="screen-title">Welcome Screen</div>
+                        <div class="status-bar">
+                            <span>9:41</span>
+                            <span>●●● 4G</span>
+                        </div>
+
+                        <div style="text-align: center; margin-top: 40px;">
+                            <div style="width: 80px; height: 80px; background: #4299e1; border-radius: 40px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; color: white; font-size: 24px;">B</div>
+                            <h3 style="color: #2d3748; margin-bottom: 10px;">Baraka Circles</h3>
+                            <p style="color: #718096; font-size: 12px; margin-bottom: 30px;">Shariah-compliant community savings</p>
+                        </div>
+
+                        <div style="margin-top: auto;">
+                            <button class="button button-primary">Get Started</button>
+                            <button class="button button-secondary">I have an account</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="phone">
+                    <div class="screen">
+                        <div class="screen-title">Phone Verification</div>
+                        <div class="status-bar">
+                            <span>9:41</span>
+                            <span>●●● 4G</span>
+                        </div>
+
+                        <div class="header">
+                            <span>←</span>
+                            <span class="header-title">Verify Phone</span>
+                            <span></span>
+                        </div>
+
+                        <div class="input-group">
+                            <div class="input-label">Phone Number</div>
+                            <input class="input" placeholder="+234 (0) 80X XXX XXXX" />
+                        </div>
+
+                        <div style="background: #e6fffa; border: 1px solid #38b2ac; border-radius: 8px; padding: 12px; margin-bottom: 20px;">
+                            <div style="color: #285e61; font-size: 12px;">
+                                ✓ Shariah Compliant<br>
+                                ✓ Bank-backed Security<br>
+                                ✓ Community Verified
+                            </div>
+                        </div>
+
+                        <button class="button button-primary">Send OTP</button>
+                    </div>
+                </div>
+
+                <div class="phone">
+                    <div class="screen">
+                        <div class="screen-title">KYC Verification</div>
+                        <div class="status-bar">
+                            <span>9:41</span>
+                            <span>●●● 4G</span>
+                        </div>
+
+                        <div class="header">
+                            <span>←</span>
+                            <span class="header-title">Identity Verification</span>
+                            <span></span>
+                        </div>
+
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 33%"></div>
+                        </div>
+                        <div style="text-align: center; font-size: 12px; color: #718096; margin-bottom: 20px;">Step 1 of 3</div>
+
+                        <div class="input-group">
+                            <div class="input-label">Full Name</div>
+                            <input class="input" placeholder="As on official ID" />
+                        </div>
+
+                        <div class="input-group">
+                            <div class="input-label">NIN (National ID Number)</div>
+                            <input class="input" placeholder="Enter your NIN" />
+                        </div>
+
+                        <div class="input-group">
+                            <div class="input-label">Date of Birth</div>
+                            <input class="input" placeholder="DD/MM/YYYY" />
+                        </div>
+
+                        <button class="button button-primary">Continue</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>2. Dashboard & Circle Management</h2>
+            <div class="flow-description">
+                <strong>Core Function:</strong> Users view active circles, track contributions, and monitor savings progress
+            </div>
+            <div class="wireframe-grid">
+                <div class="phone">
+                    <div class="screen">
+                        <div class="screen-title">Main Dashboard</div>
+                        <div class="status-bar">
+                            <span>9:41</span>
+                            <span>●●● 4G</span>
+                        </div>
+
+                        <div class="header">
+                            <span>☰</span>
+                            <span class="header-title">As-salamu alaykum, Fatima</span>
+                            <span>🔔</span>
+                        </div>
+
+                        <div class="card circle-card">
+                            <div style="font-size: 12px; margin-bottom: 5px;">Total Savings</div>
+                            <div style="font-size: 24px; font-weight: bold; margin-bottom: 10px;">₦125,000</div>
+                            <div style="font-size: 10px;">+₦15,000 this month</div>
+                        </div>
+
+                        <div class="nav-tabs">
+                            <div class="nav-tab active">My Circles</div>
+                            <div class="nav-tab">Available</div>
+                            <div class="nav-tab">History</div>
+                        </div>
+
+                        <div class="card">
+                            <div class="list-item">
+                                <div style="display: flex; align-items: center;">
+                                    <div class="icon">TC</div>
+                                    <div style="margin-left: 10px;">
+                                        <div style="font-weight: bold; font-size: 14px;">Teachers Circle</div>
+                                        <div style="font-size: 12px; color: #718096;">Next payout: March 15</div>
+                                    </div>
+                                </div>
+                                <div class="badge">Active</div>
+                            </div>
+
+                            <div class="list-item">
+                                <div style="display: flex; align-items: center;">
+                                    <div class="icon">FC</div>
+                                    <div style="margin-left: 10px;">
+                                        <div style="font-weight: bold; font-size: 14px;">Friends Circle</div>
+                                        <div style="font-size: 12px; color: #718096;">Contribution due: Today</div>
+                                    </div>
+                                </div>
+                                <div class="badge" style="background: #ed8936;">Due</div>
+                            </div>
+                        </div>
+
+                        <button class="button button-primary">+ Create New Circle</button>
+                    </div>
+                </div>
+
+                <div class="phone">
+                    <div class="screen">
+                        <div class="screen-title">Circle Details</div>
+                        <div class="status-bar">
+                            <span>9:41</span>
+                            <span>●●● 4G</span>
+                        </div>
+
+                        <div class="header">
+                            <span>←</span>
+                            <span class="header-title">Teachers Circle</span>
+                            <span>⋮</span>
+                        </div>
+
+                        <div class="card circle-card">
+                            <div style="font-size: 14px; font-weight: bold; margin-bottom: 15px;">Circle Progress</div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                                <span style="font-size: 12px;">Round 3 of 12</span>
+                                <span style="font-size: 12px;">₦10,000/month</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 25%"></div>
+                            </div>
+                        </div>
+
+                        <div class="nav-tabs">
+                            <div class="nav-tab active">Members</div>
+                            <div class="nav-tab">Payments</div>
+                            <div class="nav-tab">Schedule</div>
+                        </div>
+
+                        <div class="card">
+                            <div class="list-item">
+                                <div style="display: flex; align-items: center;">
+                                    <div class="icon">AM</div>
+                                    <div style="margin-left: 10px;">
+                                        <div style="font-weight: bold; font-size: 14px;">Amina M.</div>
+                                        <div style="font-size: 12px; color: #718096;">Position 1 • Paid ✓</div>
+                                    </div>
+                                </div>
+                                <div class="badge">Host</div>
+                            </div>
+
+                            <div class="list-item">
+                                <div style="display: flex; align-items: center;">
+                                    <div class="icon">FK</div>
+                                    <div style="margin-left: 10px;">
+                                        <div style="font-weight: bold; font-size: 14px;">Fatima K. (You)</div>
+                                        <div style="font-size: 12px; color: #718096;">Position 2 • Next payout</div>
+                                    </div>
+                                </div>
+                                <div class="badge" style="background: #48bb78;">You</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="phone">
+                    <div class="screen">
+                        <div class="screen-title">Payment Screen</div>
+                        <div class="status-bar">
+                            <span>9:41</span>
+                            <span>●●● 4G</span>
+                        </div>
+
+                        <div class="header">
+                            <span>←</span>
+                            <span class="header-title">Make Payment</span>
+                            <span></span>
+                        </div>
+
+                        <div class="card">
+                            <div style="text-align: center; margin-bottom: 20px;">
+                                <div style="font-size: 12px; color: #718096; margin-bottom: 5px;">Contribution to</div>
+                                <div style="font-weight: bold; font-size: 16px; margin-bottom: 5px;">Teachers Circle</div>
+                                <div style="font-size: 24px; font-weight: bold; color: #4299e1;">₦10,000</div>
+                            </div>
+
+                            <div style="background: #fffbeb; border: 1px solid #f59e0b; border-radius: 8px; padding: 10px; margin-bottom: 15px;">
+                                <div style="color: #92400e; font-size: 12px;">
+                                    Due: Today, March 1st<br>
+                                    Late fee applies after 7 days
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="input-group">
+                            <div class="input-label">Payment Method</div>
+                            <select class="input">
+                                <option>Baraka Wallet (₦25,000)</option>
+                                <option>Bank Transfer</option>
+                                <option>Card Payment</option>
+                            </select>
+                        </div>
+
+                        <div class="card" style="background: #f0fff4; border-color: #38a169;">
+                            <div style="color: #2f855a; font-size: 12px;">
+                                ✓ Shariah Compliant Transaction<br>
+                                ✓ No Interest or Hidden Fees<br>
+                                ✓ Transparent Record Keeping
+                            </div>
+                        </div>
+
+                        <button class="button button-primary">Pay ₦10,000</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>3. Circle Creation & Management</h2>
+            <div class="flow-description">
+                <strong>Key Feature:</strong> Create new circles with Shariah-compliant settings and invite trusted members
+            </div>
+            <div class="wireframe-grid">
+                <div class="phone">
+                    <div class="screen">
+                        <div class="screen-title">Create Circle - Step 1</div>
+                        <div class="status-bar">
+                            <span>9:41</span>
+                            <span>●●● 4G</span>
+                        </div>
+
+                        <div class="header">
+                            <span>←</span>
+                            <span class="header-title">Create New Circle</span>
+                            <span></span>
+                        </div>
+
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 33%"></div>
+                        </div>
+                        <div style="text-align: center; font-size: 12px; color: #718096; margin-bottom: 20px;">Step 1 of 3: Basic Details</div>
+
+                        <div class="input-group">
+                            <div class="input-label">Circle Name</div>
+                            <input class="input" placeholder="e.g., Neighborhood Savings" />
+                        </div>
+
+                        <div class="input-group">
+                            <div class="input-label">Monthly Contribution</div>
+                            <input class="input" placeholder="₦5,000 - ₦100,000" />
+                        </div>
+
+                        <div class="input-group">
+                            <div class="input-label">Number of Members</div>
+                            <select class="input">
+                                <option>5 members</option>
+                                <option>10 members</option>
+                                <option>15 members</option>
+                                <option>20 members</option>
+                            </select>
+                        </div>
+
+                        <div class="input-group">
+                            <div class="input-label">Circle Duration</div>
+                            <select class="input">
+                                <option>5 months (5 payouts)</option>
+                                <option>10 months (10 payouts)</option>
+                                <option>12 months (12 payouts)</option>
+                            </select>
+                        </div>
+
+                        <button class="button button-primary">Continue</button>
+                    </div>
+                </div>
+
+                <div class="phone">
+                    <div class="screen">
+                        <div class="screen-title">Invite Members</div>
+                        <div class="status-bar">
+                            <span>9:41</span>
+                            <span>●●● 4G</span>
+                        </div>
+
+                        <div class="header">
+                            <span>←</span>
+                            <span class="header-title">Invite Members</span>
+                            <span></span>
+                        </div>
+
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 66%"></div>
+                        </div>
+                        <div style="text-align: center; font-size: 12px; color: #718096; margin-bottom: 20px;">Step 2 of 3: Add Trusted Members</div>
+
+                        <div class="input-group">
+                            <div class="input-label">Search contacts or enter phone</div>
+                            <input class="input" placeholder="Name, phone number, or email" />
+                        </div>
+
+                        <div class="card">
+                            <div style="font-weight: bold; font-size: 14px; margin-bottom: 10px;">Suggested Contacts</div>
+
+                            <div class="list-item">
+                                <div style="display: flex; align-items: center;">
+                                    <div class="icon">AS</div>
+                                    <div style="margin-left: 10px;">
+                                        <div style="font-weight: bold; font-size: 14px;">Aisha S.</div>
+                                        <div style="font-size: 12px; color: #718096;">+234 803 XXX XXXX</div>
+                                    </div>
+                                </div>
+                                <button style="background: #4299e1; color: white; border: none; border-radius: 4px; padding: 5px 10px; font-size: 12px;">Invite</button>
+                            </div>
+
+                            <div class="list-item">
+                                <div style="display: flex; align-items: center;">
+                                    <div class="icon">ZA</div>
+                                    <div style="margin-left: 10px;">
+                                        <div style="font-weight: bold; font-size: 14px;">Zainab A.</div>
+                                        <div style="font-size: 12px; color: #718096;">+234 805 XXX XXXX</div>
+                                    </div>
+                                </div>
+                                <button style="background: #4299e1; color: white; border: none; border-radius: 4px; padding: 5px 10px; font-size: 12px;">Invite</button>
+                            </div>
+                        </div>
+
+                        <div style="background: #f7fafc; border-radius: 8px; padding: 12px; margin-bottom: 15px;">
+                            <div style="color: #4a5568; font-size: 12px;">
+                                💡 Tip: Invite people you trust completely. All members must verify their identity.
+                            </div>
+                        </div>
+
+                        <button class="button button-primary">Continue (3/5 invited)</button>
+                    </div>
+                </div>
+
+                <div class="phone">
+                    <div class="screen">
+                        <div class="screen-title">Shariah Settings</div>
+                        <div class="status-bar">
+                            <span>9:41</span>
+                            <span>●●● 4G</span>
+                        </div>
+
+                        <div class="header">
+                            <span>←</span>
+                            <span class="header-title">Shariah Compliance</span>
+                            <span></span>
+                        </div>
+
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 100%"></div>
+                        </div>
+                        <div style="text-align: center; font-size: 12px; color: #718096; margin-bottom: 20px;">Step 3 of 3: Islamic Guidelines</div>
+
+                        <div class="card" style="background: #f0fff4; border-color: #38a169;">
+                            <div style="color: #2f855a; font-size: 14px; font-weight: bold; margin-bottom: 10px;">
+                                ✓ Automatic Shariah Compliance
+                            </div>
+                            <div style="color: #2f855a; font-size: 12px;">
+                                • No interest (riba) charged on any transactions<br>
+                                • Risk and profit sharing among all members<br>
+                                • Transparent fund management<br>
+                                • Halal investment of pooled funds only
+                            </div>
+                        </div>
+
+                        <div class="input-group">
+                            <label style="display: flex; align-items: center; cursor: pointer;">
+                                <input type="checkbox" checked style="margin-right: 10px;" />
+                                <span style="font-size: 12px;">Allow emergency withdrawal with group consent</span>
+                            </label>
+                        </div>
+
+                        <div class="input-group">
+                            <label style="display: flex; align-items: center; cursor: pointer;">
+                                <input type="checkbox" checked style="margin-right: 10px;" />
+                                <span style="font-size: 12px;">Enable automatic Zakat calculation (2.5%)</span>
+                            </label>
+                        </div>
+
+                        <div class="input-group">
+                            <label style="display: flex; align-items: center; cursor: pointer;">
+                                <input type="checkbox" style="margin-right: 10px;" />
+                                <span style="font-size: 12px;">Invest idle funds in Shariah-compliant instruments</span>
+                            </label>
+                        </div>
+
+                        <button class="button button-primary">Create Circle</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>4. Banking Integration & Wallet</h2>
+            <div class="flow-description">
+                <strong>Security Feature:</strong> Bank-backed fund custody with transparent transaction tracking
+            </div>
+            <div class="wireframe-grid">
+                <div class="phone">
+                    <div class="screen">
+                        <div class="screen-title">Baraka Wallet</div>
+                        <div class="status-bar">
+                            <span>9:41</span>
+                            <span>●●● 4G</span>
+                        </div>
+
+                        <div class="header">
+                            <span>←</span>
+                            <span class="header-title">My Wallet</span>
+                            <span>⋮</span>
+                        </div>
+
+                        <div class="card circle-card">
+                            <div style="font-size: 12px; margin-bottom: 5px;">Available Balance</div>
+                            <div style="font-size: 28px; font-weight: bold; margin-bottom: 5px;">₦47,500</div>
+                            <div style="font-size: 10px;">Protected by Sterling Bank</div>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px;">
+                            <button class="button button-primary">Add Money</button>
+                            <button class="button button-secondary">Send Money</button>
+                        </div>
+
+                        <div class="nav-tabs">
+                            <div class="nav-tab active">Transactions</div>
+                            <div class="nav-tab">Cards</div>
+                            <div class="nav-tab">Banks</div>
+                        </div>
+
+                        <div class="card">
+                            <div class="list-item">
+                                <div style="display: flex; align-items: center;">
+                                    <div class="icon" style="background: #48bb78; color: white;">↓</div>
+                                    <div style="margin-left: 10px;">
+                                        <div style="font-weight: bold; font-size: 14px;">Circle Payout</div>
+                                        <div style="font-size: 12px; color: #718096;">Teachers Circle • Mar 1</div>
+                                    </div>
+                                </div>

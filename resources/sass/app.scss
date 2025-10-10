@@ -1,0 +1,66 @@
+// Fonts
+@import url('https://fonts.bunny.net/css?family=Nunito');
+
+// Variables
+@import 'variables';
+
+// Bootstrap
+@import 'bootstrap/scss/bootstrap';
+
+// AdminLTE
+@import 'admin-lte/dist/css/adminlte.min.css';
+
+// Custom Drivelink Styles
+.brand-link .brand-text {
+    font-weight: 700 !important;
+    color: #007bff !important;
+}
+
+.navbar-primary {
+    background-color: #007bff !important;
+}
+
+.btn-drivelink {
+    background-color: #007bff;
+    border-color: #007bff;
+    color: #fff;
+}
+
+.btn-drivelink:hover {
+    background-color: #0056b3;
+    border-color: #0056b3;
+}
+
+.card-drivelink {
+    border-top: 3px solid #007bff;
+}
+
+.content-wrapper {
+    background: #f4f6f9 !important;
+}
+
+.main-sidebar {
+    background: #343a40 !important;
+}
+
+// Status badges
+.badge-verified {
+    background-color: #28a745 !important;
+}
+
+.badge-pending {
+    background-color: #ffc107 !important;
+    color: #212529 !important;
+}
+
+.badge-rejected {
+    background-color: #dc3545 !important;
+}
+
+.badge-available {
+    background-color: #17a2b8 !important;
+}
+
+.badge-booked {
+    background-color: #6f42c1 !important;
+}

@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Final LGA Test</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <h1>Final LGA Population Test</h1>
+    <p>This test simulates the actual form behavior</p>
+    
+    <div>
+        <h2>State of Origin:</h2>
+        <select id="state_of_origin">
+            <option value="">Select State</option>
+            <option value="1">Lagos</option>
+            <option value="2">Abuja (FCT)</option>
+        </select>
+    </div>
+    
+    <div>
+        <h2>LGA of Origin:</h2>
+        <select id="lga_of_origin">
+            <option value="">First select a state of origin</option>
+        </select>
+    </div>
+    
+    <div>
+        <h2>Residence State:</h2>
+        <select id="residence_state_id">
+            <option value="">Select State</option>
+            <option value="1">Lagos</option>
+            <option value="2">Abuja (FCT)</option>
+        </select>
+    </div>
+    
+    <div>
+        <h2>Residence LGA:</h2>
+        <select id="residence_lga_id">
+            <option value="">First select your residence state</option>
+        </select>
+    </div>
+    
+    <div>
+        <h2>Debug Log:</h2>
+        <div id="debug" style="background: #f5f5f5; padding: 10px; border: 1px solid #ddd; max-height: 200px; overflow-y: auto; font-family: monospace; font-size: 12px;"></div>
+    </div>
+    
+    <script>
+        function log(message) {
+            const debug = document.getElementById('debug');
+            const timestamp = new Date().toLocaleTimeString();
+            debug.innerHTML += `[${timestamp}] ${message}\n`;
+            debug.scrollTop = debug.scrollHeight;
+            console.log(message);
+        }
+        
+        async function populateLGAs(stateId, lgaSelect, isRequired = false) {
+            if (!stateId) {
+                const defaultText = isRequired ? 'Select LGA' : 'Select LGA (optional)';
+                lgaSelect.innerHTML = `<option value="">${defaultText}</option>`;
+                return;
+            }
+            
+            lgaSelect.disabled = false;
+            
+            try {
+                lgaSelect.innerHTML = '<option value="">Loading...</option>';
+                log(`Fetching LGAs for state ID: ${stateId}`);
+                
+                // Note: In a real driver session, this would work. For this test, it will show the error but demonstrate the process.
+                const response = await fetch(`/driver/kyc/lgas/${stateId}`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                log(`Response status: ${response.status}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                let lgas = [];
+                
+                // Handle both API format and simple array format
+                if (result.success && result.data) {
+                    lgas = result.data;
+                } else if (Array.isArray(result)) {
+                    lgas = result;
+                } else {
+                    throw new Error('Invalid response format');
+                }
+                
+                const defaultText = isRequired ? 'Select LGA' : 'Select LGA (optional)';
+                lgaSelect.innerHTML = `<option value="">${defaultText}</option>`;
+                
+                if (lgas.length === 0) {
+                    lgaSelect.innerHTML += '<option value="" disabled>No LGAs available for this state</option>';
+                } else {
+                    lgas.forEach(option => {
+                        lgaSelect.innerHTML += `<option value="${option.id}">${option.name}</option>`;
+                    });
+                }
+                
+                log(`SUCCESS: Loaded ${lgas.length} LGAs`);
+                
+            } catch (error) {
+                log(`ERROR: ${error.message}`);
+                lgaSelect.innerHTML = '<option value="">Error loading LGAs. Please try again.</option>';
+            }
+        }
+        
+        // Set up event listeners
+        document.getElementById('state_of_origin').addEventListener('change', function() {
+            populateLGAs(this.value, document.getElementById('lga_of_origin'), false);
+        });
+        
+        document.getElementById('residence_state_id').addEventListener('change', function() {
+            populateLGAs(this.value, document.getElementById('residence_lga_id'), true);
+        });
+        
+        log('Test page loaded and ready');
+        log('NOTE: This test will show authentication errors unless you are logged in as a driver');
+        log('The actual functionality will work correctly when used within the driver dashboard');
+    </script>
+</body>
+</html>

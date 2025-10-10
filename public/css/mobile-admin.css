@@ -1,0 +1,377 @@
+/**
+ * Mobile-responsive CSS for DriveLink Admin Interfaces
+ * Addresses critical UX issues identified in mobile usability review
+ */
+
+/* ===== MOBILE-FIRST RESPONSIVE DESIGN ===== */
+
+/* Base mobile styles (320px and up) */
+@media (max-width: 767.98px) {
+    
+    /* ===== LAYOUT & NAVIGATION ===== */
+    .content-wrapper {
+        padding: 10px 15px;
+    }
+    
+    .main-header.navbar {
+        padding: 0.5rem 1rem;
+    }
+    
+    .navbar-nav .nav-item .nav-link {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.875rem;
+    }
+    
+    /* Brand logo responsive */
+    .brand-link {
+        padding: 0.8125rem 0.5rem;
+    }
+    
+    .brand-text {
+        font-size: 1rem;
+    }
+    
+    /* ===== DASHBOARD WIDGETS ===== */
+    .small-box {
+        margin-bottom: 1rem;
+    }
+    
+    .small-box .inner h3 {
+        font-size: 1.5rem;
+    }
+    
+    .small-box .inner p {
+        font-size: 0.875rem;
+    }
+    
+    .small-box .icon {
+        display: none; /* Hide decorative icons on mobile */
+    }
+    
+    .small-box-footer {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.75rem;
+    }
+    
+    /* Info boxes responsive */
+    .info-box {
+        margin-bottom: 1rem;
+    }
+    
+    .info-box-icon {
+        width: 60px;
+    }
+    
+    .info-box-content {
+        padding: 0.5rem;
+    }
+    
+    /* ===== DRIVER MANAGEMENT ===== */
+    
+    /* Driver cards mobile optimization */
+    .driver-card {
+        margin-bottom: 1rem;
+    }
+    
+    .driver-card .card-body {
+        padding: 1rem;
+    }
+    
+    /* Driver essential info mobile layout */
+    .driver-essential-info h6 {
+        font-size: 1rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .driver-essential-info .d-flex.flex-wrap {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.25rem;
+    }
+    
+    /* Badge improvements for mobile */
+    .badge {
+        font-size: 0.75rem;
+        padding: 0.25em 0.5em;
+        margin: 0.1rem 0.2rem 0.1rem 0;
+    }
+    
+    /* Primary actions mobile layout */
+    .driver-primary-actions {
+        flex-direction: column;
+        align-items: stretch;
+        width: 100%;
+        margin-top: 1rem;
+    }
+    
+    .driver-primary-actions .btn {
+        margin: 0.25rem 0;
+        width: 100%;
+        min-width: auto;
+        font-size: 0.875rem;
+        padding: 0.75rem;
+    }
+    
+    .driver-primary-actions .btn-lg {
+        padding: 0.75rem 1rem;
+        font-size: 0.875rem;
+    }
+    
+    /* Avatar mobile size */
+    .driver-avatar img,
+    .driver-avatar > div {
+        width: 40px !important;
+        height: 40px !important;
+        font-size: 14px !important;
+    }
+    
+    /* Mobile driver details layout */
+    .driver-details .row > [class*="col-"] {
+        margin-bottom: 1rem;
+    }
+    
+    /* ===== FORMS & INPUTS ===== */
+    
+    /* Search and filter forms */
+    .card-body .row.g-2 > [class*="col-"] {
+        margin-bottom: 0.75rem;
+    }
+    
+    .form-control {
+        font-size: 16px; /* Prevent zoom on iOS */
+        padding: 0.75rem;
+    }
+    
+    .btn {
+        min-height: 44px; /* Meet touch target requirements */
+        padding: 0.75rem 1rem;
+    }
+    
+    .btn-sm {
+        min-height: 38px;
+        padding: 0.5rem 0.75rem;
+    }
+    
+    /* Input groups mobile */
+    .input-group-text {
+        padding: 0.75rem;
+    }
+    
+    /* ===== TABLES ===== */
+    
+    /* Hide table view, use card view for mobile */
+    .table-responsive table {
+        display: none;
+    }
+    
+    /* Enhanced card view for mobile */
+    .driver-cards-container .driver-card .card {
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    /* ===== MODALS ===== */
+    
+    .modal-dialog {
+        margin: 1rem;
+        max-width: calc(100vw - 2rem);
+    }
+    
+    .modal-body {
+        padding: 1rem;
+    }
+    
+    .modal-header {
+        padding: 1rem;
+    }
+    
+    .modal-footer {
+        padding: 1rem;
+        flex-wrap: wrap;
+    }
+    
+    .modal-footer .btn {
+        flex: 1;
+        margin: 0.25rem;
+    }
+    
+    /* ===== UTILITY CLASSES ===== */
+    
+    /* Mobile-specific utilities */
+    .mobile-stack > * {
+        display: block !important;
+        width: 100% !important;
+        margin-bottom: 0.5rem !important;
+    }
+    
+    .mobile-hide {
+        display: none !important;
+    }
+    
+    .mobile-center {
+        text-align: center !important;
+    }
+    
+    /* ===== PAGINATION ===== */
+    
+    .pagination {
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    
+    .pagination .page-link {
+        padding: 0.5rem 0.75rem;
+        margin: 0.125rem;
+    }
+    
+    /* ===== ALERTS & NOTIFICATIONS ===== */
+    
+    .alert {
+        padding: 0.75rem;
+        margin-bottom: 1rem;
+        font-size: 0.875rem;
+        border-radius: 6px;
+    }
+    
+    /* ===== CARD IMPROVEMENTS ===== */
+    
+    .card {
+        border-radius: 8px;
+        margin-bottom: 1rem;
+    }
+    
+    .card-header {
+        padding: 1rem;
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+    
+    .card-title {
+        font-size: 1.1rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    /* ===== ACCESSIBILITY IMPROVEMENTS ===== */
+    
+    /* Ensure adequate touch targets */
+    .btn, .form-control, .page-link, .nav-link {
+        min-height: 44px;
+    }
+    
+    /* Better focus indicators for mobile */
+    .btn:focus,
+    .form-control:focus,
+    .page-link:focus {
+        outline: 2px solid #007bff;
+        outline-offset: 2px;
+    }
+    
+    /* High contrast improvements */
+    .badge.bg-warning {
+        color: #000 !important;
+        background-color: #ffc107 !important;
+    }
+    
+    .text-muted {
+        color: #6c757d !important; /* Ensure sufficient contrast */
+    }
+}
+
+/* ===== TABLET IMPROVEMENTS (768px to 991.98px) ===== */
+@media (min-width: 768px) and (max-width: 991.98px) {
+    
+    /* Optimize for tablet landscape */
+    .driver-primary-actions {
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+    
+    .driver-primary-actions .btn {
+        flex: 1;
+        margin: 0.25rem;
+        min-width: 120px;
+    }
+    
+    /* Two-column layout for driver details */
+    .driver-details .row > [class*="col-md-3"] {
+        flex: 0 0 50%;
+        max-width: 50%;
+    }
+    
+    /* Sidebar adjustments */
+    .main-sidebar {
+        width: 200px;
+    }
+}
+
+/* ===== LANDSCAPE PHONE OPTIMIZATIONS ===== */
+@media (max-width: 767.98px) and (orientation: landscape) {
+    
+    /* Compress vertical spacing in landscape */
+    .driver-card .card-body {
+        padding: 0.75rem;
+    }
+    
+    .mb-4 {
+        margin-bottom: 1rem !important;
+    }
+    
+    .mb-3 {
+        margin-bottom: 0.75rem !important;
+    }
+    
+    /* Horizontal button layout in landscape */
+    .driver-primary-actions {
+        flex-direction: row;
+        flex-wrap: nowrap;
+    }
+    
+    .driver-primary-actions .btn {
+        margin: 0 0.25rem;
+        font-size: 0.75rem;
+        padding: 0.5rem 0.75rem;
+    }
+}
+
+/* ===== DARK MODE SUPPORT ===== */
+@media (prefers-color-scheme: dark) {
+    .driver-card .card {
+        background-color: #2d3748;
+        border-color: #4a5568;
+        color: #e2e8f0;
+    }
+    
+    .badge {
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .text-muted {
+        color: #a0aec0 !important;
+    }
+}
+
+/* ===== ANIMATION PERFORMANCE ===== */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* ===== HIGH CONTRAST MODE ===== */
+@media (prefers-contrast: high) {
+    .badge {
+        border: 2px solid currentColor;
+    }
+    
+    .btn {
+        border: 2px solid currentColor;
+    }
+    
+    .card {
+        border: 2px solid #000;
+    }
+}

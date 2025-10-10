@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(php artisan:*)",
+      "Bash(php:*)",
+      "Bash(copy \".env.example\" \".env\")",
+      "Bash(find:*)",
+      "Bash(composer:*)",
+      "Bash(del \"C:\\xampp\\htdocs\\drivelink\\test_admin_auth_controller.php\")",
+      "Read(/C:\\xampp\\htdocs\\drivelink\\resources\\views\\driver\\auth/**)",
+      "Read(/C:\\xampp\\htdocs\\drivelink\\app\\Http\\Controllers\\Driver/**)",
+      "Read(/C:\\xampp\\htdocs\\drivelink\\database\\migrations/**)",
+      "Read(/C:\\xampp\\htdocs\\drivelink\\database\\migrations/**)",
+      "Read(/C:\\xampp\\htdocs\\drivelink\\database\\migrations/**)",
+      "Read(/C:\\xampp\\htdocs\\drivelink\\resources\\views\\driver/**)",
+      "Read(/C:\\xampp\\htdocs\\drivelink\\app\\Http\\Controllers\\Driver/**)",
+      "Read(/C:\\xampp\\htdocs\\drivelink\\app\\Http\\Controllers\\Driver/**)"
+    ],
+    "deny": [],
+    "ask": [],
+    "defaultMode": "acceptEdits",
+    "additionalDirectories": [
+      "C:\\c\\xampp\\htdocs",
+      "C:\\xampp"
+    ]
+  }
+}
