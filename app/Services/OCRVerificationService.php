@@ -20,8 +20,14 @@ class OCRVerificationService
             throw new \InvalidArgumentException('OCR service configuration missing. Please set OCR_API_KEY and OCR_ENDPOINT in your environment file.');
         }
         
-        if ($this->ocrApiKey === 'demo_key' || $this->ocrApiKey === 'your_api_key_here') {
+        if ($this->ocrApiKey === 'your_api_key_here') {
             throw new \InvalidArgumentException('Invalid OCR API key. Please set a valid API key in your environment file.');
+        }
+
+        // Allow demo_key for testing/development environments
+        if ($this->ocrApiKey === 'demo_key' && app()->environment(['local', 'testing'])) {
+            // Log warning but allow service to initialize
+            Log::warning('Using demo OCR API key. OCR functionality will be limited.');
         }
     }
 

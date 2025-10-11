@@ -8,6 +8,7 @@ use App\Models\DriverMatch;
 use App\Models\DriverNormalized as Driver;
 use App\Models\Company;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 
 class AdminRequestController extends Controller
 {
@@ -22,7 +23,7 @@ class AdminRequestController extends Controller
 
     public function create()
     {
-        $companies = Company::orderBy('name')->get();
+        $companies = Schema::hasTable('companies') ? Company::orderBy('name')->get() : collect();
         $drivers = Driver::orderBy('first_name')->get();
                          
         return view('admin.requests.create', compact('companies', 'drivers'));
@@ -57,7 +58,7 @@ class AdminRequestController extends Controller
 
     public function edit(CompanyRequest $request)
     {
-        $companies = Company::orderBy('name')->get();
+        $companies = Schema::hasTable('companies') ? Company::orderBy('name')->get() : collect();
         $drivers = Driver::orderBy('first_name')->get();
         
         return view('admin.requests.edit', compact('request', 'companies', 'drivers'));

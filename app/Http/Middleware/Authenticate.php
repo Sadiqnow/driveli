@@ -21,6 +21,11 @@ class Authenticate extends Middleware
             return null;
         }
 
+        // Treat API routes as expecting JSON so unauthenticated API requests return 401 JSON
+        if ($request->is('api/*')) {
+            return null;
+        }
+
         if (! $request->expectsJson()) {
             return $this->getRedirectRoute($request);
         }

@@ -183,21 +183,11 @@ class CompanyAuthController extends Controller
     }
 
     /**
-     * Show the company dashboard
+     * Redirect to company dashboard
      */
     public function dashboard()
     {
-        $company = Auth::guard('company')->user();
-        
-        // Get basic statistics
-        $stats = [
-            'total_requests' => $company->total_requests ?? 0,
-            'fulfilled_requests' => $company->fulfilled_requests ?? 0,
-            'average_rating' => $company->average_rating ?? 0,
-            'fulfillment_rate' => $company->fulfillment_rate ?? 0,
-        ];
-
-        return view('company.dashboard', compact('company', 'stats'));
+        return redirect()->route('company.dashboard');
     }
 
     /**

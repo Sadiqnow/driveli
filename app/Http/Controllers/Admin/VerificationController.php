@@ -8,6 +8,7 @@ use App\Services\VerificationStatusService;
 use App\Services\DriverVerificationWorkflow;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Carbon\Carbon;
 
 class VerificationController extends Controller
@@ -34,25 +35,47 @@ class VerificationController extends Controller
         // Get verification statistics
         $statistics = $this->verificationStatusService->getVerificationStatistics($dateRange);
 
-        // Get pending manual reviews
-        $pendingReviews = DriverNormalized::where('verification_status', 'requires_manual_review')
-            ->with(['driverMatches', 'driverPerformances'])
-            ->orderBy('verification_started_at', 'desc')
-            ->take(10)
-            ->get();
+        // Get pending manual reviews. Some environments/tests may not have the
+        // DriverNormalized model or the verification_started_at column. Prefer
+        // the normalized model if present, otherwise fall back to the main
+        // Drivers model and guard the orderBy by checking the table schema.
+        $driverClass = class_exists(\App\Models\DriverNormalized::class)
+            ? \App\Models\DriverNormalized::class
+            : \App\Models\Drivers::class;
 
-        // Get recent verification activities
-        $recentActivities = DB::table('driver_verifications')
-            ->join('drivers', 'driver_verifications.driver_id', '=', 'drivers.id')
-            ->select([
-                'driver_verifications.*',
-                'drivers.first_name',
-                'drivers.last_name',
-                'drivers.email'
-            ])
-            ->orderBy('driver_verifications.created_at', 'desc')
-            ->take(20)
-            ->get();
+        $pendingQuery = $driverClass::where('verification_status', 'requires_manual_review')
+            ->with(['driverMatches', 'driverPerformances']);
+
+        try {
+            $table = (new $driverClass)->getTable();
+            if (\Illuminate\Support\Facades\Schema::hasColumn($table, 'verification_started_at')) {
+                $pendingQuery = $pendingQuery->orderBy('verification_started_at', 'desc');
+            } else {
+                $pendingQuery = $pendingQuery->orderBy('created_at', 'desc');
+            }
+        } catch (\Throwable $e) {
+            // If anything goes wrong checking the schema, fall back to created_at
+            $pendingQuery = $pendingQuery->orderBy('created_at', 'desc');
+        }
+
+        $pendingReviews = $pendingQuery->take(10)->get();
+
+        // Get recent verification activities (guarded if table missing)
+        if (Schema::hasTable('driver_verifications') && Schema::hasTable('drivers')) {
+            $recentActivities = DB::table('driver_verifications')
+                ->join('drivers', 'driver_verifications.driver_id', '=', 'drivers.id')
+                ->select([
+                    'driver_verifications.*',
+                    'drivers.first_name',
+                    'drivers.last_name',
+                    'drivers.email'
+                ])
+                ->orderBy('driver_verifications.created_at', 'desc')
+                ->take(20)
+                ->get();
+        } else {
+            $recentActivities = collect();
+        }
 
         // Get failed verifications
         $failedVerifications = DriverNormalized::where('verification_status', 'failed')
@@ -245,36 +268,45 @@ class VerificationController extends Controller
         // Get comprehensive verification statistics
         $statistics = $this->verificationStatusService->getVerificationStatistics($dateRange);
 
-        // Get detailed verification breakdown by component
-        $componentStats = DB::table('driver_verifications')
-            ->whereBetween('created_at', [
-                Carbon::parse($dateRange['start']),
-                Carbon::parse($dateRange['end'])
-            ])
-            ->select([
-                'verification_type',
-                'status',
-                DB::raw('COUNT(*) as count'),
-                DB::raw('AVG(verification_score) as avg_score')
-            ])
-            ->groupBy('verification_type', 'status')
-            ->get();
+        // Get detailed verification breakdown by component (guarded)
+        if (Schema::hasTable('driver_verifications')) {
+            $componentStats = DB::table('driver_verifications')
+                ->whereBetween('created_at', [
+                    Carbon::parse($dateRange['start']),
+                    Carbon::parse($dateRange['end'])
+                ])
+                ->select([
+                    'verification_type',
+                    'status',
+                    DB::raw('COUNT(*) as count'),
+                    DB::raw('AVG(verification_score) as avg_score')
+                ])
+                ->groupBy('verification_type', 'status')
+                ->get();
+        } else {
+            $componentStats = collect();
+        }
 
         // Get API performance metrics
-        $apiStats = DB::table('api_verification_logs')
-            ->whereBetween('created_at', [
-                Carbon::parse($dateRange['start']),
-                Carbon::parse($dateRange['end'])
-            ])
-            ->select([
-                'api_provider',
-                'verification_type',
-                DB::raw('COUNT(*) as total_requests'),
-                DB::raw('SUM(is_successful) as successful_requests'),
-                DB::raw('AVG(response_time_ms) as avg_response_time')
-            ])
-            ->groupBy('api_provider', 'verification_type')
-            ->get();
+        // Guard API stats query
+        if (Schema::hasTable('api_verification_logs')) {
+            $apiStats = DB::table('api_verification_logs')
+                ->whereBetween('created_at', [
+                    Carbon::parse($dateRange['start']),
+                    Carbon::parse($dateRange['end'])
+                ])
+                ->select([
+                    'api_provider',
+                    'verification_type',
+                    DB::raw('COUNT(*) as total_requests'),
+                    DB::raw('SUM(is_successful) as successful_requests'),
+                    DB::raw('AVG(response_time_ms) as avg_response_time')
+                ])
+                ->groupBy('api_provider', 'verification_type')
+                ->get();
+        } else {
+            $apiStats = collect();
+        }
 
         return view('admin.verification.report', compact(
             'statistics',

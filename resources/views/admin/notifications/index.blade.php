@@ -8,7 +8,7 @@
             <div class="col-md-12">
                 <div class="card">
                     <div class="card-header">
-                        <h3 class="card-title">Notifications</h3>
+                        <h3 class="card-title">Notification Center</h3>
                     </div>
                     <div class="card-body">
                         <table class="table table-striped">

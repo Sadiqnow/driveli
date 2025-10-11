@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Schema;
 
 class AdminService
 {
@@ -97,12 +98,18 @@ class AdminService
                 'active' => DriverNormalized::active()->count(),
                 'recent' => DriverNormalized::where('created_at', '>=', now()->subDays(7))->count(),
             ],
-            'companies' => [
+            'companies' => (Schema::hasTable('companies')) ? [
                 'total' => Company::count(),
                 'verified' => Company::where('verification_status', 'Verified')->count(),
                 'pending' => Company::where('verification_status', 'Pending')->count(),
                 'active' => Company::where('status', 'Active')->count(),
                 'recent' => Company::where('created_at', '>=', now()->subDays(7))->count(),
+            ] : [
+                'total' => 0,
+                'verified' => 0,
+                'pending' => 0,
+                'active' => 0,
+                'recent' => 0,
             ],
             'requests' => [
                 'total' => CompanyRequest::count(),
@@ -121,7 +128,7 @@ class AdminService
             'activity' => [
                 'new_drivers_today' => DriverNormalized::whereDate('created_at', today())->count(),
                 'verifications_today' => DriverNormalized::whereDate('verified_at', today())->count(),
-                'new_companies_today' => Company::whereDate('created_at', today())->count(),
+                'new_companies_today' => (Schema::hasTable('companies')) ? Company::whereDate('created_at', today())->count() : 0,
                 'new_requests_today' => CompanyRequest::whereDate('created_at', today())->count(),
             ],
             'system' => [

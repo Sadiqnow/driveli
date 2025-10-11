@@ -1,9 +1,8 @@
-# TODO: Seed Banks Table and Remove Deletion Triggers
-
-## Steps to Complete
-- [x] Seed the banks table by running `php artisan db:seed --class=BanksSeeder` to populate with Nigerian banks data.
-- [x] Edit `tests/Feature/DriverKycAndApprovalTest.php` to remove `RefreshDatabase` trait and enhance `seedLookupTables()` to explicitly seed banks per test, preventing full DB truncation.
-- [x] Edit `test_api_simple.php` to remove or comment out any truncate statements that could affect lookup tables like banks.
-- [x] Run verification script `verify_seeding.php` to confirm banks data (should show 21 banks).
-- [x] Run affected tests (e.g., `php artisan test --filter=DriverKycAndApprovalTest`) to ensure no deletion occurs during testing.
-- [x] Update TODO.md to mark completed steps.
+- [x] Fix duplicate 'Admin' in role array in ValidationService.php
+- [x] Standardize role names to snake_case in ValidationService.php
+- [x] Remove redundant email regex from validation methods in ValidationService.php
+- [x] Remove redundant ctype_digit in validateNIN in ValidationService.php
+- [x] Add type safety and improve logic in sanitizePhoneNumber in ValidationService.php
+- [x] Update AdminAuthController.php to use standardized role names
+- [x] Test the fixes to ensure no regressions
+- [x] Fix OCR API key issue in OCRVerificationService.php

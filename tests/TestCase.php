@@ -27,10 +27,9 @@ abstract class TestCase extends BaseTestCase
     protected function setUp(): void
     {
         parent::setUp();
-        // Make tests request JSON by default so middleware returns JSON error codes
-        $this->withHeaders([
-            'Accept' => 'application/json',
-        ]);
+        // Note: do not force JSON Accept header globally — many feature tests expect
+        // normal web responses (redirects and views). Tests needing JSON responses
+        // should call $this->withHeaders(['Accept' => 'application/json']) themselves.
 
         // Instrument the LoggedExceptionCollection used by TestResponse so we can
         // capture what gets pushed into it during requests. This helps diagnose

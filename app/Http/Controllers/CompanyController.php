@@ -6,11 +6,39 @@ use Illuminate\Http\Request;
 use App\Models\Company;
 use App\Models\CompanyRequest;
 use App\Http\Requests\CompanyRequest as CompanyFormRequest;
+use Illuminate\Support\Facades\Schema;
 
 class CompanyController extends Controller
 {
     public function index(Request $request)
     {
+        if (!Schema::hasTable('companies')) {
+            // Return an empty view-friendly dataset when the companies table isn't available yet
+            $companies = collect();
+            $requests = collect();
+            $activeCompanies = $pendingVerification = $verifiedCompanies = $inactiveCompanies = $suspendedCompanies = 0;
+            $newCompaniesThisWeek = $activeRequestsToday = $monthlyRequests = 0;
+            $avgRequestsPerCompany = '0.0';
+
+            return view('admin.companies.index', compact(
+                'companies',
+                'requests',
+                'allRequests',
+                'pendingRequests',
+                'approvedRequests',
+                'rejectedRequests',
+                'activeCompanies',
+                'pendingVerification',
+                'verifiedCompanies',
+                'inactiveCompanies',
+                'suspendedCompanies',
+                'newCompaniesThisWeek',
+                'activeRequestsToday',
+                'monthlyRequests',
+                'avgRequestsPerCompany'
+            ));
+        }
+
         $query = Company::withCount('requests');
         
         // Search functionality

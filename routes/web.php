@@ -151,9 +151,13 @@ Route::prefix('admin')->name('admin.')->group(function () {
         });
 
         // Notification Center
+        // Explicit compose route should be defined before the resource to avoid
+        // the resource 'show' route treating 'compose' as an ID parameter.
+        Route::get('notifications/compose', [AdminNotificationController::class, 'compose'])->name('notifications.compose');
         Route::resource('notifications', AdminNotificationController::class);
         Route::prefix('notifications')->name('notifications.')->group(function () {
-            Route::get('/compose', [AdminNotificationController::class, 'compose'])->name('compose');
+            // Named route expected by the compose view
+            Route::post('/send', [AdminNotificationController::class, 'sendBulk'])->name('send');
             Route::post('/send-bulk', [AdminNotificationController::class, 'sendBulk'])->name('send-bulk');
             Route::post('/send-individual', [AdminNotificationController::class, 'sendIndividual'])->name('send-individual');
             Route::get('/templates', [AdminNotificationController::class, 'getTemplates'])->name('templates');
@@ -404,7 +408,7 @@ Route::prefix('driver')->name('driver.')->group(function () {
 });
 
 // ===================================================================================================
-// COMPANY PORTAL ROUTES (Future Enhancement)
+// COMPANY PORTAL ROUTES
 // ===================================================================================================
 
 Route::prefix('company')->name('company.')->group(function () {
@@ -414,15 +418,59 @@ Route::prefix('company')->name('company.')->group(function () {
     })->name('portal');
 
     // Authentication routes
-    Route::get('/login', [App\Http\Controllers\Company\CompanyAuthController::class, 'showLoginForm'])->name('login');
-    Route::post('/login', [App\Http\Controllers\Company\CompanyAuthController::class, 'login']);
-    Route::get('/register', [App\Http\Controllers\Company\CompanyAuthController::class, 'showRegistrationForm'])->name('register');
-    Route::post('/register', [App\Http\Controllers\Company\CompanyAuthController::class, 'register']);
-    
+    Route::middleware(['guest:company'])->group(function () {
+        Route::get('/login', [App\Http\Controllers\Company\CompanyAuthController::class, 'showLoginForm'])->name('login');
+        Route::post('/login', [App\Http\Controllers\Company\CompanyAuthController::class, 'login']);
+        Route::get('/register', [App\Http\Controllers\Company\CompanyAuthController::class, 'showRegistrationForm'])->name('register');
+        Route::post('/register', [App\Http\Controllers\Company\CompanyAuthController::class, 'register']);
+    });
+
     // Protected routes (require company authentication)
     Route::middleware('auth:company')->group(function () {
-        Route::get('/dashboard', [App\Http\Controllers\Company\CompanyAuthController::class, 'dashboard'])->name('dashboard');
         Route::post('/logout', [App\Http\Controllers\Company\CompanyAuthController::class, 'logout'])->name('logout');
+
+        // Dashboard
+        Route::get('/dashboard', [App\Http\Controllers\Company\CompanyDashboardController::class, 'index'])->name('dashboard');
+
+        // Request Management
+        Route::prefix('requests')->name('requests.')->group(function () {
+            Route::get('/', [App\Http\Controllers\Company\CompanyDashboardController::class, 'requestsIndex'])->name('index');
+            Route::get('/create', [App\Http\Controllers\Company\CompanyDashboardController::class, 'createRequest'])->name('create');
+            Route::post('/', [App\Http\Controllers\Company\CompanyDashboardController::class, 'storeRequest'])->name('store');
+            Route::get('/{request}/edit', [App\Http\Controllers\Company\CompanyDashboardController::class, 'editRequest'])->name('edit');
+            Route::put('/{request}', [App\Http\Controllers\Company\CompanyDashboardController::class, 'updateRequest'])->name('update');
+            Route::post('/{request}/cancel', [App\Http\Controllers\Company\CompanyDashboardController::class, 'cancelRequest'])->name('cancel');
+        });
+
+        // Driver Matching
+        Route::prefix('matching')->name('matching.')->group(function () {
+            Route::get('/', [App\Http\Controllers\Company\CompanyDashboardController::class, 'matchingIndex'])->name('index');
+            Route::get('/drivers/{driver}', [App\Http\Controllers\Company\CompanyDashboardController::class, 'showDriver'])->name('show');
+            Route::post('/initiate-match', [App\Http\Controllers\Company\CompanyDashboardController::class, 'initiateMatch'])->name('initiate');
+        });
+
+        // Job Tracking (placeholder for future implementation)
+        Route::prefix('jobs')->name('jobs.')->group(function () {
+            Route::get('/', function() {
+                return view('company.coming-soon');
+            })->name('index');
+        });
+
+        // Reports (placeholder for future implementation)
+        Route::prefix('reports')->name('reports.')->group(function () {
+            Route::get('/', function() {
+                return view('company.coming-soon');
+            })->name('index');
+        });
+
+        // Company Profile
+        Route::prefix('profile')->name('profile.')->group(function () {
+            Route::get('/', [App\Http\Controllers\Company\CompanyDashboardController::class, 'profileIndex'])->name('index');
+            Route::put('/', [App\Http\Controllers\Company\CompanyDashboardController::class, 'updateProfile'])->name('update');
+            Route::get('/settings', function() {
+                return view('company.coming-soon');
+            })->name('settings');
+        });
     });
 });
 
@@ -551,6 +599,10 @@ Route::bind('match', function ($value) {
 
 Route::bind('company', function ($value) {
     try {
+        // Defensive: if companies table doesn't exist yet (migrations not run), abort early
+        if (!\Illuminate\Support\Facades\Schema::hasTable('companies')) {
+            abort(404, 'Company not available');
+        }
         // First try by primary key if numeric
         if (is_numeric($value)) {
             return \App\Models\Company::findOrFail($value);

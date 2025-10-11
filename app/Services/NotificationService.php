@@ -13,7 +13,7 @@ class NotificationService
     /**
      * Send driver verification status notification
      */
-    public function sendVerificationNotification(Driver $driver, string $status, string $notes = null)
+    public function sendVerificationNotification(\Illuminate\Database\Eloquent\Model $driver, string $status, string $notes = null)
     {
         try {
             // Log notification attempt
@@ -170,7 +170,7 @@ class NotificationService
     /**
      * Send OCR verification result notification
      */
-    public function sendOCRVerificationNotification(Driver $driver, array $ocrResults)
+    public function sendOCRVerificationNotification(\Illuminate\Database\Eloquent\Model $driver, array $ocrResults)
     {
         try {
             $overallStatus = $ocrResults['overall_status'] ?? 'pending';
@@ -227,7 +227,7 @@ class NotificationService
     /**
      * Send document approval/rejection notification
      */
-    public function sendDocumentActionNotification(Driver $driver, string $documentType, string $action, string $notes = null)
+    public function sendDocumentActionNotification(\Illuminate\Database\Eloquent\Model $driver, string $documentType, string $action, string $notes = null)
     {
         try {
             $notificationData = [
@@ -278,7 +278,7 @@ class NotificationService
     /**
      * Send welcome notification to new driver
      */
-    public function sendDriverWelcomeNotification(Driver $driver)
+    public function sendDriverWelcomeNotification(\Illuminate\Database\Eloquent\Model $driver)
     {
         try {
             $notificationData = [
@@ -328,6 +328,22 @@ class NotificationService
                 'message' => 'Failed to send welcome notification'
             ];
         }
+    }
+
+    /**
+     * Send KYC approval notification (used by DriverManagementService)
+     */
+    public function sendKycApprovalNotification(\Illuminate\Database\Eloquent\Model $driver, string $notes = null)
+    {
+        return $this->sendVerificationNotification($driver, 'verified', $notes);
+    }
+
+    /**
+     * Send KYC rejection notification (used by DriverManagementService)
+     */
+    public function sendKycRejectionNotification(\Illuminate\Database\Eloquent\Model $driver, string $reason = null)
+    {
+        return $this->sendVerificationNotification($driver, 'rejected', $reason);
     }
 
     /**

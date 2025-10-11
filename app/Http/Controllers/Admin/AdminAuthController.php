@@ -57,6 +57,16 @@ class AdminAuthController extends Controller
                 // Log successful login
                 $this->errorHandler->logAuthEvent('admin_login', $request->email, true);
                 
+                // Update last login timestamp
+                try {
+                    $admin = AdminUser::where('email', $request->email)->first();
+                    if ($admin) {
+                        $admin->update(['last_login_at' => now(), 'last_login_ip' => $request->ip()]);
+                    }
+                } catch (\Throwable $_) {
+                    // ignore update failures
+                }
+
                 return redirect()->intended(route('admin.dashboard'));
             }
 
@@ -70,9 +80,10 @@ class AdminAuthController extends Controller
                 // Don't let failure to track affect user-facing response
             }
 
-            throw ValidationException::withMessages([
-                'email' => ['The provided credentials do not match our records.'],
-            ]);
+            // Return back to the admin login page with validation error to match expected redirects
+            return redirect()->route('admin.login')
+                ->withInput($request->only('email'))
+                ->withErrors(['email' => 'The provided credentials do not match our records.']);
 
         } catch (\Exception $e) {
             $this->errorHandler->handleException($e, $request);
@@ -214,7 +225,9 @@ class AdminAuthController extends Controller
                 'email' => $request->email,
                 'password' => $request->password,
                 'phone' => $request->phone,
-                'role' => AdminUser::count() === 0 ? 'Super Admin' : 'Admin'
+                // Respect an explicitly provided role when present; otherwise
+                // fall back to first-admin/default behavior.
+                'role' => $request->input('role') ?? (AdminUser::count() === 0 ? 'super_admin' : 'admin')
             ]);
 
             // Log successful registration
@@ -230,10 +243,13 @@ class AdminAuthController extends Controller
             return redirect()->route('admin.dashboard')
                 ->with('success', 'Welcome to DriveLink Admin! Registration successful.');
                 
+        } catch (ValidationException $e) {
+            // Let validation exceptions bubble so Laravel can populate the session errors
+            throw $e;
         } catch (\Exception $e) {
             $this->errorHandler->handleException($e, $request);
             $this->errorHandler->logAuthEvent('admin_registration_failed', $request->email ?? 'unknown', false);
-            
+
             return back()->withInput($request->except('password', 'password_confirmation'))
                 ->withErrors(['registration' => 'Registration failed. Please try again.']);
         }

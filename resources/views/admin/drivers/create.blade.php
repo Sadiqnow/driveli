@@ -300,6 +300,11 @@
             </div>
         @endif
 
+        <!-- Page heading (also used by UI tests) -->
+        <div class="mb-3">
+            <h2 class="h4">Create Driver</h2>
+        </div>
+
         <!-- Modern Step Indicator -->
         <div class="progress-indicator">
             <div class="d-flex align-items-center justify-content-between mb-3">

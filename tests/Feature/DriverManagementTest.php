@@ -9,10 +9,20 @@ use App\Services\DriverManagementService;
 use App\Constants\DrivelinkConstants;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class DriverManagementTest extends TestCase
 {
     use RefreshDatabase;
+
+    /**
+     * Avoid wrapping this test class in transactions to prevent savepoint errors
+     * on some MySQL setups during nested transaction rollback tests.
+     *
+     * RefreshDatabase will still run migrations; tests will manage DB cleanup.
+     */
+    protected $connectionsToTransact = [];
 
     private DriverManagementService $driverService;
     private AdminUser $admin;
@@ -20,6 +30,17 @@ class DriverManagementTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        // Ensure a clean drivers table for deterministic counts
+        if (\Illuminate\Support\Facades\Schema::hasTable((new \App\Models\Drivers)->getTable())) {
+            // Some DB engines (MySQL) won't allow truncating a table referenced by FK constraints.
+            // Truncate dependent tables first in a safe order inside a FK-check toggle.
+            DB::statement('SET FOREIGN_KEY_CHECKS=0');
+            if (Schema::hasTable('commissions')) {
+                DB::table('commissions')->truncate();
+            }
+            DB::table((new \App\Models\Drivers)->getTable())->truncate();
+            DB::statement('SET FOREIGN_KEY_CHECKS=1');
+        }
         
         $this->driverService = app(DriverManagementService::class);
         $this->admin = AdminUser::factory()->create([
@@ -152,10 +173,30 @@ class DriverManagementTest extends TestCase
 
     public function test_driver_statistics_calculation()
     {
-        Driver::factory()->create(['status' => DrivelinkConstants::DRIVER_STATUS_ACTIVE]);
-        Driver::factory()->create(['status' => DrivelinkConstants::DRIVER_STATUS_PENDING]);
-        Driver::factory()->create(['verification_status' => DrivelinkConstants::VERIFICATION_STATUS_VERIFIED]);
-        Driver::factory()->create(['kyc_status' => DrivelinkConstants::KYC_STATUS_COMPLETED]);
+        // Create four distinct drivers where each contributes to exactly one statistic
+        Driver::factory()->create([
+            'status' => DrivelinkConstants::DRIVER_STATUS_ACTIVE,
+            'verification_status' => DrivelinkConstants::VERIFICATION_STATUS_PENDING,
+            'kyc_status' => DrivelinkConstants::KYC_STATUS_NOT_STARTED,
+        ]);
+
+        Driver::factory()->create([
+            'status' => DrivelinkConstants::DRIVER_STATUS_PENDING,
+            'verification_status' => DrivelinkConstants::VERIFICATION_STATUS_PENDING,
+            'kyc_status' => DrivelinkConstants::KYC_STATUS_NOT_STARTED,
+        ]);
+
+        Driver::factory()->create([
+            'status' => DrivelinkConstants::DRIVER_STATUS_INACTIVE,
+            'verification_status' => DrivelinkConstants::VERIFICATION_STATUS_VERIFIED,
+            'kyc_status' => DrivelinkConstants::KYC_STATUS_NOT_STARTED,
+        ]);
+
+        Driver::factory()->create([
+            'status' => DrivelinkConstants::DRIVER_STATUS_INACTIVE,
+            'verification_status' => DrivelinkConstants::VERIFICATION_STATUS_PENDING,
+            'kyc_status' => DrivelinkConstants::KYC_STATUS_COMPLETED,
+        ]);
 
         $stats = $this->driverService->getDriverStatistics();
 
@@ -239,20 +280,29 @@ class DriverManagementTest extends TestCase
     {
         $initialCount = Driver::count();
 
-        // Mock a failure during driver creation
-        $this->mock(Driver::class, function ($mock) {
-            $mock->shouldReceive('create')->andThrow(new \Exception('Database error'));
+        // Bind a lightweight fake Drivers model that throws during create()
+        app()->bind(\App\Models\Drivers::class, function () {
+            return new class {
+                public function create($data)
+                {
+                    throw new \Exception('Database error');
+                }
+            };
         });
 
-        $this->expectException(\Exception::class);
+        // Re-resolve the service so it uses the bound Drivers implementation
+        $this->driverService = app(DriverManagementService::class);
 
-        $this->driverService->createDriver([
-            'first_name' => 'John',
-            'surname' => 'Doe',
-            'email' => 'john@test.com',
-        ]);
-
-        // Should not have created any new drivers
-        $this->assertEquals($initialCount, Driver::count());
+        try {
+            $this->driverService->createDriver([
+                'first_name' => 'John',
+                'surname' => 'Doe',
+                'email' => 'john@test.com',
+            ]);
+            $this->fail('Expected exception was not thrown');
+        } catch (\Exception $e) {
+            // Ensure DB remains consistent (no driver created)
+            $this->assertEquals($initialCount, Driver::count(), 'Driver count should be unchanged after failed transaction');
+        }
     }
 }

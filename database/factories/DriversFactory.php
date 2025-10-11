@@ -13,7 +13,7 @@ class DriversFactory extends Factory
 
     public function definition()
     {
-        return [
+        $data = [
             'driver_id' => 'DRV' . str_pad($this->faker->unique()->numberBetween(1, 99999), 5, '0', STR_PAD_LEFT),
             'nickname' => $this->faker->optional()->firstName(),
             'first_name' => $this->faker->firstName(),
@@ -56,6 +56,16 @@ class DriversFactory extends Factory
             'password' => '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // password
             'remember_token' => Str::random(10),
         ];
+
+        // Filter out attributes that do not exist in the drivers table to avoid SQL errors
+        try {
+            $table = (new \App\Models\Drivers)->getTable();
+            $columns = \Illuminate\Support\Facades\Schema::getColumnListing($table);
+            return array_intersect_key($data, array_flip($columns));
+        } catch (\Throwable $e) {
+            // If schema can't be inspected (tests using in-memory DB), just return data
+            return $data;
+        }
     }
 
     public function verified()

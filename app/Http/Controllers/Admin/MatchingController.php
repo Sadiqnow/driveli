@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\DriverNormalized;
 use App\Models\CompanyRequest;
 use App\Models\Company;
+use Illuminate\Support\Facades\Schema;
 use App\Models\DriverMatch;
 use Illuminate\Support\Facades\DB;
 
@@ -66,12 +67,15 @@ class MatchingController extends Controller
         $matchingRate = $totalMatches > 0 ? round(($successfulMatches / $totalMatches) * 100, 1) : 0;
         
         // Top companies by request count
-        $topCompanies = Company::leftJoin('company_requests', 'companies.id', '=', 'company_requests.company_id')
-            ->selectRaw('companies.id, companies.name, companies.email, companies.status, COUNT(company_requests.id) as requests_count')
-            ->groupBy('companies.id', 'companies.name', 'companies.email', 'companies.status')
-            ->orderBy('requests_count', 'desc')
-            ->limit(5)
-            ->get();
+        $topCompanies = collect();
+        if (Schema::hasTable('companies')) {
+            $topCompanies = Company::leftJoin('company_requests', 'companies.id', '=', 'company_requests.company_id')
+                ->selectRaw('companies.id, companies.name, companies.email, companies.status, COUNT(company_requests.id) as requests_count')
+                ->groupBy('companies.id', 'companies.name', 'companies.email', 'companies.status')
+                ->orderBy('requests_count', 'desc')
+                ->limit(5)
+                ->get();
+        }
         
         // Recent matches
         $recentMatches = DriverMatch::with(['driver', 'companyRequest.company'])

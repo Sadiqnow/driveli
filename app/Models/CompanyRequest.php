@@ -64,7 +64,7 @@ class CompanyRequest extends Model
 
     public function driver(): BelongsTo
     {
-        return $this->belongsTo(DriverNormalized::class, 'driver_id')
+        return $this->belongsTo(Drivers::class, 'driver_id')
                     ->select(['id', 'driver_id', 'first_name', 'surname', 'email', 'phone', 'status', 'verification_status'])
                     ->withDefault();
     }

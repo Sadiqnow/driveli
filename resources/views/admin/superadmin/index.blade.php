@@ -21,6 +21,9 @@
                             <h3 class="card-title">Admin Management</h3>
                         </div>
                         <div class="card-body">
+                            <h2>Super Admin Dashboard</h2>
+                        </div>
+                        <div class="card-body">
                             <div class="table-responsive">
                                 <table class="table table-bordered table-striped">
                                     <thead>

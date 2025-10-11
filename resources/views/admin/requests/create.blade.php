@@ -15,7 +15,7 @@
     <div class="col-md-12">
         <div class="card card-primary">
             <div class="card-header">
-                <h3 class="card-title">Create New Company Request</h3>
+                <h3 class="card-title">Create Company Request</h3>
             </div>
             
             <form action="{{ route('admin.requests.store') }}" method="POST">

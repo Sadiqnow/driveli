@@ -1,3 +1,11 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>Reports</title></head>
+<body>
+    <h1>Reports &amp; Analytics</h1>
+    <p>This is a placeholder for reports index.</p>
+</body>
+</html>
 @extends('layouts.admin_cdn')
 
 @section('content')

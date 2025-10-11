@@ -19,6 +19,20 @@ class AuthenticationService
      */
     public function authenticateAdmin(array $credentials, bool $remember = false): bool
     {
+        // Ensure only active admins can authenticate
+        $email = $credentials['email'] ?? null;
+        if (!$email) return false;
+
+        $admin = AdminUser::where('email', $email)->first();
+        if (!$admin) {
+            return false;
+        }
+
+        // Respect the status field; only allow 'Active' admins to login
+        if (isset($admin->status) && strtolower($admin->status) !== 'active') {
+            return false;
+        }
+
         return Auth::guard('admin')->attempt($credentials, $remember);
     }
 
@@ -268,7 +282,36 @@ class AuthenticationService
 
         try {
             $isFirstAdmin = AdminUser::count() === 0;
-            $role = $isFirstAdmin ? 'Super Admin' : ($data['role'] ?? 'Admin');
+            // Respect an explicitly provided role in the registration payload.
+            // Only default to 'Super Admin' if this is the first admin and no role was provided.
+            $rawRole = $data['role'] ?? null;
+
+            // Normalize common role representations to canonical display names
+            $roleMap = [
+                'super_admin' => 'Super Admin',
+                'super admin' => 'Super Admin',
+                'super-admin' => 'Super Admin',
+                'Super Admin' => 'Super Admin',
+                'admin' => 'Admin',
+                'Admin' => 'Admin',
+                'manager' => 'Manager',
+                'Manager' => 'Manager',
+                'moderator' => 'Moderator',
+                'Moderator' => 'Moderator'
+            ];
+
+            if ($rawRole && is_string($rawRole)) {
+                $key = trim($rawRole);
+                $keyLower = strtolower($key);
+                // Try direct match first
+                $role = $roleMap[$key] ?? $roleMap[$keyLower] ?? null;
+            } else {
+                $role = null;
+            }
+
+            if (!$role) {
+                $role = $isFirstAdmin ? 'Super Admin' : 'Admin';
+            }
             
             $admin = AdminUser::create([
                 'name' => $data['name'],
