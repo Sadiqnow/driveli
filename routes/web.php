@@ -349,6 +349,7 @@ Route::prefix('driver')->name('driver.')->group(function () {
         // Additional driver routes
         Route::get('/history', [DriverJobController::class, 'history'])->name('history');
         Route::get('/earnings', [DriverProfileController::class, 'earnings'])->name('earnings');
+        Route::post('/documents', [DriverProfileController::class, 'uploadDocument'])->name('documents.upload');
         Route::get('/documents', [DriverProfileController::class, 'showDocuments'])->name('documents');
         Route::get('/support', [DriverProfileController::class, 'support'])->name('support');
         Route::prefix('profile')->name('profile.')->group(function () {
@@ -664,13 +665,13 @@ Route::prefix('admin/superadmin')->name('admin.superadmin.')->group(function () 
 // ===================================================================================================
 
 Route::prefix('admin')->name('admin.')->middleware(['auth:admin'])->group(function () {
-    // Role Management - TEMPORARILY DISABLED until role system is implemented
-    // Route::resource('roles', App\Http\Controllers\Admin\RoleController::class);
-    // Route::post('roles/{role}/toggle-status', [App\Http\Controllers\Admin\RoleController::class, 'toggleStatus'])->name('roles.toggle-status');
-    // Route::get('roles/{role}/permissions', [App\Http\Controllers\Admin\RoleController::class, 'permissions'])->name('roles.permissions');
-    
-    // Permission Management - TEMPORARILY DISABLED until permission system is implemented
-    // Route::resource('permissions', App\Http\Controllers\Admin\PermissionController::class);
+    // Role Management
+    Route::resource('roles', App\Http\Controllers\Admin\RoleController::class);
+    Route::post('roles/{role}/toggle-status', [App\Http\Controllers\Admin\RoleController::class, 'toggleStatus'])->name('roles.toggle-status');
+    Route::get('roles/{role}/permissions', [App\Http\Controllers\Admin\RoleController::class, 'permissions'])->name('roles.permissions');
+
+    // Permission Management
+    Route::resource('permissions', App\Http\Controllers\Admin\PermissionController::class);
     
     // User Management (Enhanced with RBAC)
     Route::middleware(['rbac:permission,manage_users'])->group(function () {

@@ -72,6 +72,22 @@
                     </div>
                 </div>
 
+                <!-- Under Review Widget -->
+                <div class="col-lg-3 col-6">
+                    <div class="small-box bg-info">
+                        <div class="inner">
+                            <h3>{{ $reviewingCount ?? 0 }}</h3>
+                            <p>Under Review</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-search"></i>
+                        </div>
+                        <a href="{{ route('admin.drivers.index', ['verification_status' => 'reviewing']) }}" class="small-box-footer">
+                            View Under Review <i class="fas fa-arrow-circle-right"></i>
+                        </a>
+                    </div>
+                </div>
+
                 <!-- Active Drivers Widget -->
                 <div class="col-lg-3 col-6">
                     <div class="small-box bg-primary">
@@ -247,6 +263,7 @@
                             <select id="verification-filter" name="verification_status" class="form-control" aria-label="Filter drivers by verification status">
                                 <option value="">All Verification</option>
                                 <option value="pending" {{ request('verification_status')=='pending' ? 'selected' : '' }}>Pending</option>
+                                <option value="reviewing" {{ request('verification_status')=='reviewing' ? 'selected' : '' }}>Under Review</option>
                                 <option value="verified" {{ request('verification_status')=='verified' ? 'selected' : '' }}>Verified</option>
                                 <option value="rejected" {{ request('verification_status')=='rejected' ? 'selected' : '' }}>Rejected</option>
                             </select>
@@ -334,6 +351,10 @@
                                                     @elseif($driver->verification_status == 'pending')
                                                         <span class="badge bg-warning text-dark" aria-label="Verification status: Pending review" style="color: #000 !important;">
                                                             <i class="fas fa-clock" aria-hidden="true"></i> Pending Review
+                                                        </span>
+                                                    @elseif($driver->verification_status == 'reviewing')
+                                                        <span class="badge bg-info" aria-label="Verification status: Under review">
+                                                            <i class="fas fa-search" aria-hidden="true"></i> Under Review
                                                         </span>
                                                     @elseif($driver->verification_status == 'rejected')
                                                         <span class="badge bg-danger" aria-label="Verification status: Rejected">

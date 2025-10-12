@@ -85,6 +85,19 @@ $(document).ready(function() {
     $('#uploadForm').on('submit', function(e) {
         e.preventDefault();
 
+        // Client-side validation
+        if (!$('#document_file').val()) {
+            toastr.error('Please select a document file to upload.');
+            $('#document_file').focus();
+            return;
+        }
+
+        if (!$('#document_type').val()) {
+            toastr.error('Please select the document type.');
+            $('#document_type').focus();
+            return;
+        }
+
         const formData = new FormData(this);
         const uploadBtn = $('#uploadBtn');
 
@@ -110,7 +123,14 @@ $(document).ready(function() {
             },
             error: function(xhr) {
                 const response = xhr.responseJSON;
-                toastr.error(response?.message || 'Upload failed');
+                if (response && response.errors) {
+                    // Display specific validation errors
+                    for (let field in response.errors) {
+                        toastr.error(response.errors[field][0]);
+                    }
+                } else {
+                    toastr.error(response?.message || 'Upload failed');
+                }
             },
             complete: function() {
                 uploadBtn.prop('disabled', false).html('<i class="fas fa-upload me-2"></i>Upload Document');

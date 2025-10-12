@@ -480,4 +480,172 @@ class NotificationService
 
         return $names[$documentType] ?? ucfirst(str_replace('_', ' ', $documentType));
     }
+
+    /**
+     * Send KYC submission notification to admins
+     */
+    public function notifyAdminsOfKycSubmission(\Illuminate\Database\Eloquent\Model $driver)
+    {
+        try {
+            $admins = AdminUser::where('is_active', true)->get();
+
+            if ($admins->isEmpty()) {
+                Log::warning('No active admins found to notify about KYC submission');
+                return [
+                    'success' => false,
+                    'message' => 'No active admins to notify'
+                ];
+            }
+
+            $notificationData = [
+                'driver' => $driver,
+                'submission_date' => now(),
+                'kyc_step' => $driver->kyc_step,
+                'review_url' => route('admin.drivers.kyc-review', $driver->id),
+                'driver_profile_url' => route('admin.drivers.show', $driver->id),
+                'company_name' => config('app.name', 'Drivelink')
+            ];
+
+            $sentCount = 0;
+            foreach ($admins as $admin) {
+                // Send email if admin has email
+                if ($admin->email) {
+                    $this->sendEmail(
+                        $admin->email,
+                        'New KYC Application Submitted',
+                        'emails.admin-kyc-submission',
+                        array_merge($notificationData, ['admin' => $admin])
+                    );
+                    $sentCount++;
+                }
+
+                // Store notification in database
+                $this->storeNotification([
+                    'recipient_type' => 'admin',
+                    'recipient_id' => $admin->id,
+                    'type' => 'kyc_submission',
+                    'title' => 'New KYC Application',
+                    'message' => "Driver {$driver->full_name} has submitted their KYC application for review",
+                    'data' => json_encode($notificationData),
+                    'sent_at' => now(),
+                    'sent_via' => $admin->email ? 'email' : 'system'
+                ]);
+            }
+
+            Log::info('KYC submission notification sent to admins', [
+                'driver_id' => $driver->id,
+                'admins_notified' => $sentCount
+            ]);
+
+            return [
+                'success' => true,
+                'message' => "Notification sent to {$sentCount} admins"
+            ];
+
+        } catch (\Exception $e) {
+            Log::error('Failed to send KYC submission notification to admins: ' . $e->getMessage());
+            
+            return [
+                'success' => false,
+                'message' => 'Failed to send KYC submission notification'
+            ];
+        }
+    }
+
+    /**
+     * Send KYC notification (general)
+     */
+    public function sendKycNotification(\Illuminate\Database\Eloquent\Model $driver, string $message = 'Your KYC status has been updated.', array $data = [])
+    {
+        try {
+            $notificationData = array_merge([
+                'driver' => $driver,
+                'message' => $message,
+                'notification_date' => now(),
+            ], $data);
+
+            if ($driver->email) {
+                $this->sendEmail(
+                    $driver->email,
+                    'KYC Update',
+                    'emails.driver-kyc-notification',
+                    $notificationData
+                );
+            }
+
+            // Store notification
+            $this->storeNotification([
+                'recipient_type' => 'driver',
+                'recipient_id' => $driver->id,
+                'type' => 'kyc_notification',
+                'title' => 'KYC Update',
+                'message' => $message,
+                'data' => json_encode($notificationData),
+                'sent_at' => now(),
+                'sent_via' => $driver->email ? 'email' : 'system'
+            ]);
+
+            return [
+                'success' => true,
+                'message' => 'KYC notification sent'
+            ];
+
+        } catch (\Exception $e) {
+            Log::error('Failed to send KYC notification: ' . $e->getMessage());
+
+            return [
+                'success' => false,
+                'message' => 'Failed to send KYC notification'
+            ];
+        }
+    }
+
+    /**
+     * Send KYC info request notification
+     */
+    public function sendKycInfoRequestNotification(\Illuminate\Database\Eloquent\Model $driver, string $requestMessage, array $data = [])
+    {
+        try {
+            $notificationData = array_merge([
+                'driver' => $driver,
+                'request_message' => $requestMessage,
+                'request_date' => now(),
+                'response_deadline' => now()->addDays(7), // 7 days to respond
+            ], $data);
+
+            if ($driver->email) {
+                $this->sendEmail(
+                    $driver->email,
+                    'Additional Information Required for KYC',
+                    'emails.driver-kyc-info-request',
+                    $notificationData
+                );
+            }
+
+            // Store notification
+            $this->storeNotification([
+                'recipient_type' => 'driver',
+                'recipient_id' => $driver->id,
+                'type' => 'kyc_info_request',
+                'title' => 'Additional Information Required',
+                'message' => $requestMessage,
+                'data' => json_encode($notificationData),
+                'sent_at' => now(),
+                'sent_via' => $driver->email ? 'email' : 'system'
+            ]);
+
+            return [
+                'success' => true,
+                'message' => 'KYC info request notification sent'
+            ];
+
+        } catch (\Exception $e) {
+            Log::error('Failed to send KYC info request notification: ' . $e->getMessage());
+
+            return [
+                'success' => false,
+                'message' => 'Failed to send KYC info request notification'
+            ];
+        }
+    }
 }

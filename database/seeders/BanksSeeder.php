@@ -12,6 +12,12 @@ class BanksSeeder extends Seeder
      */
     public function run()
     {
+        // Skip seeding if banks table already has data
+        if (DB::table('banks')->count() > 0) {
+            $this->command->info('Banks table already has data, skipping seeding.');
+            return;
+        }
+
         $banks = [
             ['name' => 'Access Bank', 'code' => '044', 'is_active' => true],
             ['name' => 'Citibank', 'code' => '023', 'is_active' => true],
@@ -43,5 +49,6 @@ class BanksSeeder extends Seeder
         }
 
         DB::table('banks')->upsert($banks, ['code'], ['name', 'is_active', 'updated_at']);
+        $this->command->info('Banks seeded successfully!');
     }
 }

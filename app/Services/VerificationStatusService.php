@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\DriverNormalized;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 
@@ -237,33 +238,48 @@ class VerificationStatusService
             $driver = DriverNormalized::findOrFail($driverId);
 
             // Get latest workflow
-            $workflow = DB::table('verification_workflows')
-                ->where('driver_id', $driverId)
-                ->orderBy('created_at', 'desc')
-                ->first();
+            $workflow = null;
+            if (Schema::hasTable('verification_workflows')) {
+                $workflow = DB::table('verification_workflows')
+                    ->where('driver_id', $driverId)
+                    ->orderBy('created_at', 'desc')
+                    ->first();
+            }
 
             // Get all verification records
-            $verifications = DB::table('driver_verifications')
-                ->where('driver_id', $driverId)
-                ->orderBy('created_at', 'desc')
-                ->get();
+            $verifications = collect();
+            if (Schema::hasTable('driver_verifications')) {
+                $verifications = DB::table('driver_verifications')
+                    ->where('driver_id', $driverId)
+                    ->orderBy('created_at', 'desc')
+                    ->get();
+            }
 
             // Get OCR results
-            $ocrResults = DB::table('document_ocr_results')
-                ->where('driver_id', $driverId)
-                ->get();
+            $ocrResults = collect();
+            if (Schema::hasTable('document_ocr_results')) {
+                $ocrResults = DB::table('document_ocr_results')
+                    ->where('driver_id', $driverId)
+                    ->get();
+            }
 
             // Get API verification logs
-            $apiLogs = DB::table('api_verification_logs')
-                ->where('driver_id', $driverId)
-                ->orderBy('created_at', 'desc')
-                ->take(10)
-                ->get();
+            $apiLogs = collect();
+            if (Schema::hasTable('api_verification_logs')) {
+                $apiLogs = DB::table('api_verification_logs')
+                    ->where('driver_id', $driverId)
+                    ->orderBy('created_at', 'desc')
+                    ->take(10)
+                    ->get();
+            }
 
             // Get referee verifications
-            $refereeVerifications = DB::table('referee_verifications')
-                ->where('driver_id', $driverId)
-                ->get();
+            $refereeVerifications = collect();
+            if (Schema::hasTable('referee_verifications')) {
+                $refereeVerifications = DB::table('referee_verifications')
+                    ->where('driver_id', $driverId)
+                    ->get();
+            }
 
             return [
                 'success' => true,

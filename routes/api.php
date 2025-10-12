@@ -158,3 +158,6 @@ Route::get('/lgas/{state}', [App\Http\Controllers\API\LGAFallbackController::cla
 // Add routes that match what the frontend JavaScript is calling
 Route::get('/states', [LocationController::class, 'getStates'])->name('api.states.frontend');
 Route::get('/states/{stateId}/lgas', [LocationController::class, 'getLocalGovernments'])->name('api.states.lgas.frontend');
+
+// Analytics API Route
+Route::middleware(['auth:sanctum'])->get('/analytics', [App\Http\Controllers\Admin\AnalyticsController::class, 'graphs'])->name('api.analytics');

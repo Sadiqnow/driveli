@@ -12,6 +12,12 @@ class NationalitiesSeeder extends Seeder
      */
     public function run()
     {
+        // Skip seeding if nationalities table already has data
+        if (DB::table('nationalities')->count() > 0) {
+            $this->command->info('Nationalities table already has data, skipping seeding.');
+            return;
+        }
+
         $nationalities = [
             ['name' => 'Nigerian', 'code' => 'NG', 'is_active' => true],
             ['name' => 'Ghanaian', 'code' => 'GH', 'is_active' => true],
@@ -30,5 +36,6 @@ class NationalitiesSeeder extends Seeder
         }
 
         DB::table('nationalities')->upsert($nationalities, ['code'], ['name', 'is_active', 'updated_at']);
+        $this->command->info('Nationalities seeded successfully!');
     }
 }

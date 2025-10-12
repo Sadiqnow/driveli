@@ -21,10 +21,21 @@ class DriverDocumentController extends Controller
      */
     public function uploadDocument(Request $request)
     {
-        $validator = Validator::make($request->all(), [
+        $data = $request->all();
+        $data['document_file'] = $request->file('document_file');
+
+        $validator = Validator::make($data, [
             'document_file' => 'required|file|mimes:jpg,jpeg,png,pdf|max:10240', // 10MB max
             'document_type' => 'required|string|in:nin,license_front,license_back,profile_picture,passport_photo,employment_letter,service_certificate,vehicle_papers,insurance,other',
             'description' => 'nullable|string|max:255'
+        ], [
+            'document_file.required' => 'Please select a document file to upload.',
+            'document_file.file' => 'The uploaded item must be a valid file.',
+            'document_file.mimes' => 'Only JPG, PNG, and PDF files are allowed.',
+            'document_file.max' => 'The file size must not exceed 10MB.',
+            'document_type.required' => 'Please select the document type.',
+            'document_type.in' => 'Please select a valid document type.',
+            'description.max' => 'The description must not exceed 255 characters.'
         ]);
 
         if ($validator->fails()) {
@@ -47,8 +58,7 @@ class DriverDocumentController extends Controller
                 'document_type' => $request->input('document_type'),
                 'file_content' => $fileContent,
                 'verification_status' => 'pending',
-                'description' => $request->input('description'),
-                'uploaded_at' => now()
+                'description' => $request->input('description')
             ]);
 
             return response()->json([

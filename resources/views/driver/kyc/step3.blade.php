@@ -81,15 +81,98 @@
                 <!-- Employment Start Date -->
                 <div class="col-md-6 mb-3">
                     <label for="employment_start_date" class="form-label">Employment Start Date</label>
-                    <input type="date" 
-                           class="form-control @error('employment_start_date') is-invalid @enderror" 
-                           id="employment_start_date" 
-                           name="employment_start_date" 
+                    <input type="date"
+                           class="form-control @error('employment_start_date') is-invalid @enderror"
+                           id="employment_start_date"
+                           name="employment_start_date"
                            value="{{ old('employment_start_date', $driver->employment_start_date ? $driver->employment_start_date->format('Y-m-d') : '') }}"
                            max="{{ date('Y-m-d') }}">
                     @error('employment_start_date')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
+                </div>
+
+                <!-- Employment Status -->
+                <div class="col-md-12 mb-3">
+                    <label class="form-label required">Are you currently employed?</label>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input type="radio"
+                                       class="form-check-input @error('is_working') is-invalid @enderror"
+                                       id="is_working_yes"
+                                       name="is_working"
+                                       value="1"
+                                       {{ old('is_working', $driver->is_working) == '1' ? 'checked' : '' }}
+                                       required>
+                                <label class="form-check-label" for="is_working_yes">
+                                    <i class="fas fa-briefcase me-2 text-success"></i>
+                                    Yes, I am currently employed
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input type="radio"
+                                       class="form-check-input @error('is_working') is-invalid @enderror"
+                                       id="is_working_no"
+                                       name="is_working"
+                                       value="0"
+                                       {{ old('is_working', $driver->is_working) == '0' ? 'checked' : '' }}
+                                       required>
+                                <label class="form-check-label" for="is_working_no">
+                                    <i class="fas fa-times me-2 text-danger"></i>
+                                    No, I am not currently employed
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    @error('is_working')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
+
+                <!-- Previous Employment Details (shown only if not currently working) -->
+                <div id="previous_employment_details" class="col-md-12" style="display: none;">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="previous_workplace" class="form-label">Previous Workplace</label>
+                            <input type="text"
+                                   class="form-control @error('previous_workplace') is-invalid @enderror"
+                                   id="previous_workplace"
+                                   name="previous_workplace"
+                                   value="{{ old('previous_workplace', $driver->previous_workplace) }}"
+                                   placeholder="Enter your previous employer name">
+                            @error('previous_workplace')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="previous_work_id_record" class="form-label">Previous Work ID/Record</label>
+                            <input type="text"
+                                   class="form-control @error('previous_work_id_record') is-invalid @enderror"
+                                   id="previous_work_id_record"
+                                   name="previous_work_id_record"
+                                   value="{{ old('previous_work_id_record', $driver->previous_work_id_record) }}"
+                                   placeholder="Enter your previous work ID or record number">
+                            @error('previous_work_id_record')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <div class="col-md-12 mb-3">
+                            <label for="reason_stopped_working" class="form-label">Reason for Stopping Work</label>
+                            <textarea class="form-control @error('reason_stopped_working') is-invalid @enderror"
+                                      id="reason_stopped_working"
+                                      name="reason_stopped_working"
+                                      rows="3"
+                                      placeholder="Please explain why you stopped working at your previous employment">{{ old('reason_stopped_working', $driver->reason_stopped_working) }}</textarea>
+                            @error('reason_stopped_working')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Vehicle Ownership -->
@@ -425,7 +508,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Vehicle details visibility
     const hasVehicleInputs = document.querySelectorAll('input[name="has_vehicle"]');
     const vehicleDetails = document.getElementById('vehicle_details');
-    
+
     function toggleVehicleDetails() {
         const hasVehicle = document.querySelector('input[name="has_vehicle"]:checked');
         if (hasVehicle && hasVehicle.value === '1') {
@@ -438,13 +521,37 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('vehicle_year').required = false;
         }
     }
-    
+
     hasVehicleInputs.forEach(input => {
         input.addEventListener('change', toggleVehicleDetails);
     });
-    
+
+    // Employment details visibility
+    const isWorkingInputs = document.querySelectorAll('input[name="is_working"]');
+    const previousEmploymentDetails = document.getElementById('previous_employment_details');
+
+    function toggleEmploymentDetails() {
+        const isWorking = document.querySelector('input[name="is_working"]:checked');
+        if (isWorking && isWorking.value === '0') {
+            previousEmploymentDetails.style.display = 'block';
+            document.getElementById('previous_workplace').required = true;
+            document.getElementById('previous_work_id_record').required = true;
+            document.getElementById('reason_stopped_working').required = true;
+        } else {
+            previousEmploymentDetails.style.display = 'none';
+            document.getElementById('previous_workplace').required = false;
+            document.getElementById('previous_work_id_record').required = false;
+            document.getElementById('reason_stopped_working').required = false;
+        }
+    }
+
+    isWorkingInputs.forEach(input => {
+        input.addEventListener('change', toggleEmploymentDetails);
+    });
+
     // Initialize on page load
     toggleVehicleDetails();
+    toggleEmploymentDetails();
     
     // File upload handling with preview
     const fileInputs = ['driver_license_scan', 'national_id', 'passport_photo', 'utility_bill'];
@@ -508,6 +615,25 @@ document.addEventListener('DOMContentLoaded', function() {
     const submitBtn = document.getElementById('submitBtn');
     
     form.addEventListener('submit', function(event) {
+        // Check required file inputs specifically
+        const requiredFileInputs = form.querySelectorAll('input[type="file"][required]');
+        let missingFiles = [];
+        requiredFileInputs.forEach(input => {
+            if (!input.files || input.files.length === 0) {
+                missingFiles.push(input.labels[0].textContent.trim());
+                input.classList.add('is-invalid');
+            } else {
+                input.classList.remove('is-invalid');
+            }
+        });
+
+        if (missingFiles.length > 0) {
+            event.preventDefault();
+            event.stopPropagation();
+            showToast('Please upload the following required documents: ' + missingFiles.join(', '), 'error');
+            return;
+        }
+
         if (!form.checkValidity()) {
             event.preventDefault();
             event.stopPropagation();
@@ -519,17 +645,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 'Please make sure all information is accurate as you cannot make changes after submission.\n\n' +
                 'Click OK to proceed.'
             );
-            
+
             if (!confirmed) {
                 event.preventDefault();
                 return;
             }
-            
+
             // Show loading state
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Submitting...';
         }
-        
+
         form.classList.add('was-validated');
     });
     

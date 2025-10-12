@@ -344,15 +344,16 @@ class DriverService
     public function getDashboardStats(): array
     {
         $basicStats = [
-            'verified' => DriverNormalized::where('verification_status', 'verified')->count(),
-            'pending' => DriverNormalized::where('verification_status', 'pending')->count(),
-            'rejected' => DriverNormalized::where('verification_status', 'rejected')->count(),
-            'active' => DriverNormalized::active()->count(),
-            'new_this_month' => DriverNormalized::whereMonth('created_at', now()->month)
+            'verifiedCount' => DriverNormalized::where('verification_status', 'verified')->count(),
+            'pendingCount' => DriverNormalized::where('verification_status', 'pending')->count(),
+            'reviewingCount' => DriverNormalized::where('verification_status', 'reviewing')->count(),
+            'rejectedCount' => DriverNormalized::where('verification_status', 'rejected')->count(),
+            'activeCount' => DriverNormalized::active()->count(),
+            'newDriversThisMonth' => DriverNormalized::whereMonth('created_at', now()->month)
                                     ->whereYear('created_at', now()->year)
                                     ->count(),
-            'active_today' => DriverNormalized::where('last_active_at', '>=', now()->startOfDay())->count(),
-            'online' => DriverNormalized::where('last_active_at', '>=', now()->subMinutes(15))
+            'activeDriversToday' => DriverNormalized::where('last_active_at', '>=', now()->startOfDay())->count(),
+            'onlineDrivers' => DriverNormalized::where('last_active_at', '>=', now()->subMinutes(15))
                              ->where('is_active', true)
                              ->count(),
         ];
@@ -367,9 +368,9 @@ class DriverService
             ->first();
 
         return array_merge($basicStats, [
-            'total_earnings' => $performanceStats->total_earnings ?? 0,
-            'total_jobs_completed' => $performanceStats->total_jobs ?? 0,
-            'average_rating' => round($performanceStats->avg_rating ?? 0, 2),
+            'totalEarnings' => $performanceStats->total_earnings ?? 0,
+            'totalJobsCompleted' => $performanceStats->total_jobs ?? 0,
+            'averageRating' => round($performanceStats->avg_rating ?? 0, 2),
         ]);
     }
 

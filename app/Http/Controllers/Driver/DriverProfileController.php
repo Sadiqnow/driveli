@@ -14,7 +14,7 @@ class DriverProfileController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('auth');
+        $this->middleware('auth:driver');
     }
 
     /**
@@ -42,14 +42,17 @@ class DriverProfileController extends Controller
      */
     public function update(Request $request)
     {
-        $user = Auth::user();
+        $user = Auth::guard('driver')->user();
 
         $data = $request->validate([
-            'name'    => ['required', 'string', 'max:255'],
-            'email'   => ['required', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
-            'phone'   => ['nullable', 'string', 'max:30'],
-            'address' => ['nullable', 'string', 'max:500'],
-            'password' => ['nullable', 'string', 'min:8', 'confirmed'],
+            'first_name'    => ['required', 'string', 'max:255'],
+            'surname'       => ['required', 'string', 'max:255'],
+            'email'         => ['required', 'email', 'max:255', Rule::unique('drivers')->ignore($user->id)],
+            'phone'         => ['nullable', 'string', 'max:30'],
+            'date_of_birth' => ['nullable', 'date'],
+            'gender'        => ['nullable', 'in:Male,Female,Other'],
+            'license_class' => ['nullable', 'in:C,D,E'],
+            'password'      => ['nullable', 'string', 'min:8', 'confirmed'],
         ]);
 
         // If password provided, hash it
@@ -57,10 +60,13 @@ class DriverProfileController extends Controller
             $user->password = Hash::make($data['password']);
         }
 
-        $user->name    = $data['name'];
-        $user->email   = $data['email'];
-        $user->phone   = $data['phone'] ?? $user->phone;
-        $user->address = $data['address'] ?? $user->address;
+        $user->first_name    = $data['first_name'];
+        $user->surname       = $data['surname'];
+        $user->email         = $data['email'];
+        $user->phone         = $data['phone'] ?? $user->phone;
+        $user->date_of_birth = $data['date_of_birth'] ?? $user->date_of_birth;
+        $user->gender        = $data['gender'] ?? $user->gender;
+        $user->license_class = $data['license_class'] ?? $user->license_class;
 
         $user->save();
 
@@ -114,11 +120,12 @@ class DriverProfileController extends Controller
         $driver = Auth::guard('driver')->user();
 
         $request->validate([
-            'document_type' => 'required|string|max:255',
-            'document' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120', // 5MB max
+            'document_file' => 'required|file|mimes:jpg,jpeg,png,pdf|max:10240', // 10MB max
+            'document_type' => 'required|string|in:nin,license_front,license_back,profile_picture,passport_photo,employment_letter,service_certificate,vehicle_papers,insurance,other',
+            'description' => 'nullable|string|max:255'
         ]);
 
-        $file = $request->file('document');
+        $file = $request->file('document_file');
         $path = $file->store('driver_documents', 'public');
 
         $driver->documents()->create([
@@ -127,6 +134,7 @@ class DriverProfileController extends Controller
             'file_name' => $file->getClientOriginalName(),
             'mime_type' => $file->getMimeType(),
             'file_size' => $file->getSize(),
+            'description' => $request->description,
         ]);
 
         return redirect()->back()->with('success', 'Document uploaded successfully.');

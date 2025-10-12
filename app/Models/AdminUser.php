@@ -196,10 +196,8 @@ class AdminUser extends Authenticatable
     }
 
     /**
-     * Future role system - ready for implementation when role tables are created
-     * Uncomment these methods when roles, permissions, and role_user tables are available
+     * Role-based access control relationships
      */
-    
     public function roles(): BelongsToMany
     {
         return $this->belongsToMany(Role::class, 'role_user', 'user_id', 'role_id')
@@ -282,60 +280,105 @@ class AdminUser extends Authenticatable
     }
 
     // Role-based methods
-    
-    // Future role management methods - ready for implementation
-    /*
-    public function assignRole(string $role, ?AdminUser $assignedBy = null): self
+
+    /**
+     * Assign a role to the user
+     */
+    public function assignRole(string $roleName, ?AdminUser $assignedBy = null): self
     {
-        // Implementation ready for when role system is activated
+        $role = Role::where('name', $roleName)->first();
+        if ($role) {
+            $this->roles()->syncWithoutDetaching([
+                $role->id => [
+                    'assigned_at' => now(),
+                    'assigned_by' => $assignedBy?->id,
+                    'is_active' => true
+                ]
+            ]);
+        }
         return $this;
-    }
-
-    public function removeRole(string $role): self
-    {
-        // Implementation ready for when role system is activated
-        return $this;
-    }
-    */
-    
-    // Legacy fallback method
-    public function hasRole(string $role): bool
-    {
-        return $this->role === $role;
-    }
-
-    
-    // Legacy fallback method
-    public function hasAnyRole(array $roles): bool
-    {
-        return in_array($this->role, $roles);
-    }
-
-    
-    // Legacy fallback method
-    public function hasAllRoles(array $roles): bool
-    {
-        return count($roles) === 1 && $roles[0] === $this->role;
-    }
-
-    
-    // Legacy fallback method
-    public function getAllPermissions(): array
-    {
-        return $this->permissions ?? [];
     }
 
     /**
-     * Check if user has permission (legacy version)
+     * Remove a role from the user
+     */
+    public function removeRole(string $roleName): self
+    {
+        $role = Role::where('name', $roleName)->first();
+        if ($role) {
+            $this->roles()->detach($role->id);
+        }
+        return $this;
+    }
+
+    /**
+     * Check if user has a specific role
+     */
+    public function hasRole(string $role): bool
+    {
+        // Check new RBAC system first
+        if ($this->activeRoles()->where('name', $role)->exists()) {
+            return true;
+        }
+
+        // Fallback to legacy role field
+        return $this->role === $role;
+    }
+
+    /**
+     * Check if user has any of the given roles
+     */
+    public function hasAnyRole(array $roles): bool
+    {
+        // Check new RBAC system first
+        if ($this->activeRoles()->whereIn('name', $roles)->exists()) {
+            return true;
+        }
+
+        // Fallback to legacy role field
+        return in_array($this->role, $roles);
+    }
+
+    /**
+     * Check if user has all of the given roles
+     */
+    public function hasAllRoles(array $roles): bool
+    {
+        $userRoles = $this->activeRoles()->pluck('name')->toArray();
+        return empty(array_diff($roles, $userRoles));
+    }
+
+    /**
+     * Get all permissions for the user
+     */
+    public function getAllPermissions(): array
+    {
+        // Get permissions from roles
+        $permissions = $this->activeRoles()
+                           ->with('permissions')
+                           ->get()
+                           ->pluck('permissions')
+                           ->flatten()
+                           ->pluck('name')
+                           ->unique()
+                           ->toArray();
+
+        // Merge with legacy permissions
+        $legacyPermissions = $this->permissions ?? [];
+        return array_unique(array_merge($permissions, $legacyPermissions));
+    }
+
+    /**
+     * Check if user has permission
      */
     public function hasPermission($permission): bool
     {
         // Super admin has all permissions
-        if ($this->role === 'super_admin') {
+        if ($this->hasRole('super_admin')) {
             return true;
         }
 
-        // Check in direct permissions
+        // Check in role-based permissions
         $allPermissions = $this->getAllPermissions();
         return in_array($permission, $allPermissions);
     }
@@ -345,7 +388,7 @@ class AdminUser extends Authenticatable
      */
     public function hasAnyPermission(array $permissions): bool
     {
-        if ($this->role === 'super_admin') {
+        if ($this->hasRole('super_admin')) {
             return true;
         }
 
@@ -358,7 +401,7 @@ class AdminUser extends Authenticatable
      */
     public function hasAllPermissions(array $permissions): bool
     {
-        if ($this->role === 'super_admin') {
+        if ($this->hasRole('super_admin')) {
             return true;
         }
 
@@ -366,18 +409,23 @@ class AdminUser extends Authenticatable
         return empty(array_diff($permissions, $allPermissions));
     }
 
-    
-    // Legacy fallback method
+    /**
+     * Get the highest role level for the user
+     */
     public function getHighestRoleLevel(): int
     {
-        // Simple role hierarchy based on role names
-        $levels = [
+        $highestLevel = $this->activeRoles()->max('level') ?? 0;
+
+        // Also consider legacy role level
+        $legacyLevels = [
             'Super Admin' => 100,
             'Admin' => 10,
             'Moderator' => 5,
             'Viewer' => 1
         ];
-        return $levels[$this->role] ?? 1;
+        $legacyLevel = $legacyLevels[$this->role] ?? 0;
+
+        return max($highestLevel, $legacyLevel);
     }
 
     /**

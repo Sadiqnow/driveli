@@ -99,128 +99,130 @@
     </div>
     @endif
 
-    <!-- KYC Status Card -->
+    <!-- Verification Status Card -->
     <div class="col-12">
         <div class="card">
             <div class="card-body">
                 @php
+                    $verificationStatus = $driver->verification_status ?? 'pending';
                     $kycProgress = $driver->getKycProgressPercentage();
                     $kycStatus = $driver->kyc_status ?? 'not_started';
                     $currentStep = $driver->getCurrentKycStep();
                 @endphp
-                
+
                 <div class="d-flex align-items-center justify-content-between">
                     <div class="d-flex align-items-center flex-grow-1">
                         <div class="me-3">
-                            @if($kycStatus === 'completed')
-                                <div class="rounded-circle d-flex align-items-center justify-content-center" 
+                            @if($verificationStatus === 'verified')
+                                <div class="rounded-circle d-flex align-items-center justify-content-center"
                                      style="width: 56px; height: 56px; background: var(--drivelink-success);">
                                     <i class="fas fa-check-circle text-white fa-lg" aria-hidden="true"></i>
                                 </div>
-                            @elseif($kycStatus === 'in_progress')
-                                <div class="rounded-circle d-flex align-items-center justify-content-center" 
-                                     style="width: 56px; height: 56px; background: var(--drivelink-warning);">
-                                    <i class="fas fa-clock text-white fa-lg" aria-hidden="true"></i>
-                                </div>
-                            @elseif($kycStatus === 'rejected')
-                                <div class="rounded-circle d-flex align-items-center justify-content-center" 
+                            @elseif($verificationStatus === 'rejected')
+                                <div class="rounded-circle d-flex align-items-center justify-content-center"
                                      style="width: 56px; height: 56px; background: var(--drivelink-danger);">
                                     <i class="fas fa-exclamation-triangle text-white fa-lg" aria-hidden="true"></i>
                                 </div>
                             @else
-                                <div class="rounded-circle d-flex align-items-center justify-content-center" 
-                                     style="width: 56px; height: 56px; background: var(--drivelink-secondary);">
-                                    <i class="fas fa-shield-alt text-white fa-lg" aria-hidden="true"></i>
+                                <div class="rounded-circle d-flex align-items-center justify-content-center"
+                                     style="width: 56px; height: 56px; background: var(--drivelink-warning);">
+                                    <i class="fas fa-clock text-white fa-lg" aria-hidden="true"></i>
                                 </div>
                             @endif
                         </div>
                         <div class="flex-grow-1">
                             <div class="d-flex justify-content-between align-items-start">
                                 <div>
-                                    <h6 class="mb-1">KYC Verification Status</h6>
+                                    <h6 class="mb-1">Verification Status</h6>
                                     <div class="d-flex align-items-center mb-2">
-                                        @if($kycStatus === 'completed')
-                                            <span class="badge bg-success me-2">Completed</span>
-                                            <span class="text-muted small">Under admin review</span>
-                                        @elseif($kycStatus === 'in_progress')
-                                            <span class="badge bg-warning me-2">In Progress</span>
-                                            <span class="text-muted small">Step {{ $currentStep }} of 3</span>
-                                        @elseif($kycStatus === 'rejected')
+                                        @if($verificationStatus === 'verified')
+                                            <span class="badge bg-success me-2">Verified</span>
+                                            <span class="text-muted small">You are verified and can receive jobs</span>
+                                        @elseif($verificationStatus === 'rejected')
                                             <span class="badge bg-danger me-2">Rejected</span>
-                                            <span class="text-muted small">{{ $driver->kyc_retry_count ?? 0 }}/3 attempts used</span>
+                                            <span class="text-muted small">Contact support for more information</span>
                                         @else
-                                            <span class="badge bg-secondary me-2">Not Started</span>
-                                            <span class="text-muted small">Complete KYC to get verified</span>
+                                            <span class="badge bg-warning me-2">Pending Review</span>
+                                            <span class="text-muted small">Your application is under review</span>
                                         @endif
                                     </div>
-                                    <div class="progress" style="height: 8px; width: 200px;">
-                                        <div class="progress-bar 
-                                            {{ $kycStatus === 'completed' ? 'bg-success' : 
-                                               ($kycStatus === 'rejected' ? 'bg-danger' : 'bg-primary') }}" 
-                                             role="progressbar" 
-                                             style="width: {{ $kycProgress }}%"
-                                             aria-valuenow="{{ $kycProgress }}" 
-                                             aria-valuemin="0" 
-                                             aria-valuemax="100">
+                                    @if($verificationStatus !== 'verified')
+                                        <div class="progress" style="height: 8px; width: 200px;">
+                                            <div class="progress-bar bg-primary"
+                                                 role="progressbar"
+                                                 style="width: {{ $kycProgress }}%"
+                                                 aria-valuenow="{{ $kycProgress }}"
+                                                 aria-valuemin="0"
+                                                 aria-valuemax="100">
+                                            </div>
                                         </div>
-                                    </div>
-                                    <small class="text-muted">{{ $kycProgress }}% complete</small>
+                                        <small class="text-muted">KYC Progress: {{ $kycProgress }}% complete</small>
+                                    @endif
                                 </div>
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="text-end">
-                        @if($kycStatus === 'completed')
-                            <a href="{{ route('driver.kyc.summary') }}" class="btn btn-outline-success btn-sm">
-                                <i class="fas fa-eye me-1" aria-hidden="true"></i>
-                                View Status
-                            </a>
-                        @elseif($kycStatus === 'in_progress')
-                            @if($currentStep === 1)
-                                <a href="{{ route('driver.kyc.step1') }}" class="btn btn-primary btn-sm">
-                                    <i class="fas fa-arrow-right me-1" aria-hidden="true"></i>
-                                    Continue Step 1
-                                </a>
-                            @elseif($currentStep === 2)
-                                <a href="{{ route('driver.kyc.step2') }}" class="btn btn-primary btn-sm">
-                                    <i class="fas fa-arrow-right me-1" aria-hidden="true"></i>
-                                    Continue Step 2
-                                </a>
-                            @elseif($currentStep === 3)
-                                <a href="{{ route('driver.kyc.step3') }}" class="btn btn-primary btn-sm">
-                                    <i class="fas fa-clipboard-check me-1" aria-hidden="true"></i>
-                                    Complete KYC
-                                </a>
-                            @endif
-                        @elseif($kycStatus === 'rejected')
-                            @if(($driver->kyc_retry_count ?? 0) < 3)
-                                <a href="{{ route('driver.kyc.retry') }}" class="btn btn-warning btn-sm">
-                                    <i class="fas fa-redo me-1" aria-hidden="true"></i>
-                                    Retry KYC
-                                </a>
-                            @else
-                                <button class="btn btn-outline-secondary btn-sm" disabled>
-                                    <i class="fas fa-ban me-1" aria-hidden="true"></i>
-                                    Contact Support
-                                </button>
-                            @endif
+                        @if($verificationStatus === 'verified')
+                            <div class="text-center">
+                                <i class="fas fa-check-circle text-success fa-2x mb-2" aria-hidden="true"></i>
+                                <p class="text-success mb-0 small">Verified Driver</p>
+                            </div>
+                        @elseif($verificationStatus === 'rejected')
+                            <button class="btn btn-outline-danger btn-sm" disabled>
+                                <i class="fas fa-ban me-1" aria-hidden="true"></i>
+                                Contact Support
+                            </button>
                         @else
-                            <a href="{{ route('driver.kyc.index') }}" class="btn btn-primary btn-sm">
-                                <i class="fas fa-play me-1" aria-hidden="true"></i>
-                                Start KYC
-                            </a>
+                            @if($kycStatus === 'completed')
+                                <span class="badge bg-info">Awaiting Admin Review</span>
+                            @elseif($kycStatus === 'in_progress')
+                                @if($currentStep === 1)
+                                    <a href="{{ route('driver.kyc.step1') }}" class="btn btn-primary btn-sm">
+                                        <i class="fas fa-arrow-right me-1" aria-hidden="true"></i>
+                                        Continue KYC
+                                    </a>
+                                @elseif($currentStep === 2)
+                                    <a href="{{ route('driver.kyc.step2') }}" class="btn btn-primary btn-sm">
+                                        <i class="fas fa-arrow-right me-1" aria-hidden="true"></i>
+                                        Continue KYC
+                                    </a>
+                                @elseif($currentStep === 3)
+                                    <a href="{{ route('driver.kyc.step3') }}" class="btn btn-primary btn-sm">
+                                        <i class="fas fa-clipboard-check me-1" aria-hidden="true"></i>
+                                        Complete KYC
+                                    </a>
+                                @endif
+                            @elseif($kycStatus === 'rejected')
+                                @if(($driver->kyc_retry_count ?? 0) < 3)
+                                    <a href="{{ route('driver.kyc.retry') }}" class="btn btn-warning btn-sm">
+                                        <i class="fas fa-redo me-1" aria-hidden="true"></i>
+                                        Retry KYC
+                                    </a>
+                                @else
+                                    <button class="btn btn-outline-secondary btn-sm" disabled>
+                                        <i class="fas fa-ban me-1" aria-hidden="true"></i>
+                                        Contact Support
+                                    </button>
+                                @endif
+                            @else
+                                <a href="{{ route('driver.kyc.index') }}" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-play me-1" aria-hidden="true"></i>
+                                    Start KYC
+                                </a>
+                            @endif
                         @endif
                     </div>
                 </div>
-                
-                @if($kycStatus === 'rejected' && $driver->kyc_rejection_reason)
+
+                @if($verificationStatus === 'rejected' && $driver->rejection_reason)
                     <div class="mt-3 p-3 bg-danger bg-opacity-10 border border-danger border-opacity-25 rounded">
                         <div class="d-flex align-items-start">
                             <i class="fas fa-exclamation-circle text-danger me-2 mt-1"></i>
                             <div>
                                 <strong class="text-danger">Rejection Reason:</strong>
-                                <p class="mb-0 text-dark mt-1">{{ $driver->kyc_rejection_reason }}</p>
+                                <p class="mb-0 text-dark mt-1">{{ $driver->rejection_reason }}</p>
                             </div>
                         </div>
                     </div>
@@ -366,11 +368,22 @@
             <div class="card-body">
                 <div class="d-grid gap-2">
                     @php
+                        $verificationStatus = $driver->verification_status ?? 'pending';
                         $kycStatus = $driver->kyc_status ?? 'not_started';
                         $currentStep = $driver->getCurrentKycStep();
                     @endphp
-                    
-                    @if($kycStatus !== 'completed')
+
+                    @if($verificationStatus === 'verified')
+                        <a href="{{ route('driver.jobs.index') }}" class="btn btn-drivelink-primary">
+                            <i class="fas fa-search me-2" aria-hidden="true"></i>
+                            Find Available Jobs
+                        </a>
+                    @elseif($verificationStatus === 'rejected')
+                        <button class="btn btn-outline-danger" disabled>
+                            <i class="fas fa-ban me-2" aria-hidden="true"></i>
+                            Contact Support
+                        </button>
+                    @else
                         @if($kycStatus === 'not_started')
                             <a href="{{ route('driver.kyc.index') }}" class="btn btn-drivelink-primary">
                                 <i class="fas fa-shield-alt me-2" aria-hidden="true"></i>
@@ -400,24 +413,24 @@
                                     Retry KYC Process
                                 </a>
                             @endif
+                        @elseif($kycStatus === 'completed')
+                            <span class="btn btn-outline-info disabled">
+                                <i class="fas fa-clock me-2" aria-hidden="true"></i>
+                                Awaiting Admin Review
+                            </span>
                         @endif
-                    @else
-                        <a href="{{ route('driver.jobs.index') }}" class="btn btn-drivelink-primary">
-                            <i class="fas fa-search me-2" aria-hidden="true"></i>
-                            Find Available Jobs
-                        </a>
                     @endif
-                    
+
                     <a href="{{ route('driver.profile.edit') }}" class="btn btn-drivelink-outline">
                         <i class="fas fa-user-edit me-2" aria-hidden="true"></i>
                         Update Profile
                     </a>
-                    
+
                     <a href="{{ route('driver.documents') }}" class="btn btn-drivelink-outline">
                         <i class="fas fa-file-upload me-2" aria-hidden="true"></i>
                         Manage Documents
                     </a>
-                    
+
                     @if($kycStatus !== 'not_started')
                         <a href="{{ route('driver.kyc.index') }}" class="btn btn-outline-info">
                             <i class="fas fa-shield-alt me-2" aria-hidden="true"></i>

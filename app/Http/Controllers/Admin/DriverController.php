@@ -3,13 +3,15 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\DriverNormalized as Driver;
+use App\Models\Drivers as Driver;
 use Illuminate\Http\Request;
 use App\Http\Requests\DriverRegistrationRequest;
 use App\Http\Requests\DriverProfileUpdateRequest;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
 use App\Constants\DrivelinkConstants;
@@ -430,7 +432,76 @@ class DriverController extends Controller
 
         $validated = $request->validate($rules);
 
-        // ...existing code to store files, update model, transaction handling...
+        try {
+            DB::beginTransaction();
+
+            // Handle file uploads securely
+            $secureUploader = new SecureFileUploadService();
+            $uploadedFiles = [];
+
+            if ($request->hasFile('profile_picture')) {
+                $result = $secureUploader->uploadFile(
+                    $request->file('profile_picture'),
+                    'image',
+                    'driver-photos',
+                    'profile_' . $driver->driver_id
+                );
+                $uploadedFiles['profile_picture'] = $result['path'];
+            }
+
+            if ($request->hasFile('nin_document')) {
+                $result = $secureUploader->uploadFile(
+                    $request->file('nin_document'),
+                    'document',
+                    'driver-documents',
+                    'nin_' . $driver->driver_id
+                );
+                $uploadedFiles['nin_document'] = $result['path'];
+            }
+
+            // Update driver with validated data and file paths
+            $updateData = array_merge($validated, $uploadedFiles);
+            unset($updateData['nin_document'], $updateData['profile_picture']); // Remove file objects
+
+            $driver->update($updateData);
+
+            DB::commit();
+
+            Log::info('Driver step 2 completed', [
+                'driver_id' => $driver->driver_id,
+                'admin_id' => auth('admin')->id()
+            ]);
+
+            return redirect()->route('admin.drivers.show', $driver->id)
+                           ->with('success', 'Driver profile step 2 completed successfully!');
+
+        } catch (\Exception $e) {
+            DB::rollback();
+
+            // Clean up uploaded files on failure
+            if (isset($uploadedFiles)) {
+                foreach ($uploadedFiles as $filePath) {
+                    try {
+                        $secureUploader->deleteFile($filePath);
+                    } catch (\Exception $cleanupEx) {
+                        Log::warning('Failed to cleanup uploaded file during step 2 failure', [
+                            'file_path' => $filePath,
+                            'error' => $cleanupEx->getMessage()
+                        ]);
+                    }
+                }
+            }
+
+            Log::error('Failed to complete driver step 2', [
+                'error' => $e->getMessage(),
+                'driver_id' => $driver->id,
+                'admin_id' => auth('admin')->id()
+            ]);
+
+            return back()
+                ->withInput()
+                ->withErrors(['general' => 'Failed to complete driver profile step 2. Please try again.']);
+        }
     }
 
     /**
@@ -511,6 +582,12 @@ class DriverController extends Controller
      */
     public function resendOTP(Request $request, $id)
     {
+        $key = 'otp_resend_' . $id . '_admin';
+        if (RateLimiter::tooManyAttempts($key, 3)) {
+            return response()->json(['error' => 'Too many resend attempts. Try again later.'], 429);
+        }
+        RateLimiter::hit($key, 3600); // 1 hour
+
         $driver = Driver::findOrFail($id);
         $otpService = app(\App\Services\OTPService::class);
 
@@ -1181,7 +1258,7 @@ class DriverController extends Controller
 
             // Update password if provided
             if ($request->filled('password')) {
-                $driver->update(['password' => $request->password]);
+                $driver->update(['password' => Hash::make($request->password)]);
             }
 
             // Handle file uploads if provided

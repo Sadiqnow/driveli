@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\DriverMatch;
 use App\Models\DriverPerformance;
 use App\Models\Commission;
-use App\Models\Driver;
+use App\Models\Drivers;
 use Carbon\Carbon;
 
 class DriverDashboardController extends Controller
@@ -20,7 +20,10 @@ class DriverDashboardController extends Controller
 
     public function index()
     {
-        $driver = Auth::guard('driver')->user();
+        $authDriver = Auth::guard('driver')->user();
+
+        // Fetch fresh driver data from database to ensure verification status is up to date
+        $driver = Drivers::find($authDriver->id);
 
         // Calculate profile completeness
         $profileCompleteness = $this->calculateProfileCompleteness($driver);
@@ -130,7 +133,7 @@ class DriverDashboardController extends Controller
         ]);
 
         $authDriver = Auth::guard('driver')->user();
-        $driver = \App\Models\Driver::find($authDriver->id);
+        $driver = Drivers::find($authDriver->id);
         $driver->available = $request->available;
         $driver->save();
 
