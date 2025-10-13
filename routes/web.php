@@ -621,14 +621,14 @@ Route::bind('company', function ($value) {
 
 Route::bind('driver', function ($value) {
     try {
-        // Bind to DriverNormalized model
+        // Bind to Drivers model
         // First try by primary key if numeric
         if (is_numeric($value)) {
-            return \App\Models\DriverNormalized::findOrFail($value);
+            return \App\Models\Drivers::findOrFail($value);
         }
-        
+
         // Try to find by driver_id if it's a string
-        return \App\Models\DriverNormalized::where('driver_id', $value)->firstOrFail();
+        return \App\Models\Drivers::where('driver_id', $value)->firstOrFail();
     } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
         abort(404, 'Driver not found');
     } catch (\Exception $e) {

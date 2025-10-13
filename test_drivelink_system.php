@@ -20,9 +20,9 @@ try {
     $adminCount = App\Models\AdminUser::count();
     echo "✅ AdminUser model working - Count: {$adminCount}\n";
     
-    // Test DriverNormalized model
-    $driverCount = App\Models\DriverNormalized::count();
-    echo "✅ DriverNormalized model working - Count: {$driverCount}\n";
+    // Test Drivers model
+    $driverCount = App\Models\Drivers::count();
+    echo "✅ Drivers model working - Count: {$driverCount}\n";
     
     // Test Company model
     $companyCount = App\Models\Company::count();
@@ -31,7 +31,7 @@ try {
     echo "\n3. Testing Key Relationships...\n";
     
     // Test driver with relationships
-    $driver = App\Models\DriverNormalized::with(['nationality', 'locations', 'documents'])->first();
+    $driver = App\Models\Drivers::with(['nationality', 'locations', 'documents'])->first();
     if ($driver) {
         echo "✅ Driver relationships working\n";
         echo "   - Driver: {$driver->full_name}\n";
@@ -46,7 +46,7 @@ try {
     
     // Test that verification fields are protected
     $protectedFields = ['verification_status', 'verified_at', 'verified_by', 'ocr_verification_status'];
-    $fillableFields = App\Models\DriverNormalized::make()->getFillable();
+    $fillableFields = App\Models\Drivers::make()->getFillable();
     
     $vulnerableFields = array_intersect($protectedFields, $fillableFields);
     if (empty($vulnerableFields)) {
@@ -57,7 +57,7 @@ try {
 
     echo "\n5. Testing Admin Functions...\n";
     
-    if (method_exists(App\Models\DriverNormalized::class, 'adminUpdateVerification')) {
+    if (method_exists(App\Models\Drivers::class, 'adminUpdateVerification')) {
         echo "✅ Admin verification methods available\n";
     } else {
         echo "❌ Admin verification methods missing\n";

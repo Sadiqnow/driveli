@@ -4,7 +4,7 @@ require_once __DIR__ . '/vendor/autoload.php';
 
 use App\Models\CompanyRequest;
 use App\Models\Company;
-use App\Models\DriverNormalized;
+use App\Models\Drivers;
 use App\Models\AdminUser;
 use Illuminate\Support\Facades\DB;
 

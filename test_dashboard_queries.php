@@ -4,11 +4,11 @@ require_once 'vendor/autoload.php';
 $app = require_once 'bootstrap/app.php';
 $app->make('Illuminate\Contracts\Console\Kernel')->bootstrap();
 
+use App\Models\Drivers as Driver;
+
 try {
     echo "Testing Dashboard Queries\n";
     echo "========================\n\n";
-
-    use App\Models\DriverNormalized as Driver;
 
     echo "1. Testing basic driver stats query...\n";
     $stats = Driver::selectRaw('

@@ -21,7 +21,7 @@ try {
     }
 
     // Test model loading
-    $driver = new App\Models\DriverNormalized();
+    $driver = new App\Models\Drivers();
     echo "✅ Drivers Model: LOADS\n";
     echo "   Table: " . $driver->getTable() . "\n";
 

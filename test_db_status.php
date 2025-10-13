@@ -26,7 +26,7 @@ try {
     if ($hasTable) {
         // Test model access
         try {
-            $count = \App\Models\DriverNormalized::count();
+            $count = \App\Models\Drivers::count();
             echo "   ✓ Model access works: {$count} records\n";
         } catch (Exception $e) {
             echo "   ❌ Model error: " . $e->getMessage() . "\n";

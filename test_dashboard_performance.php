@@ -9,7 +9,7 @@ try {
     echo "====================================\n\n";
 
     echo "1. Testing basic driver stats query...\n";
-    $stats = \App\Models\DriverNormalized::selectRaw('
+    $stats = \App\Models\Drivers::selectRaw('
         COUNT(*) as total_drivers,
         SUM(CASE WHEN profile_picture IS NOT NULL THEN 1 ELSE 0 END) as drivers_with_documents,
         SUM(CASE WHEN ocr_verification_status != "pending" THEN 1 ELSE 0 END) as ocr_processed
@@ -21,7 +21,7 @@ try {
     echo "   OCR processed: {$stats->ocr_processed}\n\n";
 
     echo "2. Testing driver performance relationship...\n";
-    $driver = \App\Models\DriverNormalized::first();
+    $driver = \App\Models\Drivers::first();
     if ($driver) {
         $performance = $driver->performance;
         echo "✅ Performance relationship works\n";

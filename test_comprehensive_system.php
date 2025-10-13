@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Schema;
 use App\Models\AdminUser;
-use App\Models\DriverNormalized;
+use App\Models\Drivers;
 use App\Models\Company;
 use App\Services\AuthenticationService;
 use App\Services\ValidationService;
@@ -106,7 +106,7 @@ class ComprehensiveSystemTest
             }
             
             if (Schema::hasTable('drivers')) {
-                $driverCount = DriverNormalized::count();
+                $driverCount = Drivers::count();
                 echo "   📊 Driver records count: $driverCount\n";
             }
             
@@ -199,9 +199,9 @@ class ComprehensiveSystemTest
                 }
             }
             
-            // Test DriverNormalized model
-            if (class_exists('App\Models\DriverNormalized')) {
-                echo "   ✅ DriverNormalized model exists\n";
+            // Test Drivers model
+            if (class_exists('App\Models\Drivers')) {
+                echo "   ✅ Drivers model exists\n";
             }
             
         } catch (Exception $e) {

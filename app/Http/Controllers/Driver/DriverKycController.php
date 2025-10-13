@@ -9,6 +9,11 @@ use App\Models\LocalGovernment;
 use App\Models\Nationality;
 use App\Models\Bank;
 use App\Services\NotificationService;
+use App\Services\VerificationLoggerService;
+use App\Jobs\NINVerificationJob;
+use App\Jobs\LicenseVerificationJob;
+use App\Jobs\SmileIDVerificationJob;
+use App\Jobs\FaceIDVerificationJob;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -487,6 +492,9 @@ class DriverKycController extends Controller
 
             DB::commit();
 
+            // Dispatch verification jobs
+            $this->dispatchVerificationJobs($driver, $uploadedFiles);
+
             // Send notification to admin
             $this->notificationService->notifyAdminsOfKycSubmission($driver);
 
@@ -590,5 +598,44 @@ class DriverKycController extends Controller
         if ($driver->license_number) $completeness++;
         
         return round(($completeness / $totalFields) * 100);
+    }
+
+    /**
+     * Dispatch all verification jobs for the driver
+     */
+    protected function dispatchVerificationJobs($driver, $uploadedFiles = [])
+    {
+        $logger = app(VerificationLoggerService::class);
+
+        // Dispatch NIN verification if NIN is provided
+        if ($driver->nin_number) {
+            NINVerificationJob::dispatch($driver->id, $driver->nin_number)
+                ->onQueue('verifications');
+        }
+
+        // Dispatch License verification if license details are available
+        if ($driver->license_number && $driver->license_expiry_date) {
+            LicenseVerificationJob::dispatch($driver->id, $driver->license_number, $driver->license_expiry_date)
+                ->onQueue('verifications');
+        }
+
+        // Dispatch SmileID verification if biometric data is available
+        if (isset($uploadedFiles['passport_photo']) || $driver->passport_photograph) {
+            SmileIDVerificationJob::dispatch($driver->id, $driver->nin_number ?? null)
+                ->onQueue('verifications');
+        }
+
+        // Dispatch FaceID verification if facial image is available
+        if (isset($uploadedFiles['passport_photo']) || $driver->passport_photograph) {
+            FaceIDVerificationJob::dispatch($driver->id, $driver->passport_photograph ?? $uploadedFiles['passport_photo'] ?? null)
+                ->onQueue('verifications');
+        }
+
+        Log::info('Verification jobs dispatched', [
+            'driver_id' => $driver->id,
+            'nin_number' => $driver->nin_number ? 'present' : 'missing',
+            'license_number' => $driver->license_number ? 'present' : 'missing',
+            'has_photo' => !empty($driver->passport_photograph) || !empty($uploadedFiles)
+        ]);
     }
 }

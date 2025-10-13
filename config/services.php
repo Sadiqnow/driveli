@@ -38,4 +38,31 @@ return [
         'language' => env('OCR_LANGUAGE', 'eng'),
     ],
 
+    'nimc' => [
+        'api_url' => env('NIMC_API_URL', 'https://api.nimc.gov.ng/verify-nin'),
+        'api_key' => env('NIMC_API_KEY'),
+        'timeout' => env('NIMC_TIMEOUT', 30),
+    ],
+
+    'frsc' => [
+        'api_url' => env('FRSC_API_URL', 'https://api.frsc.gov.ng/verify-license'),
+        'api_key' => env('FRSC_API_KEY'),
+        'timeout' => env('FRSC_TIMEOUT', 30),
+    ],
+
+    'smile_id' => [
+        'partner_id' => env('SMILE_ID_PARTNER_ID'),
+        'api_key' => env('SMILE_ID_API_KEY'),
+        'sid_server' => env('SMILE_ID_SID_SERVER', 0), // 0 for sandbox, 1 for production
+        'api_url' => env('SMILE_ID_API_URL', 'https://api.smileidentity.com/v2/verify'),
+        'callback_url' => env('SMILE_ID_CALLBACK_URL'),
+        'timeout' => env('SMILE_ID_TIMEOUT', 60),
+    ],
+
+    'face_id' => [
+        'api_url' => env('FACE_ID_API_URL', 'https://api.face-recognition.local/verify'),
+        'api_key' => env('FACE_ID_API_KEY'),
+        'timeout' => env('FACE_ID_TIMEOUT', 30),
+    ],
+
 ];

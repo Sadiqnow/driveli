@@ -48,7 +48,7 @@ if (Schema::hasTable('driver_documents')) {
 // Check sample driver documents
 echo "\n=== Sample Document Check ===\n";
 try {
-    $driver = App\Models\DriverNormalized::first();
+    $driver = App\Models\Drivers::first();
     if ($driver) {
         echo "✓ Sample driver found: {$driver->first_name} {$driver->surname}\n";
         echo "  - Driver ID: {$driver->driver_id}\n";
