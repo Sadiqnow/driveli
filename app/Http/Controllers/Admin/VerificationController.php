@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\DriverNormalized;
+use App\Models\Drivers;
 use App\Services\VerificationStatusService;
 use App\Services\DriverVerificationWorkflow;
 use Illuminate\Http\Request;
@@ -35,7 +35,7 @@ class VerificationController extends Controller
         $statistics = $this->verificationStatusService->getVerificationStatistics($dateRange);
 
         // Get pending manual reviews
-        $pendingReviews = DriverNormalized::where('verification_status', 'requires_manual_review')
+        $pendingReviews = Drivers::where('verification_status', 'requires_manual_review')
             ->with(['driverMatches', 'driverPerformances'])
             ->orderBy('verification_started_at', 'desc')
             ->take(10)
@@ -55,7 +55,7 @@ class VerificationController extends Controller
             ->get();
 
         // Get failed verifications
-        $failedVerifications = DriverNormalized::where('verification_status', 'failed')
+        $failedVerifications = Drivers::where('verification_status', 'failed')
             ->orderBy('updated_at', 'desc')
             ->take(10)
             ->get();
@@ -90,8 +90,8 @@ class VerificationController extends Controller
         try {
             DB::beginTransaction();
 
-            $driver = DriverNormalized::findOrFail($driverId);
-            
+            $driver = Drivers::findOrFail($driverId);
+
             // Override score if provided
             $finalScore = $request->input('override_score', $driver->overall_verification_score);
             
@@ -143,8 +143,8 @@ class VerificationController extends Controller
         try {
             DB::beginTransaction();
 
-            $driver = DriverNormalized::findOrFail($driverId);
-            
+            $driver = Drivers::findOrFail($driverId);
+
             // Update verification status to failed
             $verificationData = [
                 'manual_review' => [

@@ -4,7 +4,7 @@ namespace App\Services;
 
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
-use App\Models\DriverNormalized;
+use App\Models\Drivers;
 use App\Services\DocumentOCRService;
 use App\Services\DocumentMatchingService;
 use App\Services\NINVerificationService;
@@ -76,7 +76,7 @@ class DriverVerificationWorkflow
             ];
 
             // Get driver data
-            $driver = DriverNormalized::find($driverId);
+            $driver = Drivers::find($driverId);
             if (!$driver) {
                 throw new Exception('Driver not found with ID: ' . $driverId);
             }
@@ -722,7 +722,7 @@ class DriverVerificationWorkflow
     public function getVerificationStatus($driverId)
     {
         try {
-            $driver = DriverNormalized::find($driverId);
+            $driver = Drivers::find($driverId);
             if (!$driver) {
                 return [
                     'success' => false,

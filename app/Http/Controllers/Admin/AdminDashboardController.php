@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\DriverNormalized as Driver;
+use App\Models\Drivers as Driver;
 use App\Models\CompanyRequest;
 use App\Models\DriverMatch;
 use App\Models\Commission;

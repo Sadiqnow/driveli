@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Driver;
 use App\Http\Controllers\Controller;
 use App\Models\DriverMatch;
 use App\Models\CompanyRequest;
-use App\Models\DriverNormalized;
+use App\Models\Drivers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;

@@ -3,7 +3,7 @@
 namespace App\Services;
 
 use App\Models\AdminUser;
-use App\Models\DriverNormalized as Driver;
+use App\Models\Drivers as Driver;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
@@ -67,7 +67,7 @@ class NotificationService
 
         } catch (\Exception $e) {
             Log::error('Failed to send verification notification: ' . $e->getMessage());
-            
+
             return [
                 'success' => false,
                 'message' => 'Failed to send notification: ' . $e->getMessage()
@@ -82,7 +82,7 @@ class NotificationService
     {
         try {
             $resetUrl = route('admin.password.reset', $resetToken) . '?email=' . urlencode($admin->email);
-            
+
             $notificationData = [
                 'admin' => $admin,
                 'reset_url' => $resetUrl,
@@ -127,7 +127,7 @@ class NotificationService
 
         } catch (\Exception $e) {
             Log::error('Failed to send admin password reset notification: ' . $e->getMessage());
-            
+
             return [
                 'success' => false,
                 'message' => 'Failed to send password reset notification'
@@ -216,7 +216,7 @@ class NotificationService
 
         } catch (\Exception $e) {
             Log::error('Failed to send OCR notification: ' . $e->getMessage());
-            
+
             return [
                 'success' => false,
                 'message' => 'Failed to send OCR notification'
@@ -267,7 +267,7 @@ class NotificationService
 
         } catch (\Exception $e) {
             Log::error('Failed to send document action notification: ' . $e->getMessage());
-            
+
             return [
                 'success' => false,
                 'message' => 'Failed to send document action notification'
@@ -322,10 +322,119 @@ class NotificationService
 
         } catch (\Exception $e) {
             Log::error('Failed to send welcome notification: ' . $e->getMessage());
-            
+
             return [
                 'success' => false,
                 'message' => 'Failed to send welcome notification'
+            ];
+        }
+    }
+
+    /**
+     * Notify admins of KYC submission
+     */
+    public function notifyAdminsOfKycSubmission(Driver $driver)
+    {
+        try {
+            // Get all admin users
+            $admins = AdminUser::where('status', 'active')->get();
+
+            if ($admins->isEmpty()) {
+                Log::warning('No active admins found to notify of KYC submission', [
+                    'driver_id' => $driver->driver_id
+                ]);
+                return [
+                    'success' => false,
+                    'message' => 'No active admins found'
+                ];
+            }
+
+            $notificationData = [
+                'driver' => $driver,
+                'kyc_data' => [
+                    'driver_id' => $driver->driver_id,
+                    'full_name' => $driver->full_name,
+                    'email' => $driver->email,
+                    'phone' => $driver->phone,
+                    'kyc_step' => $driver->kyc_step,
+                    'kyc_status' => $driver->kyc_status,
+                    'submitted_at' => $driver->kyc_submitted_at,
+                ],
+                'review_url' => route('admin.drivers.kyc-review', $driver->id),
+                'admin_dashboard_url' => route('admin.dashboard'),
+                'company_name' => config('app.name', 'Drivelink')
+            ];
+
+            $successCount = 0;
+            $errors = [];
+
+            foreach ($admins as $admin) {
+                try {
+                    // Send email notification
+                    if ($admin->email) {
+                        $this->sendEmail(
+                            $admin->email,
+                            'New KYC Application Submitted - ' . $driver->full_name,
+                            'emails.admin-kyc-submission',
+                            array_merge($notificationData, ['admin' => $admin])
+                        );
+                    }
+
+                    // Store notification in database
+                    $this->storeNotification([
+                        'recipient_type' => 'admin',
+                        'recipient_id' => $admin->id,
+                        'type' => 'kyc_submission',
+                        'title' => 'New KYC Application Submitted',
+                        'message' => "New KYC application submitted by {$driver->full_name} ({$driver->driver_id})",
+                        'data' => json_encode($notificationData),
+                        'sent_at' => now(),
+                        'sent_via' => $admin->email ? 'email' : 'system'
+                    ]);
+
+                    $successCount++;
+
+                } catch (\Exception $e) {
+                    $errors[] = [
+                        'admin_id' => $admin->id,
+                        'admin_email' => $admin->email,
+                        'error' => $e->getMessage()
+                    ];
+                    Log::error('Failed to notify admin of KYC submission', [
+                        'admin_id' => $admin->id,
+                        'admin_email' => $admin->email,
+                        'driver_id' => $driver->driver_id,
+                        'error' => $e->getMessage()
+                    ]);
+                }
+            }
+
+            $result = [
+                'success' => $successCount > 0,
+                'total_admins' => $admins->count(),
+                'notified_admins' => $successCount,
+                'errors' => $errors
+            ];
+
+            if ($successCount > 0) {
+                Log::info('KYC submission notification sent to admins', [
+                    'driver_id' => $driver->driver_id,
+                    'total_admins' => $admins->count(),
+                    'notified_admins' => $successCount
+                ]);
+            }
+
+            return $result;
+
+        } catch (\Exception $e) {
+            Log::error('Failed to notify admins of KYC submission: ' . $e->getMessage(), [
+                'driver_id' => $driver->driver_id,
+                'error' => $e->getMessage()
+            ]);
+
+            return [
+                'success' => false,
+                'message' => 'Failed to notify admins: ' . $e->getMessage()
             ];
         }
     }

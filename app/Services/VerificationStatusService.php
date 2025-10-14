@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Models\DriverNormalized;
+use App\Models\Drivers;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
@@ -21,7 +21,7 @@ class VerificationStatusService
         try {
             DB::beginTransaction();
 
-            $driver = DriverNormalized::findOrFail($driverId);
+            $driver = Drivers::findOrFail($driverId);
             
             // Calculate overall verification score
             $overallScore = $this->calculateOverallScore($verificationData);
@@ -234,7 +234,7 @@ class VerificationStatusService
     public function getDriverVerificationDetails($driverId)
     {
         try {
-            $driver = DriverNormalized::findOrFail($driverId);
+            $driver = Drivers::findOrFail($driverId);
 
             // Get latest workflow
             $workflow = DB::table('verification_workflows')
@@ -292,7 +292,7 @@ class VerificationStatusService
     public function retryFailedVerification($driverId, $verificationTypes = [])
     {
         try {
-            $driver = DriverNormalized::findOrFail($driverId);
+            $driver = Drivers::findOrFail($driverId);
 
             if ($driver->verification_status !== 'failed') {
                 return [
@@ -346,7 +346,7 @@ class VerificationStatusService
     public function getVerificationStatistics($dateRange = null)
     {
         try {
-            $query = DriverNormalized::query();
+            $query = Drivers::query();
 
             if ($dateRange) {
                 $query->whereBetween('verification_started_at', [

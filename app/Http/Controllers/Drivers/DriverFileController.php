@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Drivers;
 
 use App\Http\Controllers\Controller;
 use App\Models\DriverDocument;
-use App\Models\DriverNormalized;
+use App\Models\Drivers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -21,7 +21,7 @@ class DriverFileController extends Controller
     /**
      * Upload document for a driver
      */
-    public function uploadDocument(Request $request, DriverNormalized $driver)
+    public function uploadDocument(Request $request, Drivers $driver)
     {
         // Support older tests that send 'nin_document' key
         if ($request->hasFile('nin_document')) {
@@ -94,7 +94,7 @@ class DriverFileController extends Controller
     /**
      * Get documents for a driver
      */
-    public function getDocuments(DriverNormalized $driver)
+    public function getDocuments(Drivers $driver)
     {
         $documents = DriverDocument::where('driver_id', $driver->id)
             ->orderBy('created_at', 'desc')
@@ -109,7 +109,7 @@ class DriverFileController extends Controller
     /**
      * Delete a document
      */
-    public function deleteDocument(DriverNormalized $driver, DriverDocument $document)
+    public function deleteDocument(Drivers $driver, DriverDocument $document)
     {
         try {
             // Verify document belongs to driver
@@ -144,7 +144,7 @@ class DriverFileController extends Controller
     /**
      * Download a document
      */
-    public function downloadDocument(DriverNormalized $driver, DriverDocument $document)
+    public function downloadDocument(Drivers $driver, DriverDocument $document)
     {
         try {
             // Verify document belongs to driver
@@ -167,7 +167,7 @@ class DriverFileController extends Controller
     /**
      * Bulk upload documents
      */
-    public function bulkUpload(Request $request, DriverNormalized $driver)
+    public function bulkUpload(Request $request, Drivers $driver)
     {
         $validator = Validator::make($request->all(), [
             'documents' => 'required|array|max:10',

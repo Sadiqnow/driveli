@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\DriverNormalized;
+use App\Models\Drivers;
 use App\Models\CompanyRequest;
 use App\Models\Company;
 use App\Models\DriverMatch;
@@ -15,7 +15,7 @@ class MatchingController extends Controller
     public function index()
     {
         // Get available drivers and requests for the manual matching modal
-        $availableDrivers = DriverNormalized::select('id', 'driver_id', 'first_name', 'surname', 'phone', 'email')
+        $availableDrivers = Drivers::select('id', 'driver_id', 'first_name', 'surname', 'phone', 'email')
             ->where('verification_status', 'verified')
             ->where('status', 'active')
             ->where('is_active', true)
@@ -52,7 +52,7 @@ class MatchingController extends Controller
     public function dashboard()
     {
         // Get dashboard statistics
-        $availableDrivers = DriverNormalized::where('verification_status', 'verified')
+        $availableDrivers = Drivers::where('verification_status', 'verified')
             ->where('status', 'active')
             ->where('is_active', true)
             ->whereNull('deleted_at')->count();
@@ -101,9 +101,9 @@ class MatchingController extends Controller
     {
         try {
             DB::beginTransaction();
-            
+
             // Get available drivers
-            $availableDrivers = DriverNormalized::select('id', 'driver_id', 'first_name', 'surname', 'phone', 'email')
+            $availableDrivers = Drivers::select('id', 'driver_id', 'first_name', 'surname', 'phone', 'email')
                 ->where('verification_status', 'verified')
                 ->where('status', 'active')
                 ->where('is_active', true)
@@ -181,7 +181,7 @@ class MatchingController extends Controller
             DB::beginTransaction();
             
             // Check if driver is available
-            $driver = DriverNormalized::findOrFail($request->driver_id);
+            $driver = Drivers::findOrFail($request->driver_id);
             if ($driver->verification_status !== 'verified' || $driver->status !== 'active' || !$driver->is_active) {
                 return back()->with('error', 'Selected driver is not available or not verified.');
             }
@@ -232,7 +232,7 @@ class MatchingController extends Controller
     {
         $companyRequest = CompanyRequest::findOrFail($requestId);
         
-        $drivers = DriverNormalized::where('verification_status', 'verified')
+        $drivers = Drivers::where('verification_status', 'verified')
             ->where('status', 'active')
             ->where('is_active', true)
             ->whereNull('deleted_at')

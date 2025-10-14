@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Models\DriverNormalized;
+use App\Models\Drivers;
 use Carbon\Carbon;
 
 class DrivelinkHelperService
@@ -37,7 +37,7 @@ class DrivelinkHelperService
         $timestamp = now()->format('ymd');
         
         // Get the last driver ID for today
-        $lastDriver = DriverNormalized::where('driver_id', 'like', $prefix . $timestamp . '%')
+        $lastDriver = Drivers::where('driver_id', 'like', $prefix . $timestamp . '%')
             ->orderBy('driver_id', 'desc')
             ->first();
         
@@ -102,7 +102,7 @@ class DrivelinkHelperService
     /**
      * Calculate driver profile completion percentage
      */
-    public static function calculateDriverCompletionPercentage(DriverNormalized $driver): int
+    public static function calculateDriverCompletionPercentage(Drivers $driver): int
     {
         $requiredFields = [
             'first_name', 'surname', 'email', 'phone', 'date_of_birth',
@@ -258,7 +258,7 @@ class DrivelinkHelperService
             'ip_address' => request()->ip(),
         ]);
 
-        \Log::channel('business')->{$level}($event, $logData);
+        \Illuminate\Support\Facades\Log::channel('business')->{$level}($event, $logData);
     }
 
     /**
@@ -294,9 +294,9 @@ class DrivelinkHelperService
     public static function getDashboardStats(): array
     {
         return [
-            'total_drivers' => DriverNormalized::count(),
-            'verified_drivers' => DriverNormalized::verified()->count(),
-            'pending_verification' => DriverNormalized::where('verification_status', 'pending')->count(),
+            'total_drivers' => Drivers::count(),
+            'verified_drivers' => Drivers::verified()->count(),
+            'pending_verification' => Drivers::where('verification_status', 'pending')->count(),
             'active_requests' => \App\Models\CompanyRequest::active()->count(),
             'completed_matches' => \App\Models\DriverMatch::completed()->count(),
             'pending_matches' => \App\Models\DriverMatch::pending()->count(),

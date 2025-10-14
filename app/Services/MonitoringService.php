@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use App\Models\AdminUser;
-use App\Models\DriverNormalized as Driver;
+use App\Models\Drivers as Driver;
 use App\Constants\DrivelinkConstants;
 
 class MonitoringService

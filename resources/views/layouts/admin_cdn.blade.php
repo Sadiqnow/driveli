@@ -288,7 +288,7 @@
                                 <i class="nav-icon fas fa-users" aria-hidden="true"></i>
                                 <p>All Drivers
                                     @php
-                                        $pendingCount = \App\Models\DriverNormalized::where('verification_status', 'pending')->count();
+                                        $pendingCount = \App\Models\Drivers::where('verification_status', 'pending')->count();
                                     @endphp
                                     @if($pendingCount > 0)
                                         <span class="badge badge-warning right">{{ $pendingCount }}</span>

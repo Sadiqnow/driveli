@@ -5,7 +5,7 @@ require_once 'vendor/autoload.php';
 $app = require_once 'bootstrap/app.php';
 $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
 
-echo "🔍 Testing DriverNormalized relationships...\n\n";
+echo "🔍 Testing Drivers relationships...\n\n";
 
 try {
     $models = [
@@ -28,8 +28,8 @@ try {
                 $relation = $instance->driver();
                 $relatedModel = $relation->getRelated();
                 
-                if ($relatedModel instanceof App\Models\DriverNormalized) {
-                    echo "  ✓ Driver relationship correctly points to DriverNormalized\n";
+                if ($relatedModel instanceof App\Models\Drivers) {
+                    echo "  ✓ Driver relationship correctly points to Drivers\n";
                 } elseif ($relatedModel instanceof App\Models\Driver) {
                     echo "  ⚠ Driver relationship still points to old Driver model\n";
                 } else {

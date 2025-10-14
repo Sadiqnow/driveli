@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Models\DriverNormalized;
+use App\Models\Drivers;
 use App\Models\DriverDocument;
 use App\Models\DriverLocation;
 use App\Models\DriverBankingDetail;
@@ -60,14 +60,14 @@ class DriverService
      * ];
      * $driver = $driverService->createDriver($driverData);
      */
-    public function createDriver(array $data): DriverNormalized
+    public function createDriver(array $data): Drivers
     {
         return DB::transaction(function () use ($data) {
             // Generate unique driver ID
             $driverId = $this->generateDriverId();
 
             // Create main driver record
-            $driver = DriverNormalized::create([
+            $driver = Drivers::create([
                 'driver_id' => $driverId,
                 'first_name' => $data['first_name'],
                 'middle_name' => $data['middle_name'] ?? null,
@@ -150,7 +150,7 @@ class DriverService
      * ];
      * $updatedDriver = $driverService->updateDriver($driver, $updateData);
      */
-    public function updateDriver(DriverNormalized $driver, array $data): DriverNormalized
+    public function updateDriver(Drivers $driver, array $data): Drivers
     {
         return DB::transaction(function () use ($driver, $data) {
             // Update main driver record

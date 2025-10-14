@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\DriverNormalized as Driver;
+use App\Models\Drivers as Driver;
 use App\Models\Country;
 use App\Models\GlobalState;
 use App\Models\GlobalVehicleType;

@@ -13,10 +13,10 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Cache;
 use App\Models\UserActivity;
+use App\Models\Drivers;
 use Exception;
 // // use App\Models\CompanyRequest;
-// use App\Models\DriverNormalized as Driver;
-// // 
+
 // // use App\Models\notifications as Notification;
 // // use App\Helpers\DrivelinkHelper;
 

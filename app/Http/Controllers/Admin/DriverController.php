@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\DriverNormalized as Driver;
+use App\Models\Drivers as Driver;
 use Illuminate\Http\Request;
 use App\Http\Requests\DriverRegistrationRequest;
 use App\Http\Requests\DriverProfileUpdateRequest;

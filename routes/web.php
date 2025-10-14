@@ -568,14 +568,14 @@ Route::bind('company', function ($value) {
 
 Route::bind('driver', function ($value) {
     try {
-        // Bind to DriverNormalized model
+        // Bind to Drivers model
         // First try by primary key if numeric
         if (is_numeric($value)) {
-            return \App\Models\DriverNormalized::findOrFail($value);
+            return \App\Models\Drivers::findOrFail($value);
         }
-        
+
         // Try to find by driver_id if it's a string
-        return \App\Models\DriverNormalized::where('driver_id', $value)->firstOrFail();
+        return \App\Models\Drivers::where('driver_id', $value)->firstOrFail();
     } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
         abort(404, 'Driver not found');
     } catch (\Exception $e) {
@@ -598,12 +598,30 @@ Route::prefix('admin/superadmin')->name('admin.superadmin.')->group(function () 
         Route::get('/settings/group/{group}', [App\Http\Controllers\Admin\SuperAdminController::class, 'getSettingGroup'])->name('settings.group');
         Route::post('/settings/test-api', [App\Http\Controllers\Admin\SuperAdminController::class, 'testApiConnection'])->name('settings.test-api');
         Route::post('/settings/reset', [App\Http\Controllers\Admin\SuperAdminController::class, 'resetSettings'])->name('settings.reset');
-        
+
         // AJAX routes
         Route::post('/assign-role', [App\Http\Controllers\Admin\SuperAdminController::class, 'assignRole'])->name('assign-role');
         Route::post('/remove-role', [App\Http\Controllers\Admin\SuperAdminController::class, 'removeRole'])->name('remove-role');
         Route::post('/search-users', [App\Http\Controllers\Admin\SuperAdminController::class, 'searchUsers'])->name('search-users');
         Route::post('/bulk-user-operations', [App\Http\Controllers\Admin\SuperAdminController::class, 'bulkUserOperations'])->name('bulk-user-operations');
+    });
+});
+
+// ===================================================================================================
+// SUPER ADMIN ADMIN MANAGEMENT ROUTES
+// ===================================================================================================
+
+Route::prefix('superadmin/admins')->name('superadmin.admins.')->group(function () {
+    Route::middleware(['auth:admin'])->group(function () {
+        Route::get('/', [App\Http\Controllers\Admin\AdminController::class, 'index'])->name('index');
+        Route::get('/create', [App\Http\Controllers\Admin\AdminController::class, 'create'])->name('create');
+        Route::post('/', [App\Http\Controllers\Admin\AdminController::class, 'store'])->name('store');
+        Route::get('/{admin}/edit', [App\Http\Controllers\Admin\AdminController::class, 'edit'])->name('edit');
+        Route::put('/{admin}', [App\Http\Controllers\Admin\AdminController::class, 'update'])->name('update');
+        Route::delete('/{admin}', [App\Http\Controllers\Admin\AdminController::class, 'destroy'])->name('destroy');
+
+        // AJAX routes
+        Route::get('/role-permissions', [App\Http\Controllers\Admin\AdminController::class, 'getRolePermissions'])->name('role-permissions');
     });
 });
 

@@ -3,7 +3,7 @@
 namespace App\Services;
 
 use App\Models\AdminUser;
-use App\Models\DriverNormalized;
+use App\Models\Drivers;
 use App\Models\Company;
 use App\Models\CompanyRequest;
 use App\Models\DriverMatch;
@@ -91,11 +91,11 @@ class AdminService
         return Cache::remember('admin_dashboard_stats', 1800, function () {
             return [
             'drivers' => [
-                'total' => DriverNormalized::count(),
-                'verified' => DriverNormalized::verified()->count(),
-                'pending' => DriverNormalized::where('verification_status', 'pending')->count(),
-                'active' => DriverNormalized::active()->count(),
-                'recent' => DriverNormalized::where('created_at', '>=', now()->subDays(7))->count(),
+                'total' => Drivers::count(),
+                'verified' => Drivers::verified()->count(),
+                'pending' => Drivers::where('verification_status', 'pending')->count(),
+                'active' => Drivers::active()->count(),
+                'recent' => Drivers::where('created_at', '>=', now()->subDays(7))->count(),
             ],
             'companies' => [
                 'total' => Company::count(),
@@ -119,8 +119,8 @@ class AdminService
                 'recent' => DriverMatch::where('created_at', '>=', now()->subDays(7))->count(),
             ],
             'activity' => [
-                'new_drivers_today' => DriverNormalized::whereDate('created_at', today())->count(),
-                'verifications_today' => DriverNormalized::whereDate('verified_at', today())->count(),
+                'new_drivers_today' => Drivers::whereDate('created_at', today())->count(),
+                'verifications_today' => Drivers::whereDate('verified_at', today())->count(),
                 'new_companies_today' => Company::whereDate('created_at', today())->count(),
                 'new_requests_today' => CompanyRequest::whereDate('created_at', today())->count(),
             ],
@@ -144,7 +144,7 @@ class AdminService
             $activities = collect();
 
         // Recent driver registrations
-        $recentDrivers = DriverNormalized::select('id', 'driver_id', 'first_name', 'surname', 'created_at')
+        $recentDrivers = Drivers::select('id', 'driver_id', 'first_name', 'surname', 'created_at')
             ->latest()
             ->limit($limit / 4)
             ->get()
@@ -160,7 +160,7 @@ class AdminService
             });
 
         // Recent driver verifications
-        $recentVerifications = DriverNormalized::select('id', 'driver_id', 'first_name', 'surname', 'verified_at')
+        $recentVerifications = Drivers::select('id', 'driver_id', 'first_name', 'surname', 'verified_at')
             ->whereNotNull('verified_at')
             ->latest('verified_at')
             ->limit($limit / 4)
@@ -476,16 +476,16 @@ class AdminService
 
     private function calculateVerificationRate(): float
     {
-        $total = DriverNormalized::count();
+        $total = Drivers::count();
         if ($total === 0) return 0;
-        
-        $verified = DriverNormalized::verified()->count();
+
+        $verified = Drivers::verified()->count();
         return round(($verified / $total) * 100, 2);
     }
 
     private function getAverageResponseTime(): float
     {
-        $avgTime = DriverNormalized::whereNotNull('verified_at')
+        $avgTime = Drivers::whereNotNull('verified_at')
             ->whereNotNull('created_at')
             ->select(DB::raw('AVG(TIMESTAMPDIFF(HOUR, created_at, verified_at)) as avg_hours'))
             ->value('avg_hours');
@@ -495,10 +495,10 @@ class AdminService
 
     private function getProfileCompletionRate(): float
     {
-        $total = DriverNormalized::count();
+        $total = Drivers::count();
         if ($total === 0) return 0;
 
-        $complete = DriverNormalized::whereNotNull('profile_picture')
+        $complete = Drivers::whereNotNull('profile_picture')
             ->whereNotNull('nin_number')
             ->whereNotNull('license_number')
             ->whereHas('locations')

@@ -7,7 +7,7 @@ use App\Services\DocumentOCRService;
 use App\Services\NINVerificationService;
 use App\Services\DocumentMatchingService;
 use App\Models\DriverReferee;
-use App\Models\DriverNormalized;
+use App\Models\Drivers;
 use Exception;
 
 class RefereeVerificationService
@@ -286,7 +286,7 @@ class RefereeVerificationService
                 'relationship' => $refereeData['relationship'] ?? 'Unknown'
             ]);
 
-            $driver = DriverNormalized::find($driverId);
+            $driver = Drivers::find($driverId);
             if (!$driver) {
                 return [
                     'success' => false,
