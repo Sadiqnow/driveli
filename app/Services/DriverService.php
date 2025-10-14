@@ -11,6 +11,16 @@ use App\Models\DriverEmploymentHistory;
 use App\Models\DriverPreference;
 use App\Models\AdminUser;
 use App\Exceptions\DriverException;
+use App\Repositories\DriverRepository;
+use App\Repositories\DocumentRepository;
+use App\Repositories\VerificationRepository;
+use App\Repositories\NotificationRepository;
+use App\Repositories\LocationRepository;
+use App\Repositories\PerformanceRepository;
+use App\Repositories\BankingDetailRepository;
+use App\Repositories\NextOfKinRepository;
+use App\Repositories\EmploymentHistoryRepository;
+use App\Repositories\PreferenceRepository;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Hash;
@@ -33,6 +43,40 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
  */
 class DriverService
 {
+    protected DriverRepository $driverRepository;
+    protected DocumentRepository $documentRepository;
+    protected VerificationRepository $verificationRepository;
+    protected NotificationRepository $notificationRepository;
+    protected LocationRepository $locationRepository;
+    protected PerformanceRepository $performanceRepository;
+    protected BankingDetailRepository $bankingDetailRepository;
+    protected NextOfKinRepository $nextOfKinRepository;
+    protected EmploymentHistoryRepository $employmentHistoryRepository;
+    protected PreferenceRepository $preferenceRepository;
+
+    public function __construct(
+        DriverRepository $driverRepository,
+        DocumentRepository $documentRepository,
+        VerificationRepository $verificationRepository,
+        NotificationRepository $notificationRepository,
+        LocationRepository $locationRepository,
+        PerformanceRepository $performanceRepository,
+        BankingDetailRepository $bankingDetailRepository,
+        NextOfKinRepository $nextOfKinRepository,
+        EmploymentHistoryRepository $employmentHistoryRepository,
+        PreferenceRepository $preferenceRepository
+    ) {
+        $this->driverRepository = $driverRepository;
+        $this->documentRepository = $documentRepository;
+        $this->verificationRepository = $verificationRepository;
+        $this->notificationRepository = $notificationRepository;
+        $this->locationRepository = $locationRepository;
+        $this->performanceRepository = $performanceRepository;
+        $this->bankingDetailRepository = $bankingDetailRepository;
+        $this->nextOfKinRepository = $nextOfKinRepository;
+        $this->employmentHistoryRepository = $employmentHistoryRepository;
+        $this->preferenceRepository = $preferenceRepository;
+    }
     /**
      * Create a new driver with complete profile data.
      *
@@ -66,8 +110,8 @@ class DriverService
             // Generate unique driver ID
             $driverId = $this->generateDriverId();
 
-            // Create main driver record
-            $driver = DriverNormalized::create([
+            // Create main driver record using repository
+            $driver = $this->driverRepository->create([
                 'driver_id' => $driverId,
                 'first_name' => $data['first_name'],
                 'middle_name' => $data['middle_name'] ?? null,
@@ -99,22 +143,22 @@ class DriverService
                 $driver->update(['profile_picture' => $profilePath]);
             }
 
-            // Store documents
+            // Store documents using repository
             $this->storeDriverDocuments($driver, $data);
 
-            // Store location information
+            // Store location information using repository
             $this->storeDriverLocations($driver, $data);
 
-            // Store banking details
+            // Store banking details using repository
             $this->storeDriverBankingDetails($driver, $data);
 
-            // Store next of kin information
+            // Store next of kin information using repository
             $this->storeDriverNextOfKin($driver, $data);
 
-            // Store employment history
+            // Store employment history using repository
             $this->storeDriverEmploymentHistory($driver, $data);
 
-            // Store preferences
+            // Store preferences using repository
             $this->storeDriverPreferences($driver, $data);
 
             return $driver->load([
@@ -153,8 +197,8 @@ class DriverService
     public function updateDriver(DriverNormalized $driver, array $data): DriverNormalized
     {
         return DB::transaction(function () use ($driver, $data) {
-            // Update main driver record
-            $driver->update(array_filter([
+            // Update main driver record using repository
+            $this->driverRepository->update($driver->id, array_filter([
                 'first_name' => $data['first_name'] ?? $driver->first_name,
                 'middle_name' => $data['middle_name'] ?? $driver->middle_name,
                 'surname' => $data['surname'] ?? $driver->surname,
@@ -295,47 +339,7 @@ class DriverService
      */
     public function getDrivers(array $filters = [], int $perPage = 15)
     {
-        $query = DriverNormalized::query()
-            ->with(['nationality', 'verifiedBy', 'performance']);
-
-        // Apply filters
-        if (isset($filters['status'])) {
-            $query->where('status', $filters['status']);
-        }
-
-        if (isset($filters['verification_status'])) {
-            $query->where('verification_status', $filters['verification_status']);
-        }
-
-        if (isset($filters['gender'])) {
-            $query->where('gender', $filters['gender']);
-        }
-
-        if (isset($filters['nationality_id'])) {
-            $query->where('nationality_id', $filters['nationality_id']);
-        }
-
-        if (isset($filters['search'])) {
-            $search = $filters['search'];
-            $query->where(function ($q) use ($search) {
-                $q->where('first_name', 'like', "%{$search}%")
-                  ->orWhere('surname', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%")
-                  ->orWhere('phone', 'like', "%{$search}%")
-                  ->orWhere('driver_id', 'like', "%{$search}%");
-            });
-        }
-
-        if (isset($filters['age_min']) || isset($filters['age_max'])) {
-            $query->byAge($filters['age_min'] ?? null, $filters['age_max'] ?? null);
-        }
-
-        // Apply sorting
-        $sortBy = $filters['sort_by'] ?? 'created_at';
-        $sortOrder = $filters['sort_order'] ?? 'desc';
-        $query->orderBy($sortBy, $sortOrder);
-
-        return $query->paginate($perPage);
+        return $this->driverRepository->search($filters, ['created_at' => 'desc'], $perPage, ['nationality', 'verifiedBy', 'performance']);
     }
 
     /**
@@ -343,34 +347,15 @@ class DriverService
      */
     public function getDashboardStats(): array
     {
-        $basicStats = [
-            'verifiedCount' => DriverNormalized::where('verification_status', 'verified')->count(),
-            'pendingCount' => DriverNormalized::where('verification_status', 'pending')->count(),
-            'reviewingCount' => DriverNormalized::where('verification_status', 'reviewing')->count(),
-            'rejectedCount' => DriverNormalized::where('verification_status', 'rejected')->count(),
-            'activeCount' => DriverNormalized::active()->count(),
-            'newDriversThisMonth' => DriverNormalized::whereMonth('created_at', now()->month)
-                                    ->whereYear('created_at', now()->year)
-                                    ->count(),
-            'activeDriversToday' => DriverNormalized::where('last_active_at', '>=', now()->startOfDay())->count(),
-            'onlineDrivers' => DriverNormalized::where('last_active_at', '>=', now()->subMinutes(15))
-                             ->where('is_active', true)
-                             ->count(),
-        ];
+        $stats = $this->driverRepository->getStatistics();
 
-        // Performance stats with optimized aggregation
-        $performanceStats = DB::table('driver_performance')
-            ->selectRaw('
-                COALESCE(SUM(total_earnings), 0) as total_earnings,
-                COALESCE(SUM(total_jobs_completed), 0) as total_jobs,
-                COALESCE(AVG(CASE WHEN average_rating > 0 THEN average_rating END), 0) as avg_rating
-            ')
-            ->first();
+        // Performance stats using repository
+        $performanceStats = $this->performanceRepository->getStatistics();
 
-        return array_merge($basicStats, [
-            'totalEarnings' => $performanceStats->total_earnings ?? 0,
-            'totalJobsCompleted' => $performanceStats->total_jobs ?? 0,
-            'averageRating' => round($performanceStats->avg_rating ?? 0, 2),
+        return array_merge($stats, [
+            'totalEarnings' => $performanceStats['total_earnings'] ?? 0,
+            'totalJobsCompleted' => $performanceStats['total_jobs_completed'] ?? 0,
+            'averageRating' => $performanceStats['average_rating'] ?? 0,
         ]);
     }
 
@@ -381,25 +366,7 @@ class DriverService
      */
     public function getDriverStatistics(): array
     {
-        return [
-            'total' => DriverNormalized::count(),
-            'verified' => DriverNormalized::verified()->count(),
-            'pending' => DriverNormalized::where('verification_status', 'pending')->count(),
-            'rejected' => DriverNormalized::where('verification_status', 'rejected')->count(),
-            'active' => DriverNormalized::active()->count(),
-            'available' => DriverNormalized::available()->count(),
-            'by_gender' => [
-                'male' => DriverNormalized::where('gender', 'Male')->count(),
-                'female' => DriverNormalized::where('gender', 'Female')->count(),
-            ],
-            'by_status' => [
-                'active' => DriverNormalized::where('status', 'active')->count(),
-                'inactive' => DriverNormalized::where('status', 'inactive')->count(),
-                'suspended' => DriverNormalized::where('status', 'suspended')->count(),
-            ],
-            'recent_registrations' => DriverNormalized::where('created_at', '>=', now()->subDays(30))->count(),
-            'recent_verifications' => DriverNormalized::where('verified_at', '>=', now()->subDays(30))->count(),
-        ];
+        return $this->driverRepository->getStatistics();
     }
 
     /**
@@ -440,7 +407,7 @@ class DriverService
     public function updateVerificationStatus(DriverNormalized $driver, string $status, AdminUser $admin, string $notes = null, string $adminPassword = null): array
     {
         // Verify admin password if provided
-        if ($adminPassword && !\Hash::check($adminPassword, $admin->password)) {
+        if ($adminPassword && !Hash::check($adminPassword, $admin->password)) {
             throw new \Exception('Invalid admin password');
         }
 
@@ -503,8 +470,8 @@ class DriverService
         foreach ($documents as $field => $type) {
             if (isset($data[$field])) {
                 $path = $this->storeDriverDocument($data[$field], 'documents');
-                
-                DriverDocument::create([
+
+                $this->documentRepository->create([
                     'driver_id' => $driver->driver_id,
                     'document_type' => $type,
                     'file_path' => $path,
@@ -558,7 +525,7 @@ class DriverService
         ];
 
         foreach ($locations as $location) {
-            DriverLocation::create([
+            $this->locationRepository->create([
                 'driver_id' => $driver->driver_id,
                 'location_type' => $location['type'],
                 'state_id' => $location['state_id'],
@@ -578,7 +545,7 @@ class DriverService
      */
     private function storeDriverBankingDetails(DriverNormalized $driver, array $data): void
     {
-        DriverBankingDetail::create([
+        $this->bankingDetailRepository->create([
             'driver_id' => $driver->driver_id,
             'bank_id' => $data['bank_id'],
             'account_number' => $data['account_number'],
@@ -598,7 +565,7 @@ class DriverService
      */
     private function storeDriverNextOfKin(DriverNormalized $driver, array $data): void
     {
-        DriverNextOfKin::create([
+        $this->nextOfKinRepository->create([
             'driver_id' => $driver->driver_id,
             'name' => $data['nok_name'],
             'relationship' => $data['nok_relationship'],
@@ -618,7 +585,7 @@ class DriverService
     private function storeDriverEmploymentHistory(DriverNormalized $driver, array $data): void
     {
         if (isset($data['current_employment_status']) && $data['current_employment_status'] !== 'Unemployed') {
-            DriverEmploymentHistory::create([
+            $this->employmentHistoryRepository->create([
                 'driver_id' => $driver->driver_id,
                 'company_name' => $data['current_employer'] ?? 'Self-employed',
                 'job_title' => $data['current_job_title'] ?? 'Driver',
@@ -639,7 +606,7 @@ class DriverService
      */
     private function storeDriverPreferences(DriverNormalized $driver, array $data): void
     {
-        DriverPreference::create([
+        $this->preferenceRepository->create([
             'driver_id' => $driver->driver_id,
             'preferred_work_areas' => json_encode($data['preferred_work_areas'] ?? []),
             'vehicle_type_preference' => $data['vehicle_type_preference'] ?? null,

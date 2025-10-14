@@ -181,6 +181,12 @@ Route::get('/states/{stateId}/lgas', [LocationController::class, 'getLocalGovern
 // Analytics API Route
 Route::middleware(['auth:sanctum'])->get('/analytics', [App\Http\Controllers\Admin\AnalyticsController::class, 'graphs'])->name('api.analytics');
 
+// API Documentation Routes
+Route::prefix('docs')->name('api.docs.')->group(function () {
+    Route::get('/schema/{api?}', [App\Http\Controllers\Api\ApiDocumentationController::class, 'getSchema'])->name('schema');
+    Route::get('/openapi', [App\Http\Controllers\Api\ApiDocumentationController::class, 'getOpenApiSpec'])->name('openapi');
+});
+
 // ===================================================================================================
 // EMPLOYMENT FEEDBACK API ROUTES
 // ===================================================================================================

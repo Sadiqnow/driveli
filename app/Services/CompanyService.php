@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Company;
 use App\Models\CompanyRequest;
 use App\Models\AdminUser;
+use App\Repositories\CompanyRepository;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\UploadedFile;
@@ -13,6 +14,12 @@ use Illuminate\Support\Facades\Schema;
 
 class CompanyService
 {
+    protected CompanyRepository $companyRepository;
+
+    public function __construct(CompanyRepository $companyRepository)
+    {
+        $this->companyRepository = $companyRepository;
+    }
     /**
      * Create a new company.
      *
@@ -25,7 +32,7 @@ class CompanyService
             // Generate unique company ID
             $companyId = $this->generateCompanyId();
 
-            $company = Company::create([
+            $company = $this->companyRepository->create([
                 'company_id' => $companyId,
                 'name' => $data['name'],
                 'email' => $data['email'],
@@ -187,46 +194,7 @@ class CompanyService
             return collect([])->paginate($perPage);
         }
 
-        $query = Company::query();
-
-        // Apply filters
-        if (isset($filters['status'])) {
-            $query->where('status', $filters['status']);
-        }
-
-        if (isset($filters['verification_status'])) {
-            $query->where('verification_status', $filters['verification_status']);
-        }
-
-        if (isset($filters['industry'])) {
-            $query->where('industry', $filters['industry']);
-        }
-
-        if (isset($filters['state'])) {
-            $query->where('state', $filters['state']);
-        }
-
-        if (isset($filters['company_size'])) {
-            $query->where('company_size', $filters['company_size']);
-        }
-
-        if (isset($filters['search'])) {
-            $search = $filters['search'];
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%")
-                  ->orWhere('phone', 'like', "%{$search}%")
-                  ->orWhere('company_id', 'like', "%{$search}%")
-                  ->orWhere('registration_number', 'like', "%{$search}%");
-            });
-        }
-
-        // Apply sorting
-        $sortBy = $filters['sort_by'] ?? 'created_at';
-        $sortOrder = $filters['sort_order'] ?? 'desc';
-        $query->orderBy($sortBy, $sortOrder);
-
-        return $query->paginate($perPage);
+        return $this->companyRepository->search($filters, ['created_at' => 'desc'], $perPage);
     }
 
     /**
@@ -252,30 +220,7 @@ class CompanyService
             ];
         }
 
-        return [
-            'total' => Company::count(),
-            'verified' => Company::where('verification_status', 'Verified')->count(),
-            'pending' => Company::where('verification_status', 'Pending')->count(),
-            'rejected' => Company::where('verification_status', 'Rejected')->count(),
-            'active' => Company::where('status', 'Active')->count(),
-            'suspended' => Company::where('status', 'Suspended')->count(),
-            'by_industry' => Company::select('industry', DB::raw('count(*) as count'))
-                ->groupBy('industry')
-                ->pluck('count', 'industry')
-                ->toArray(),
-            'by_state' => Company::select('state', DB::raw('count(*) as count'))
-                ->groupBy('state')
-                ->orderByDesc('count')
-                ->limit(10)
-                ->pluck('count', 'state')
-                ->toArray(),
-            'by_size' => Company::select('company_size', DB::raw('count(*) as count'))
-                ->groupBy('company_size')
-                ->pluck('count', 'company_size')
-                ->toArray(),
-            'recent_registrations' => Company::where('created_at', '>=', now()->subDays(30))->count(),
-            'recent_verifications' => Company::where('verified_at', '>=', now()->subDays(30))->count(),
-        ];
+        return $this->companyRepository->getStatistics();
     }
 
     /**

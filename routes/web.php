@@ -192,6 +192,13 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('/driver/{driverId}', [App\Http\Controllers\Admin\LocationMonitoringController::class, 'monitorDriver'])->name('driver');
         });
 
+        // Log Dashboard Routes
+        Route::prefix('logs')->name('logs.')->group(function () {
+            Route::get('/', [App\Http\Controllers\Admin\LogDashboardController::class, 'index'])->name('index');
+            Route::get('/stats', [App\Http\Controllers\Admin\LogDashboardController::class, 'getStats'])->name('stats');
+            Route::get('/export', [App\Http\Controllers\Admin\LogDashboardController::class, 'export'])->name('export');
+        });
+
     });
 });
 
