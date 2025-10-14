@@ -7,7 +7,7 @@ $app->make('Illuminate\Contracts\Console\Kernel')->bootstrap();
 
 use App\Models\CompanyRequest;
 use App\Models\Company;
-use App\Models\DriverNormalized;
+use App\Models\Drivers;
 
 echo "Testing Manual Matching Data\n";
 echo "===========================\n\n";
@@ -74,34 +74,43 @@ try {
             
             if ($companies->count() > 0) {
                 CompanyRequest::create([
+                    'request_id' => 'REQ_' . time() . '_1',
                     'company_id' => $companies->first()->id,
                     'status' => 'pending',
                     'description' => 'Need experienced driver for logistics operations',
                     'location' => 'Lagos',
                     'job_type' => 'Delivery',
+                    'position_title' => 'Logistics Driver',
                     'requirements' => 'Valid license, 2+ years experience',
-                    'salary_range' => '150000-200000'
+                    'salary_range' => '150000-200000',
+                    'created_by' => 1
                 ]);
                 
                 CompanyRequest::create([
+                    'request_id' => 'REQ_' . time() . '_2',
                     'company_id' => $companies->first()->id,
                     'status' => 'Active',
                     'description' => 'Urgent: Driver needed for executive transport',
                     'location' => 'Abuja',
                     'job_type' => 'Executive',
+                    'position_title' => 'Executive Driver',
                     'requirements' => 'Professional driver, clean record',
-                    'salary_range' => '250000-300000'
+                    'salary_range' => '250000-300000',
+                    'created_by' => 1
                 ]);
                 
                 if ($companies->count() > 1) {
                     CompanyRequest::create([
+                        'request_id' => 'REQ_' . time() . '_3',
                         'company_id' => $companies->get(1)->id,
                         'status' => 'pending',
                         'description' => 'Part-time driver for weekend deliveries',
                         'location' => 'Port Harcourt',
                         'job_type' => 'Part-time',
+                        'position_title' => 'Part-time Delivery Driver',
                         'requirements' => 'Weekend availability',
-                        'salary_range' => '80000-120000'
+                        'salary_range' => '80000-120000',
+                        'created_by' => 1
                     ]);
                 }
                 
@@ -119,7 +128,7 @@ try {
     }
     
     // Check available drivers
-    $availableDrivers = DriverNormalized::whereNull('deleted_at')->count();
+    $availableDrivers = Drivers::whereNull('deleted_at')->count();
     echo "\nAvailable drivers: $availableDrivers\n";
     
 } catch (Exception $e) {

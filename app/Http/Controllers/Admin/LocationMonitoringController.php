@@ -89,17 +89,25 @@ class LocationMonitoringController extends Controller
                 $request->reason
             );
 
-            return response()->json([
-                'success' => true,
-                'message' => 'OTP challenge sent to driver',
-                'otp_id' => $otp->id,
-            ]);
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'OTP challenge sent to driver',
+                    'otp_id' => $otp->id,
+                ]);
+            }
+
+            return redirect()->back()->with('success', 'OTP challenge sent to driver');
 
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 400);
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $e->getMessage(),
+                ], 400);
+            }
+
+            return redirect()->back()->with('error', 'Failed to send OTP challenge: ' . $e->getMessage());
         }
     }
 
@@ -185,5 +193,159 @@ class LocationMonitoringController extends Controller
             'suspicious' => $suspicious,
             'driver_id' => $driverId,
         ]);
+    }
+
+    /**
+     * Get monitoring dashboard statistics (API)
+     */
+    public function getStats()
+    {
+        Gate::authorize('monitor-drivers');
+
+        $dashboard = $this->locationService->getMonitoringDashboard();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'active_drivers' => $dashboard['active_drivers'],
+                'total_locations_recorded' => $dashboard['total_locations_recorded'],
+                'suspicious_activities' => $dashboard['suspicious_activities'],
+                'alerts_count' => count($dashboard['suspicious_activities']),
+            ],
+        ]);
+    }
+
+    /**
+     * Get driver monitoring data for AJAX
+     */
+    public function getDriverData(Request $request, $driverId)
+    {
+        Gate::authorize('monitor-drivers');
+
+        $driver = DriverNormalized::findOrFail($driverId);
+
+        // Get last location
+        $lastLocation = DriverLocationTracking::where('driver_id', $driverId)
+            ->orderBy('recorded_at', 'desc')
+            ->first();
+
+        // Get last activity from activity log
+        $lastActivity = \App\Models\ActivityLog::where('user_type', 'driver')
+            ->where('user_id', $driverId)
+            ->orderBy('created_at', 'desc')
+            ->first();
+
+        // Check if being monitored
+        $isBeingMonitored = $this->locationService->isDriverBeingMonitored($driverId);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'driver_id' => $driverId,
+                'last_location' => $lastLocation ? [
+                    'latitude' => $lastLocation->latitude,
+                    'longitude' => $lastLocation->longitude,
+                    'accuracy' => $lastLocation->accuracy,
+                    'recorded_at' => $lastLocation->recorded_at->toISOString(),
+                    'device_info' => $lastLocation->device_info,
+                ] : null,
+                'last_activity' => $lastActivity ? $lastActivity->created_at->toISOString() : null,
+                'device_info' => $lastLocation ? $lastLocation->device_info : null,
+                'is_being_monitored' => $isBeingMonitored,
+            ],
+        ]);
+    }
+
+    /**
+     * Get driver activity log
+     */
+    public function getDriverActivity(Request $request, $driverId)
+    {
+        Gate::authorize('monitor-drivers');
+
+        $limit = $request->get('limit', 20);
+
+        $activities = \App\Models\ActivityLog::where('user_type', 'driver')
+            ->where('user_id', $driverId)
+            ->orderBy('created_at', 'desc')
+            ->limit($limit)
+            ->get(['action', 'description', 'metadata', 'created_at']);
+
+        return response()->json([
+            'success' => true,
+            'data' => $activities,
+        ]);
+    }
+
+    /**
+     * API endpoint for dashboard data
+     */
+    public function getDashboardData(Request $request)
+    {
+        Gate::authorize('monitor-drivers');
+
+        $dashboard = $this->locationService->getMonitoringDashboard();
+
+        return response()->json([
+            'success' => true,
+            'data' => $dashboard,
+        ]);
+    }
+
+    /**
+     * API endpoint for trace alerts
+     */
+    public function getTraceAlerts(Request $request)
+    {
+        Gate::authorize('monitor-drivers');
+
+        $alerts = \App\Models\TraceAlert::with('driver')
+            ->active()
+            ->orderBy('triggered_at', 'desc')
+            ->get()
+            ->map(function ($alert) {
+                return [
+                    'id' => $alert->id,
+                    'driver_id' => $alert->driver_id,
+                    'driver_name' => $alert->driver->full_name ?? 'Unknown',
+                    'alert_type' => $alert->alert_type,
+                    'alert_type_description' => $alert->alert_type_description,
+                    'severity' => $alert->severity,
+                    'triggered_at' => $alert->triggered_at->toISOString(),
+                ];
+            });
+
+        return response()->json([
+            'success' => true,
+            'data' => $alerts,
+        ]);
+    }
+
+    /**
+     * Resolve trace alert
+     */
+    public function resolveAlert(Request $request, $alertId)
+    {
+        Gate::authorize('monitor-drivers');
+
+        $request->validate([
+            'notes' => 'nullable|string|max:500',
+        ]);
+
+        try {
+            $alert = \App\Models\TraceAlert::findOrFail($alertId);
+            $alert->resolve(auth()->id(), $request->notes);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Alert resolved successfully',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to resolve alert',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
 }

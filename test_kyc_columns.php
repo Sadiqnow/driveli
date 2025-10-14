@@ -4,7 +4,7 @@
 require_once __DIR__ . '/vendor/autoload.php';
 
 use Illuminate\Support\Facades\DB;
-use App\Models\DriverNormalized;
+use App\Models\Drivers;
 
 // Bootstrap Laravel
 $app = require_once __DIR__ . '/bootstrap/app.php';
@@ -52,7 +52,7 @@ try {
     ];
     
     echo "\nTesting fillable fields:\n";
-    $driver = new DriverNormalized();
+    $driver = new Drivers();
     $fillableFields = $driver->getFillable();
     
     foreach ($testData as $field => $value) {

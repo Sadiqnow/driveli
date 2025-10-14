@@ -3057,6 +3057,28 @@ class DriverController extends Controller
     }
 
     /**
+     * Get active drivers count (API)
+     */
+    public function getActiveDrivers(Request $request)
+    {
+        try {
+            $activeDrivers = Driver::where('status', 'active')->count();
+
+            return response()->json([
+                'success' => true,
+                'active_drivers' => $activeDrivers
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to get active drivers count: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to load active drivers count'
+            ], 500);
+        }
+    }
+
+    /**
      * Get recently registered drivers
      */
     public function getRecentDrivers(Request $request)

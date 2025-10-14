@@ -6,7 +6,7 @@ require_once 'vendor/autoload.php';
 $app = require_once 'bootstrap/app.php';
 $app->make('Illuminate\Contracts\Console\Kernel')->bootstrap();
 
-use App\Models\DriverNormalized;
+use App\Models\Drivers;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 
@@ -14,14 +14,14 @@ echo "Testing Driver Authentication System\n";
 echo str_repeat("=", 50) . "\n";
 
 try {
-    // Test 1: Check if DriverNormalized model can be accessed
-    echo "1. Testing DriverNormalized model access... ";
-    $count = DriverNormalized::count();
+    // Test 1: Check if Drivers model can be accessed
+    echo "1. Testing Drivers model access... ";
+    $count = Drivers::count();
     echo "✓ SUCCESS (Found $count drivers)\n";
     
     // Test 2: Test driver creation
     echo "2. Testing driver creation... ";
-    $testDriver = DriverNormalized::create([
+    $testDriver = Drivers::create([
         'first_name' => 'Test',
         'surname' => 'Driver',
         'email' => 'testdriver@example.com',

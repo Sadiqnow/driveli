@@ -17,6 +17,20 @@ class DriverDocumentController extends Controller
     }
 
     /**
+     * Display a listing of the resource.
+     */
+    public function index()
+    {
+        $driver = Auth::guard('driver')->user();
+
+        $documents = DriverDocument::where('driver_id', $driver->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return view('driver.documents.index', compact('documents'));
+    }
+
+    /**
      * Upload document for the authenticated driver
      */
     public function uploadDocument(Request $request)

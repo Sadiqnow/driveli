@@ -59,7 +59,7 @@ try {
     // Test 4: Database Connection Test
     echo "\n✅ Test 4: Testing Database Connectivity\n";
     try {
-        $drivers = \App\Models\DriverNormalized::count();
+    $drivers = \App\Models\Drivers::count();
         $requests = \App\Models\CompanyRequest::count();
         $matches = \App\Models\DriverMatch::count();
         $companies = \App\Models\Company::count();
@@ -71,8 +71,9 @@ try {
         
         // Test 5: Check for matching-ready data
         echo "\n✅ Test 5: Checking Data Availability for Matching\n";
-        $availableDrivers = \App\Models\DriverNormalized::where('verification_status', 'Verified')
-            ->where('availability_status', 'Available')
+        $availableDrivers = \App\Models\Drivers::where('verification_status', 'verified')
+            ->where('status', 'active')
+            ->where('is_active', true)
             ->whereNull('deleted_at')
             ->count();
             

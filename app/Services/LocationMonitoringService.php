@@ -6,11 +6,19 @@ use App\Models\DriverLocationTracking;
 use App\Models\DriverNormalized;
 use App\Models\AdminUser;
 use App\Models\ActivityLog;
+use App\Services\DeactivationService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Collection;
 
 class LocationMonitoringService
 {
+    protected $deactivationService;
+
+    public function __construct(DeactivationService $deactivationService)
+    {
+        $this->deactivationService = $deactivationService;
+    }
+
     /**
      * Record driver location
      */
@@ -200,5 +208,33 @@ class LocationMonitoringService
         // This would be implemented to track ongoing suspicious activities
         // For now, return empty array
         return [];
+    }
+
+    /**
+     * Check if a driver is currently being monitored
+     */
+    public function isDriverBeingMonitored($driverId)
+    {
+        // Check if there are any active monitoring sessions or alerts for this driver
+        $activeAlerts = \App\Models\TraceAlert::where('driver_id', $driverId)
+            ->active()
+            ->exists();
+
+        // Check if driver has recent suspicious activity
+        $recentSuspicious = \App\Models\ActivityLog::where('user_type', 'driver')
+            ->where('user_id', $driverId)
+            ->where('action', 'suspicious_activity')
+            ->where('created_at', '>=', now()->subHours(24))
+            ->exists();
+
+        return $activeAlerts || $recentSuspicious;
+    }
+
+    /**
+     * Send OTP challenge for suspicious activity
+     */
+    public function sendOTPChallenge($driverId, $reason)
+    {
+        return $this->deactivationService->sendOTPChallenge('driver', $driverId, $reason);
     }
 }

@@ -7,7 +7,7 @@ $kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
 $kernel->bootstrap();
 
 use Illuminate\Support\Facades\Schema;
-use App\Models\DriverNormalized;
+use App\Models\Drivers;
 
 echo "=== Testing KYC Step 2 Fix ===\n\n";
 
@@ -54,7 +54,7 @@ if (empty($missingColumns)) {
 
 // Test 2: Check model fillable fields
 echo "2. Checking model fillable fields:\n";
-$driver = new DriverNormalized();
+$driver = new Drivers();
 $fillableFields = $driver->getFillable();
 $missingFillable = [];
 
@@ -102,11 +102,11 @@ try {
         'kyc_status' => 'in_progress',
     ];
     
-    $testDriver = DriverNormalized::create($testData);
+    $testDriver = Drivers::create($testData);
     echo "   ✅ Test driver created with ID: {$testDriver->id}\n";
     
     // Verify data was saved correctly
-    $savedDriver = DriverNormalized::find($testDriver->id);
+    $savedDriver = Drivers::find($testDriver->id);
     echo "   ✅ Test driver retrieved successfully\n";
     echo "   ✅ Residential address: " . ($savedDriver->residential_address ?: 'NULL') . "\n";
     echo "   ✅ Bank ID: " . ($savedDriver->bank_id ?: 'NULL') . "\n";

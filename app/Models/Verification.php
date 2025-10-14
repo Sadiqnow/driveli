@@ -12,7 +12,8 @@ class Verification extends Model
     use HasFactory;
 
     protected $fillable = [
-        'driver_id',
+        'verifiable_id',
+        'verifiable_type',
         'type',
         'verification_source',
         'status',
@@ -38,11 +39,19 @@ class Verification extends Model
     ];
 
     /**
+     * Get the verifiable model (driver, etc.) that owns the verification.
+     */
+    public function verifiable()
+    {
+        return $this->morphTo();
+    }
+
+    /**
      * Get the driver that owns the verification.
      */
     public function driver(): BelongsTo
     {
-        return $this->belongsTo(Drivers::class, 'driver_id');
+        return $this->belongsTo(Drivers::class, 'verifiable_id');
     }
 
     /**

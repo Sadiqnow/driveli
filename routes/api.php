@@ -65,6 +65,25 @@ Route::prefix('admin')->name('api.admin.')->group(function () {
             Route::get('/retention', [App\Http\Controllers\Admin\DriverController::class, 'getDriverRetention'])->name('retention');
             Route::get('/engagement', [App\Http\Controllers\Admin\DriverController::class, 'getDriverEngagement'])->name('engagement');
             Route::get('/satisfaction', [App\Http\Controllers\Admin\DriverController::class, 'getDriverSatisfaction'])->name('satisfaction');
+            Route::get('/active', [App\Http\Controllers\Admin\DriverController::class, 'getActiveDrivers'])->name('active');
+        });
+
+        // Deactivation and Monitoring API Routes
+        Route::prefix('deactivation')->name('deactivation.')->group(function () {
+            Route::get('/stats', [App\Http\Controllers\Admin\DeactivationController::class, 'getStats'])->name('stats');
+        });
+
+        Route::prefix('monitoring')->name('monitoring.')->group(function () {
+            Route::get('/stats', [App\Http\Controllers\Admin\LocationMonitoringController::class, 'getStats'])->name('stats');
+            Route::get('/dashboard', [App\Http\Controllers\Admin\LocationMonitoringController::class, 'getDashboardData'])->name('dashboard');
+            Route::get('/alerts', [App\Http\Controllers\Admin\LocationMonitoringController::class, 'getTraceAlerts'])->name('alerts');
+            Route::post('/alerts/{alertId}/resolve', [App\Http\Controllers\Admin\LocationMonitoringController::class, 'resolveAlert'])->name('resolve-alert');
+            Route::get('/driver/{driverId}/locations', [App\Http\Controllers\Admin\LocationMonitoringController::class, 'getDriverLocations'])->name('driver-locations');
+            Route::get('/driver/{driverId}/data', [App\Http\Controllers\Admin\LocationMonitoringController::class, 'getDriverData'])->name('driver-data');
+            Route::get('/driver/{driverId}/activity', [App\Http\Controllers\Admin\LocationMonitoringController::class, 'getDriverActivity'])->name('driver-activity');
+            Route::post('/driver/{driverId}/challenge', [App\Http\Controllers\Admin\LocationMonitoringController::class, 'sendChallenge'])->name('send-challenge');
+            Route::get('/locations/bounds', [App\Http\Controllers\Admin\LocationMonitoringController::class, 'getLocationsInBounds'])->name('locations-bounds');
+            Route::get('/driver/{driverId}/suspicious', [App\Http\Controllers\Admin\LocationMonitoringController::class, 'checkSuspiciousActivity'])->name('check-suspicious');
         });
     });
 });
@@ -161,3 +180,16 @@ Route::get('/states/{stateId}/lgas', [LocationController::class, 'getLocalGovern
 
 // Analytics API Route
 Route::middleware(['auth:sanctum'])->get('/analytics', [App\Http\Controllers\Admin\AnalyticsController::class, 'graphs'])->name('api.analytics');
+
+// ===================================================================================================
+// EMPLOYMENT FEEDBACK API ROUTES
+// ===================================================================================================
+Route::prefix('employment-feedback')->name('api.employment-feedback.')->group(function () {
+    // Admin-only endpoints
+    Route::middleware(['auth:sanctum', 'ability:admin'])->group(function () {
+        Route::post('/request', [App\Http\Controllers\EmploymentFeedbackController::class, 'requestFeedback'])->name('request');
+        Route::post('/bulk-request', [App\Http\Controllers\EmploymentFeedbackController::class, 'bulkRequestFeedback'])->name('bulk-request');
+        Route::get('/stats', [App\Http\Controllers\EmploymentFeedbackController::class, 'getStats'])->name('stats');
+        Route::get('/flagged-drivers', [App\Http\Controllers\EmploymentFeedbackController::class, 'getFlaggedDrivers'])->name('flagged-drivers');
+    });
+});

@@ -90,7 +90,7 @@ try {
         $testPhone2 = '081' . rand(10000000, 99999999);
         $testEmail2 = 'eloquent_' . time() . '@example.com';
         
-        $eloquentDriver = new \App\Models\DriverNormalized();
+        $eloquentDriver = new \App\Models\Drivers();
         $eloquentDriver->driver_id = $driverId2;
         $eloquentDriver->first_name = 'Eloquent';
         $eloquentDriver->surname = 'Test';
@@ -169,13 +169,13 @@ try {
     echo "\n=== Testing Controller Integration ===\n";
     
     try {
-        $driverCount = \App\Models\DriverNormalized::count();
+        $driverCount = \App\Models\Drivers::count();
         echo "✅ Eloquent count matches: $driverCount\n";
-        
-        $activeCount = \App\Models\DriverNormalized::where('status', 'active')->count();
+
+        $activeCount = \App\Models\Drivers::where('status', 'active')->count();
         echo "✅ Active drivers: $activeCount\n";
-        
-        $pendingCount = \App\Models\DriverNormalized::where('verification_status', 'pending')->count();
+
+        $pendingCount = \App\Models\Drivers::where('verification_status', 'pending')->count();
         echo "✅ Pending verification: $pendingCount\n";
         
     } catch (Exception $e) {

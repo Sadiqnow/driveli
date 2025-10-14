@@ -130,7 +130,7 @@ foreach ($tests as $key => $description) {
 
             case 'edge_cases':
                 // Test edge cases and error handling
-                $driverModel = new \App\Models\DriverNormalized();
+                $driverModel = new \App\Models\Drivers();
 
                 // Check if model has proper validation rules
                 $rules = $driverModel->rules ?? [];

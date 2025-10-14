@@ -141,6 +141,36 @@ class DriverProfileController extends Controller
     }
 
     /**
+     * Show the change password form.
+     */
+    public function showChangePassword()
+    {
+        return view('driver.profile.change-password');
+    }
+
+    /**
+     * Change the authenticated driver's password.
+     */
+    public function changePassword(Request $request)
+    {
+        $request->validate([
+            'current_password' => ['required', 'string'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+        ]);
+
+        $user = Auth::guard('driver')->user();
+
+        if (!Hash::check($request->input('current_password'), $user->password)) {
+            return back()->withErrors(['current_password' => 'The provided password does not match our records.']);
+        }
+
+        $user->password = Hash::make($request->input('password'));
+        $user->save();
+
+        return redirect()->route('driver.profile.show')->with('status', 'Password changed successfully.');
+    }
+
+    /**
      * Delete the authenticated driver's account.
      */
     public function destroy(Request $request)

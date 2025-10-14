@@ -59,8 +59,8 @@ try {
         echo "✅ completion_rate column exists\n\n";
     }
     
-    // Test the problematic query from DriverNormalized
-    echo "Testing the exact query from DriverNormalized model...\n";
+    // Test the problematic query from Drivers model
+    echo "Testing the exact query from Drivers model...\n";
     $testQuery = "SELECT id, driver_id, total_jobs_completed, average_rating, total_earnings, completion_rate FROM driver_performance LIMIT 1";
     $result = $pdo->query($testQuery);
     echo "✅ Query executed successfully!\n\n";

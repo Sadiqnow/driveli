@@ -57,15 +57,15 @@ try {
         }
     }
     
-    // 4. Test DriverNormalized model
-    echo "\n4. Testing DriverNormalized model...\n";
+    // 4. Test Drivers model
+    echo "\n4. Testing Drivers model...\n";
     try {
-        $model = new App\Models\DriverNormalized();
+        $model = new App\Models\Drivers();
         echo "   ✓ Model loads successfully\n";
         echo "   Table: " . $model->getTable() . "\n";
         echo "   Fillable count: " . count($model->getFillable()) . "\n";
-        
-        $modelCount = App\Models\DriverNormalized::count();
+
+        $modelCount = App\Models\Drivers::count();
         echo "   Current drivers: $modelCount\n";
         
     } catch (Exception $e) {
@@ -90,8 +90,8 @@ try {
             'registered_at' => now(),
         ];
         
-        echo "   Creating test driver with DriverNormalized model...\n";
-        $driver = App\Models\DriverNormalized::create($testData);
+        echo "   Creating test driver with Drivers model...\n";
+        $driver = App\Models\Drivers::create($testData);
         
         echo "   ✓ SUCCESS! Driver created:\n";
         echo "     ID: " . $driver->id . "\n";

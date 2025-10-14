@@ -86,5 +86,11 @@ class Kernel extends HttpKernel
         // KYC middleware
         'kyc.step' => \App\Http\Middleware\EnsureKycStepOrder::class,
         'kyc.rate.limit' => \App\Http\Middleware\KycRateLimit::class,
+
+        // Security & Audit middleware
+        'rate_limit.otp' => \App\Http\Middleware\RateLimitOtpRequests::class,
+        'ip.security' => \App\Http\Middleware\IpSecurityCheck::class,
+        'device.fingerprint' => \App\Http\Middleware\DeviceFingerprinting::class,
+        'audit.logging' => \App\Http\Middleware\AuditLogging::class,
     ];
 }

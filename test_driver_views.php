@@ -15,8 +15,8 @@ try {
     echo "1. Testing dashboard access...\n";
     $request = Request::create('/driver/dashboard', 'GET');
     
-    // Mock authentication
-    $user = new App\Models\DriverNormalized();
+    // Mock authentication - create a simple stdClass instead of model
+    $user = new stdClass();
     $user->id = 1;
     $user->driver_id = 'TEST-001';
     $user->first_name = 'Test';
@@ -24,7 +24,7 @@ try {
     $user->email = 'test@example.com';
     $user->verification_status = 'pending';
     $user->status = 'inactive';
-    $user->registered_at = now();
+    $user->registered_at = date('Y-m-d H:i:s');
     
     // Mock authentication for the request
     $request->setUserResolver(function () use ($user) {

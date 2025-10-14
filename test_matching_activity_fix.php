@@ -16,7 +16,7 @@ try {
 
     // Test 2: Check if we have test data
     echo "2. Checking for test data...\n";
-    $driverCount = \App\Models\DriverNormalized::where('verification_status', 'verified')->count();
+    $driverCount = \App\Models\Drivers::where('verification_status', 'verified')->count();
     $requestCount = \App\Models\CompanyRequest::whereIn('status', ['pending', 'Pending', 'Active'])->count();
     echo "   ✓ Available drivers: {$driverCount}\n";
     echo "   ✓ Pending requests: {$requestCount}\n\n";
@@ -25,7 +25,7 @@ try {
     if ($driverCount > 0 && $requestCount > 0) {
         echo "3. Creating sample match...\n";
         
-        $driver = \App\Models\DriverNormalized::where('verification_status', 'verified')->first();
+        $driver = \App\Models\Drivers::where('verification_status', 'verified')->first();
         $request = \App\Models\CompanyRequest::whereIn('status', ['pending', 'Pending', 'Active'])->first();
         
         // Generate match ID

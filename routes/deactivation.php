@@ -19,7 +19,7 @@ use App\Http\Controllers\Api\DriverLocationController;
 // DEACTIVATION MANAGEMENT ROUTES (Admin Only)
 // ===================================================================================================
 
-Route::prefix('admin/deactivation')->name('admin.deactivation.')->middleware(['auth:admin'])->group(function () {
+Route::prefix('admin/deactivation')->name('admin.deactivation.')->middleware(['auth:admin', 'rate_limit.otp', 'ip.security', 'device.fingerprint', 'audit.logging'])->group(function () {
     Route::get('/', [DeactivationController::class, 'index'])->name('index');
     Route::get('/create', [DeactivationController::class, 'create'])->name('create');
     Route::post('/', [DeactivationController::class, 'store'])->name('store');
@@ -44,7 +44,7 @@ Route::prefix('admin/deactivation')->name('admin.deactivation.')->middleware(['a
 // LOCATION MONITORING ROUTES (Admin-II Only)
 // ===================================================================================================
 
-Route::prefix('admin/monitoring')->name('admin.monitoring.')->middleware(['auth:admin'])->group(function () {
+Route::prefix('admin/monitoring')->name('admin.monitoring.')->middleware(['auth:admin', 'ip.security', 'device.fingerprint', 'audit.logging'])->group(function () {
     Route::get('/', [LocationMonitoringController::class, 'index'])->name('index');
     Route::get('/driver/{driverId}', [LocationMonitoringController::class, 'monitorDriver'])->name('driver');
 
@@ -53,6 +53,7 @@ Route::prefix('admin/monitoring')->name('admin.monitoring.')->middleware(['auth:
     Route::post('/driver/{driverId}/challenge', [LocationMonitoringController::class, 'sendChallenge'])->name('send-challenge');
     Route::get('/locations/bounds', [LocationMonitoringController::class, 'getLocationsInBounds'])->name('locations-bounds');
     Route::get('/driver/{driverId}/suspicious', [LocationMonitoringController::class, 'checkSuspiciousActivity'])->name('check-suspicious');
+    Route::get('/stats', [LocationMonitoringController::class, 'getStats'])->name('stats');
 });
 
 // ===================================================================================================
@@ -73,4 +74,29 @@ Route::prefix('api/driver')->name('api.driver.')->middleware(['auth:api'])->grou
 
 Route::middleware(['auth'])->group(function () {
     Route::post('/driver/deactivation-request', [DeactivationController::class, 'driverRequestDeactivation'])->name('driver.deactivation-request');
+});
+
+// ===================================================================================================
+// API ROUTES FOR DRIVER DEACTIVATION
+// ===================================================================================================
+
+Route::prefix('api')->name('api.')->group(function () {
+    // Driver deactivation API routes
+    Route::middleware(['auth:sanctum'])->group(function () {
+        Route::post('/driver/deactivation-request', [DeactivationController::class, 'driverRequestDeactivation'])->name('driver.deactivation-request');
+    });
+
+    // Admin deactivation API routes
+    Route::middleware(['auth:sanctum', 'ability:admin'])->group(function () {
+        Route::prefix('admin/deactivation')->name('admin.deactivation.')->group(function () {
+            Route::post('/', [DeactivationController::class, 'store'])->name('store');
+            Route::post('/{deactivationRequest}/review', [DeactivationController::class, 'review'])->name('review');
+            Route::post('/{deactivationRequest}/approve', [DeactivationController::class, 'approve'])->name('approve');
+            Route::post('/{deactivationRequest}/reject', [DeactivationController::class, 'reject'])->name('reject');
+            Route::post('/otp/{otp}/verify', [DeactivationController::class, 'verifyOTP'])->name('verify-otp');
+            Route::post('/otp/{otp}/resend', [DeactivationController::class, 'resendOTP'])->name('resend-otp');
+            Route::post('/send-challenge', [DeactivationController::class, 'sendChallenge'])->name('send-challenge');
+            Route::get('/stats', [DeactivationController::class, 'getStats'])->name('stats');
+        });
+    });
 });

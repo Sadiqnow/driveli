@@ -5,7 +5,7 @@ require_once 'vendor/autoload.php';
 $app = require_once 'bootstrap/app.php';
 $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
 
-use App\Models\DriverNormalized;
+use App\Models\Drivers;
 use Illuminate\Support\Facades\Schema;
 
 echo "Testing KYC columns in Laravel...\n\n";
@@ -40,7 +40,7 @@ try {
     ];
     
     // Try to create a test driver
-    $driver = new DriverNormalized();
+    $driver = new Drivers();
     $driver->fill($testData);
     
     echo "✓ Model can be filled with KYC data\n";

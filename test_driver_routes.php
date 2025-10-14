@@ -47,12 +47,12 @@ try {
     echo "❌ Error: " . $e->getMessage() . "\n";
 }
 
-echo "\nTesting DriverNormalized Model...\n";
+echo "\nTesting Drivers Model...\n";
 try {
-    $count = \App\Models\DriverNormalized::count();
-    echo "✅ DriverNormalized model accessible. Records: {$count}\n";
+    $count = \App\Models\Drivers::count();
+    echo "✅ Drivers model accessible. Records: {$count}\n";
 } catch (Exception $e) {
-    echo "❌ DriverNormalized error: " . $e->getMessage() . "\n";
+    echo "❌ Drivers error: " . $e->getMessage() . "\n";
 }
 
 echo "\nTesting Authentication Guards...\n";

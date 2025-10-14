@@ -32,10 +32,10 @@ try {
     }
     echo "\n";
 
-    // Test 2: Check DriverNormalized model fillable array
-    echo "2. Checking DriverNormalized model...\n";
-    
-    $driver = new \App\Models\DriverNormalized();
+    // Test 2: Check Drivers model fillable array
+    echo "2. Checking Drivers model...\n";
+
+    $driver = new \App\Models\Drivers();
     $fillable = $driver->getFillable();
     
     foreach ($originFields as $field) {
@@ -51,8 +51,8 @@ try {
     echo "3. Testing model relationships...\n";
     
     try {
-        $driver = new \App\Models\DriverNormalized();
-        
+        $driver = new \App\Models\Drivers();
+
         // Test if relationships exist
         $relationMethods = ['originState', 'originLga'];
         foreach ($relationMethods as $method) {
@@ -62,7 +62,7 @@ try {
                 echo "   ❌ {$method}() relationship method missing\n";
             }
         }
-        
+
     } catch (Exception $e) {
         echo "   ❌ Error testing relationships: " . $e->getMessage() . "\n";
     }
@@ -95,7 +95,7 @@ try {
             'is_active' => true,
         ];
         
-        $testDriver = \App\Models\DriverNormalized::create($testData);
+        $testDriver = \App\Models\Drivers::create($testData);
         echo "   ✓ Successfully created driver with origin fields\n";
         echo "     - Driver ID: {$testDriver->driver_id}\n";
         echo "     - State of Origin: {$testDriver->state_of_origin}\n";
@@ -115,7 +115,7 @@ try {
     echo "5. Testing relationships with existing drivers...\n";
     
     try {
-        $driver = \App\Models\DriverNormalized::first();
+        $driver = \App\Models\Drivers::first();
         if ($driver) {
             echo "   Testing with driver: {$driver->first_name} {$driver->surname}\n";
             

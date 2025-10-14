@@ -6,8 +6,7 @@
 
 require_once 'vendor/autoload.php';
 
-use App\Models\Driver;
-use App\Models\DriverNormalized;
+use App\Models\Drivers;
 use Illuminate\Foundation\Application;
 
 try {
@@ -20,22 +19,16 @@ try {
 
     // Test 1: Check if models exist and are accessible
     echo "1. Testing model accessibility...\n";
-    if (class_exists('App\Models\Driver')) {
-        echo "   ✓ Driver model exists\n";
+    if (class_exists('App\Models\Drivers')) {
+        echo "   ✓ Drivers model exists\n";
     } else {
-        echo "   ✗ Driver model missing\n";
-    }
-
-    if (class_exists('App\Models\DriverNormalized')) {
-        echo "   ✓ DriverNormalized model exists\n";
-    } else {
-        echo "   ✗ DriverNormalized model missing\n";
+        echo "   ✗ Drivers model missing\n";
     }
 
     // Test 2: Check database connection
     echo "\n2. Testing database connection...\n";
     try {
-        $count = Driver::count();
+        $count = Drivers::count();
         echo "   ✓ Database connected. Current driver count: {$count}\n";
     } catch (Exception $e) {
         echo "   ✗ Database connection failed: " . $e->getMessage() . "\n";
@@ -45,9 +38,9 @@ try {
     // Test 3: Test Read operation
     echo "\n3. Testing READ operation...\n";
     try {
-        $drivers = Driver::limit(5)->get();
+        $drivers = Drivers::limit(5)->get();
         echo "   ✓ Read operation successful. Retrieved " . $drivers->count() . " drivers\n";
-        
+
         if ($drivers->count() > 0) {
             $firstDriver = $drivers->first();
             echo "   Sample driver: ID={$firstDriver->id}, Name={$firstDriver->full_name}, Email={$firstDriver->email}\n";
@@ -59,9 +52,9 @@ try {
     // Test 4: Test Create operation (with rollback)
     echo "\n4. Testing CREATE operation...\n";
     try {
-        DB::beginTransaction();
-        
-        $testDriver = Driver::create([
+        \Illuminate\Support\Facades\DB::beginTransaction();
+
+        $testDriver = Drivers::create([
             'driver_id' => 'DR' . str_pad(mt_rand(0, 999999), 6, '0', STR_PAD_LEFT),
             'first_name' => 'Test',
             'surname' => 'Driver',
@@ -75,42 +68,42 @@ try {
             'is_active' => true,
             'registered_at' => now()
         ]);
-        
+
         echo "   ✓ Create operation successful. Created driver with ID: {$testDriver->id}\n";
-        
+
         // Test 5: Test Update operation
         echo "\n5. Testing UPDATE operation...\n";
         $testDriver->update(['first_name' => 'Updated']);
         $testDriver->refresh();
-        
+
         if ($testDriver->first_name === 'Updated') {
             echo "   ✓ Update operation successful\n";
         } else {
             echo "   ✗ Update operation failed - name not updated\n";
         }
-        
+
         // Test 6: Test Delete operation (soft delete)
         echo "\n6. Testing DELETE operation...\n";
         $testDriver->delete();
-        
+
         if ($testDriver->trashed()) {
             echo "   ✓ Delete operation successful (soft delete)\n";
         } else {
             echo "   ✗ Delete operation failed\n";
         }
-        
-        DB::rollback(); // Rollback all changes
+
+        \Illuminate\Support\Facades\DB::rollback(); // Rollback all changes
         echo "   ✓ Test data rolled back\n";
-        
+
     } catch (Exception $e) {
-        DB::rollback();
+        \Illuminate\Support\Facades\DB::rollback();
         echo "   ✗ Create/Update/Delete operations failed: " . $e->getMessage() . "\n";
     }
 
     // Test 7: Test relationships
     echo "\n7. Testing relationships...\n";
     try {
-        $driver = Driver::with(['nationality', 'verifiedBy', 'documents'])->first();
+        $driver = Drivers::with(['nationality', 'verifiedBy', 'documents'])->first();
         if ($driver) {
             echo "   ✓ Relationships loaded successfully\n";
             echo "   Driver has " . $driver->documents->count() . " documents\n";
@@ -124,8 +117,8 @@ try {
     // Test 8: Test scopes
     echo "\n8. Testing scopes...\n";
     try {
-        $activeCount = Driver::active()->count();
-        $verifiedCount = Driver::verified()->count();
+        $activeCount = Drivers::active()->count();
+        $verifiedCount = Drivers::verified()->count();
         echo "   ✓ Scopes working. Active: {$activeCount}, Verified: {$verifiedCount}\n";
     } catch (Exception $e) {
         echo "   ✗ Scopes test failed: " . $e->getMessage() . "\n";

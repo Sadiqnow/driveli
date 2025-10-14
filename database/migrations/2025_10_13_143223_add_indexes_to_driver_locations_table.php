@@ -14,10 +14,23 @@ return new class extends Migration
     public function up()
     {
         Schema::table('driver_locations', function (Blueprint $table) {
-            $table->index(['driver_id', 'recorded_at'], 'driver_locations_driver_id_recorded_at_index');
-            $table->index(['latitude', 'longitude'], 'driver_locations_coordinates_index');
-            $table->index('recorded_at', 'driver_locations_recorded_at_index');
-            $table->index('accuracy', 'driver_locations_accuracy_index');
+            // Check if indexes exist before creating them
+            $indexes = DB::select("SHOW INDEX FROM driver_locations");
+
+            $existingIndexes = array_column($indexes, 'Key_name');
+
+            if (!in_array('driver_locations_driver_id_recorded_at_index', $existingIndexes)) {
+                $table->index(['driver_id', 'recorded_at'], 'driver_locations_driver_id_recorded_at_index');
+            }
+            if (!in_array('driver_locations_coordinates_index', $existingIndexes)) {
+                $table->index(['latitude', 'longitude'], 'driver_locations_coordinates_index');
+            }
+            if (!in_array('driver_locations_recorded_at_index', $existingIndexes)) {
+                $table->index('recorded_at', 'driver_locations_recorded_at_index');
+            }
+            if (!in_array('driver_locations_accuracy_index', $existingIndexes)) {
+                $table->index('accuracy', 'driver_locations_accuracy_index');
+            }
         });
     }
 

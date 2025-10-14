@@ -8,7 +8,7 @@ $kernel = $app->make(Illuminate\Contracts\Http\Kernel::class);
 // Initialize Laravel environment
 $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
 
-use App\Models\DriverNormalized;
+use App\Models\Drivers;
 use Illuminate\Support\Facades\DB;
 
 try {
@@ -41,7 +41,7 @@ try {
     echo "\n3. Testing the actual update query...\n";
     
     // Find a driver to test with (or create a test one)
-    $driver = DriverNormalized::first();
+    $driver = Drivers::first();
     if (!$driver) {
         echo "No drivers found to test with.\n";
         exit(0);

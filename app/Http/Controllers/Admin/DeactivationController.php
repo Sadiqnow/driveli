@@ -73,10 +73,25 @@ class DeactivationController extends Controller
                 );
             }
 
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Deactivation request created successfully',
+                    'request_id' => $deactivationRequest->id,
+                ]);
+            }
+
             return redirect()->route('admin.deactivation.show', $deactivationRequest)
                 ->with('success', 'Deactivation request created successfully');
 
         } catch (\Exception $e) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to create deactivation request: ' . $e->getMessage(),
+                ], 400);
+            }
+
             return redirect()->back()
                 ->with('error', 'Failed to create deactivation request: ' . $e->getMessage())
                 ->withInput();

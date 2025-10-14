@@ -6,7 +6,7 @@ $app = require_once 'bootstrap/app.php';
 $kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
 $kernel->bootstrap();
 
-use App\Models\DriverNormalized as Driver;
+use App\Models\Drivers as Driver;
 use App\Services\NotificationService;
 
 echo "Testing Email Integration with Real Data\n";

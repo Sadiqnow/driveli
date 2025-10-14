@@ -590,6 +590,16 @@ class DriverAuthController extends Controller
         ]);
     }
 
+    public function showLoginForm()
+    {
+        return view('driver.auth.login');
+    }
+
+    public function showRegistrationForm()
+    {
+        return view('driver.auth.register');
+    }
+
     public function showLogin()
     {
         return view('driver.auth.login');

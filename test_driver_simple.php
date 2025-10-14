@@ -4,7 +4,7 @@ require_once 'vendor/autoload.php';
 $app = require_once 'bootstrap/app.php';
 $app->make('Illuminate\Contracts\Console\Kernel')->bootstrap();
 
-use App\Models\DriverNormalized as Driver;
+use App\Models\Drivers as Driver;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 

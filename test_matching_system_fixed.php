@@ -28,7 +28,7 @@ try {
     
     try {
         // Test the exact query from the controller
-        $availableDrivers = \App\Models\DriverNormalized::select('id', 'driver_id', 'first_name', 'surname', 'phone', 'email')
+        $availableDrivers = \App\Models\Drivers::select('id', 'driver_id', 'first_name', 'surname', 'phone', 'email')
             ->where('verification_status', 'verified')
             ->where('status', 'active')
             ->where('is_active', true)
@@ -108,7 +108,7 @@ try {
     
     try {
         // Test auto-matching logic
-        $availableDrivers = \App\Models\DriverNormalized::where('verification_status', 'verified')
+        $availableDrivers = \App\Models\Drivers::where('verification_status', 'verified')
             ->where('status', 'active')
             ->where('is_active', true)
             ->whereNull('deleted_at')

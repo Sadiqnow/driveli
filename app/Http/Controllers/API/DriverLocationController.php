@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreLocationRequest;
 use App\Jobs\ProcessLocationUpdate;
 use App\Models\DriverLocationTracking;
-use App\Models\DriverNormalized;
+use App\Models\Drivers;
 use App\Services\LocationMonitoringService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -70,18 +70,22 @@ class DriverLocationController extends Controller
                 'accuracy' => $request->accuracy,
             ]);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Location update queued successfully',
-                'data' => [
-                    'driver_id' => $driver->id,
-                    'queued_at' => now()->toISOString(),
-                    'coordinates' => [
-                        'latitude' => $request->latitude,
-                        'longitude' => $request->longitude,
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Location update queued successfully',
+                    'data' => [
+                        'driver_id' => $driver->id,
+                        'queued_at' => now()->toISOString(),
+                        'coordinates' => [
+                            'latitude' => $request->latitude,
+                            'longitude' => $request->longitude,
+                        ],
                     ],
-                ],
-            ]);
+                ]);
+            }
+
+            return redirect()->back()->with('success', 'Location update queued successfully');
 
         } catch (\Exception $e) {
             Log::error("Failed to queue location update: {$e->getMessage()}", [
@@ -90,11 +94,15 @@ class DriverLocationController extends Controller
                 'exception' => $e,
             ]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to process location update',
-                'error' => config('app.debug') ? $e->getMessage() : 'Internal server error',
-            ], 500);
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to process location update',
+                    'error' => config('app.debug') ? $e->getMessage() : 'Internal server error',
+                ], 500);
+            }
+
+            return redirect()->back()->with('error', 'Failed to process location update: ' . (config('app.debug') ? $e->getMessage() : 'Internal server error'));
         }
     }
 

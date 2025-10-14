@@ -32,7 +32,7 @@ try {
     echo "- Phone: " . $testData['phone'] . "\n";
 
     // Create driver using the model
-    $driver = App\Models\DriverNormalized::create($testData);
+    $driver = App\Models\Drivers::create($testData);
     echo "✅ Driver created successfully with ID: " . $driver->driver_id . "\n";
 
     // Test authentication
@@ -82,7 +82,7 @@ try {
         echo "✅ Form validation passed\n";
         
         // Create second driver
-        $driver2 = App\Models\DriverNormalized::create([
+        $driver2 = App\Models\Drivers::create([
             'driver_id' => 'TEST-' . ($timestamp + 1),
             'license_number' => $request->drivers_license_number,
             'first_name' => $request->first_name,
