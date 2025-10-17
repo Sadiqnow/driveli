@@ -84,5 +84,10 @@ class Kernel extends HttpKernel
         // KYC middleware
         'kyc.step' => \App\Http\Middleware\EnsureKycStepOrder::class,
         'kyc.rate.limit' => \App\Http\Middleware\KycRateLimit::class,
+
+        // Super Admin middleware
+        'superadmin.driver.access' => \App\Http\Middleware\SuperAdminDriverAccess::class,
+        'SuperAdminDriverAccess' => \App\Http\Middleware\SuperAdminDriverAccess::class,
+        'register.superadmin.middleware' => \App\Http\Middleware\RegisterSuperAdminMiddleware::class,
     ];
 }

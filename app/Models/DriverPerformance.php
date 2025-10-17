@@ -35,7 +35,7 @@ class DriverPerformance extends Model
 
     public function driver()
     {
-        return $this->belongsTo(DriverNormalized::class, 'driver_id');
+        return $this->belongsTo(Driver::class, 'driver_id');
     }
 
     public function getFormattedEarningsAttribute()

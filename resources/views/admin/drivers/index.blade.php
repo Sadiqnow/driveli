@@ -365,26 +365,26 @@
                                         </div>
                                         
                                         <!-- Primary Actions -->
-                                        <div class="driver-primary-actions">
+                                        <div class="driver-primary-actions d-flex flex-column flex-md-row gap-2">
                                             @if($driver->verification_status == 'pending')
-                                                <button class="btn btn-success btn-lg me-2 verify-driver-btn" 
+                                                <button class="btn btn-success btn-sm btn-lg-md me-2 verify-driver-btn"
                                                         data-driver-id="{{ $driver->id }}"
                                                         data-driver-name="{{ $driver->full_name ?? $driver->first_name }}"
                                                         aria-label="Verify {{ $driver->full_name ?? $driver->first_name }}">
-                                                    <i class="fas fa-check-circle" aria-hidden="true"></i> Verify
+                                                    <i class="fas fa-check-circle" aria-hidden="true"></i> <span class="d-none d-md-inline">Verify</span>
                                                 </button>
-                                                <button class="btn btn-danger btn-lg me-2 reject-driver-btn" 
+                                                <button class="btn btn-danger btn-sm btn-lg-md me-2 reject-driver-btn"
                                                         data-driver-id="{{ $driver->id }}"
                                                         data-driver-name="{{ $driver->full_name ?? $driver->first_name }}"
                                                         aria-label="Reject verification for {{ $driver->full_name ?? $driver->first_name }}">
-                                                    <i class="fas fa-times-circle" aria-hidden="true"></i> Reject
+                                                    <i class="fas fa-times-circle" aria-hidden="true"></i> <span class="d-none d-md-inline">Reject</span>
                                                 </button>
                                             @elseif($driver->verification_status == 'verified')
-                                                <div class="verification-actions" data-driver-id="{{ $driver->id }}">
-                                                    <span class="badge bg-success me-2" aria-label="Status: Verified">
-                                                        <i class="fas fa-check-circle" aria-hidden="true"></i> Verified
+                                                <div class="verification-actions d-flex align-items-center gap-2" data-driver-id="{{ $driver->id }}">
+                                                    <span class="badge bg-success" aria-label="Status: Verified">
+                                                        <i class="fas fa-check-circle" aria-hidden="true"></i> <span class="d-none d-md-inline">Verified</span>
                                                     </span>
-                                                    <button class="btn btn-outline-warning btn-sm undo-verification-btn" 
+                                                    <button class="btn btn-outline-warning btn-sm undo-verification-btn"
                                                             data-driver-id="{{ $driver->id }}"
                                                             data-driver-name="{{ $driver->full_name ?? $driver->first_name }}"
                                                             title="Undo verification"
@@ -393,11 +393,11 @@
                                                     </button>
                                                 </div>
                                             @elseif($driver->verification_status == 'rejected')
-                                                <div class="verification-actions" data-driver-id="{{ $driver->id }}">
-                                                    <span class="badge bg-danger me-2" aria-label="Status: Rejected">
-                                                        <i class="fas fa-times-circle" aria-hidden="true"></i> Rejected
+                                                <div class="verification-actions d-flex align-items-center gap-2" data-driver-id="{{ $driver->id }}">
+                                                    <span class="badge bg-danger" aria-label="Status: Rejected">
+                                                        <i class="fas fa-times-circle" aria-hidden="true"></i> <span class="d-none d-md-inline">Rejected</span>
                                                     </span>
-                                                    <button class="btn btn-outline-success btn-sm undo-rejection-btn" 
+                                                    <button class="btn btn-outline-success btn-sm undo-rejection-btn"
                                                             data-driver-id="{{ $driver->id }}"
                                                             data-driver-name="{{ $driver->full_name ?? $driver->first_name }}"
                                                             title="Undo rejection"
@@ -406,17 +406,17 @@
                                                     </button>
                                                 </div>
                                             @endif
-                                            
+
                                             <!-- View Details Button -->
-                                            <a href="{{ route('admin.drivers.show', $driver->id) }}" 
-                                               class="btn btn-primary btn-lg me-2"
+                                            <a href="{{ route('admin.drivers.show', $driver->id) }}"
+                                               class="btn btn-primary btn-sm btn-lg-md me-2"
                                                aria-label="View details for {{ $driver->full_name ?? $driver->first_name }}">
-                                                <i class="fas fa-eye"></i> View
+                                                <i class="fas fa-eye"></i> <span class="d-none d-md-inline">View</span>
                                             </a>
-                                            
+
                                             <!-- Expand/Collapse Details -->
-                                            <button class="btn btn-outline-secondary" 
-                                                    type="button" 
+                                            <button class="btn btn-outline-secondary btn-sm"
+                                                    type="button"
                                                     onclick="toggleDriverDetails({{ $driver->id }})"
                                                     aria-label="Toggle additional details">
                                                 <i class="fas fa-chevron-down expand-icon"></i>

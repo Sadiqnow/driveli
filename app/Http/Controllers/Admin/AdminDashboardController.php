@@ -215,27 +215,16 @@ class AdminDashboardController extends Controller
     {
         $activities = collect();
 
-        // Recent user activities (safely handle if table doesn't exist)
-            try {
-                if (Schema::hasTable('user_activities')) {
-                $recentUserActivities = UserActivity::with('user:id,name')
-                    ->latest('created_at')
-                    ->limit(5)
-                    ->get();
-                    
-                foreach ($recentUserActivities as $activity) {
-                    $userName = $activity->user ? $activity->user->name : 'Unknown User';
-                    $activities->push([
-                        'type' => 'user_activity',
-                        'message' => "{$userName}: {$activity->description}",
-                        'timestamp' => $activity->created_at,
-                        'icon' => $activity->action_icon,
-                        'color' => $activity->action_color,
-                        'user_id' => $activity->user_id
-                    ]);
+        // Recent user activities using ActivityLogger
+        try {
+            if (Schema::hasTable('user_activities')) {
+                $recentActivities = \App\Services\ActivityLogger::getDashboardActivities(7, 8);
+
+                foreach ($recentActivities as $activity) {
+                    $activities->push($activity);
                 }
             }
-    } catch (\Exception $e) {
+        } catch (\Exception $e) {
             // Silently handle if user_activities table doesn't exist yet
         }
 

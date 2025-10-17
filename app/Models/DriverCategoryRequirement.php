@@ -10,6 +10,7 @@ class DriverCategoryRequirement extends Model
     use HasFactory;
 
     protected $fillable = [
+        'driver_id',
         'category',
         'country_id',
         'required_licenses',

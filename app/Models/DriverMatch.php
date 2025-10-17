@@ -49,7 +49,7 @@ class DriverMatch extends Model
     // Relationships
     public function driver(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
-        return $this->belongsTo(DriverNormalized::class, 'driver_id')->withDefault();
+        return $this->belongsTo(Driver::class, 'driver_id')->withDefault();
     }
 
     public function companyRequest(): \Illuminate\Database\Eloquent\Relations\BelongsTo

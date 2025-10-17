@@ -1,6 +1,6 @@
-@extends('layouts.admin_cdn')
+@extends('layouts.admin_master')
 
-@section('title', 'SuperAdmin - Audit Logs')
+@section('title', 'Audit Logs')
 
 @section('content_header')
     <div class="content-header">
@@ -12,7 +12,7 @@
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
                         <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Home</a></li>
-                        <li class="breadcrumb-item"><a href="{{ route('admin.superadmin.dashboard') }}">SuperAdmin</a></li>
+                        <li class="breadcrumb-item"><a href="{{ route('admin.superadmin.index') }}">Super Admin</a></li>
                         <li class="breadcrumb-item active">Audit Logs</li>
                     </ol>
                 </div>
@@ -23,174 +23,186 @@
 
 @section('content')
     <div class="container-fluid">
-        <!-- Info Card -->
-        <div class="card card-info">
+        <!-- Filters -->
+        <div class="card">
             <div class="card-header">
-                <h3 class="card-title">
-                    <i class="fas fa-info-circle mr-1"></i>
-                    System Audit Logs
-                </h3>
+                <h3 class="card-title">Filter Audit Logs</h3>
             </div>
             <div class="card-body">
-                <div class="text-center py-5">
-                    <i class="fas fa-tools fa-4x text-muted mb-4"></i>
-                    <h4 class="text-muted">Audit Logging System</h4>
-                    <p class="text-muted mb-4">
-                        The comprehensive audit logging system is currently being implemented.<br>
-                        This will track all administrative actions and system changes.
-                    </p>
-                    
-                    <div class="row justify-content-center">
-                        <div class="col-md-8">
-                            <div class="card card-outline card-primary">
-                                <div class="card-header">
-                                    <h5 class="card-title mb-0">Planned Audit Features</h5>
-                                </div>
-                                <div class="card-body">
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <ul class="list-unstyled">
-                                                <li><i class="fas fa-check-circle text-success mr-2"></i> User Authentication Logs</li>
-                                                <li><i class="fas fa-check-circle text-success mr-2"></i> Administrative Actions</li>
-                                                <li><i class="fas fa-check-circle text-success mr-2"></i> Role & Permission Changes</li>
-                                                <li><i class="fas fa-check-circle text-success mr-2"></i> Data Modifications</li>
-                                            </ul>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <ul class="list-unstyled">
-                                                <li><i class="fas fa-check-circle text-success mr-2"></i> System Configuration Changes</li>
-                                                <li><i class="fas fa-check-circle text-success mr-2"></i> File Upload/Download Logs</li>
-                                                <li><i class="fas fa-check-circle text-success mr-2"></i> API Access Logs</li>
-                                                <li><i class="fas fa-check-circle text-success mr-2"></i> Security Events</li>
-                                            </ul>
-                                        </div>
+                <form method="GET" class="row g-3">
+                    <div class="col-md-3">
+                        <label for="action" class="form-label">Action</label>
+                        <select name="action" id="action" class="form-control">
+                            <option value="">All Actions</option>
+                            <option value="created" {{ request('action') == 'created' ? 'selected' : '' }}>Created</option>
+                            <option value="updated" {{ request('action') == 'updated' ? 'selected' : '' }}>Updated</option>
+                            <option value="deleted" {{ request('action') == 'deleted' ? 'selected' : '' }}>Deleted</option>
+                            <option value="login" {{ request('action') == 'login' ? 'selected' : '' }}>Login</option>
+                            <option value="logout" {{ request('action') == 'logout' ? 'selected' : '' }}>Logout</option>
+                            <option value="verified" {{ request('action') == 'verified' ? 'selected' : '' }}>Verified</option>
+                            <option value="rejected" {{ request('action') == 'rejected' ? 'selected' : '' }}>Rejected</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="user_type" class="form-label">User Type</label>
+                        <select name="user_type" id="user_type" class="form-control">
+                            <option value="">All Users</option>
+                            <option value="App\Models\AdminUser" {{ request('user_type') == 'App\Models\AdminUser' ? 'selected' : '' }}>Admin Users</option>
+                            <option value="App\Models\User" {{ request('user_type') == 'App\Models\User' ? 'selected' : '' }}>Regular Users</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="date_from" class="form-label">From Date</label>
+                        <input type="date" name="date_from" id="date_from" class="form-control" value="{{ request('date_from') }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="date_to" class="form-label">To Date</label>
+                        <input type="date" name="date_to" id="date_to" class="form-control" value="{{ request('date_to') }}">
+                    </div>
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search"></i> Filter
+                        </button>
+                        <a href="{{ route('admin.superadmin.audit-logs') }}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Clear Filters
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Audit Logs Table -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Activity Logs</h3>
+                <div class="card-tools">
+                    <span class="badge badge-info">{{ $activities->total() }} total activities</span>
+                </div>
+            </div>
+            <div class="card-body table-responsive p-0">
+                <table class="table table-hover text-nowrap">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Action</th>
+                            <th>Description</th>
+                            <th>IP Address</th>
+                            <th>Timestamp</th>
+                            <th>Details</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($activities as $activity)
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="text-avatar mr-2" style="width: 32px; height: 32px; border-radius: 50%; background: #007bff; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold;">
+                                        {{ substr($activity->user ? $activity->user->name : 'U', 0, 1) }}
+                                    </div>
+                                    <div>
+                                        <div class="font-weight-bold">{{ $activity->user ? $activity->user->name : 'Unknown User' }}</div>
+                                        <small class="text-muted">{{ class_basename($activity->user_type) }}</small>
                                     </div>
                                 </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="mt-4">
-                        <a href="{{ route('admin.superadmin.dashboard') }}" class="btn btn-primary">
-                            <i class="fas fa-arrow-left mr-1"></i> Back to Dashboard
-                        </a>
-                        <a href="{{ route('admin.superadmin.settings') }}" class="btn btn-outline-secondary ml-2">
-                            <i class="fas fa-cog mr-1"></i> System Settings
-                        </a>
-                    </div>
-                </div>
+                            </td>
+                            <td>
+                                <span class="badge badge-{{ \App\Services\ActivityLogger::getActionColor($activity->action) }}">
+                                    <i class="{{ \App\Services\ActivityLogger::getActionIcon($activity->action) }} mr-1"></i>
+                                    {{ ucfirst($activity->action) }}
+                                </span>
+                            </td>
+                            <td>{{ $activity->description }}</td>
+                            <td>
+                                <code>{{ $activity->ip_address }}</code>
+                            </td>
+                            <td>
+                                <span title="{{ $activity->created_at->format('Y-m-d H:i:s') }}">
+                                    {{ $activity->created_at->diffForHumans() }}
+                                </span>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-info" onclick="showActivityDetails({{ $activity->id }})">
+                                    <i class="fas fa-eye"></i> View
+                                </button>
+                            </td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="6" class="text-center py-4">
+                                <i class="fas fa-inbox fa-2x text-muted mb-2"></i>
+                                <p class="text-muted">No audit logs found</p>
+                            </td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+            <div class="card-footer">
+                {{ $activities->appends(request()->query())->links() }}
             </div>
         </div>
+    </div>
 
-        <!-- Temporary Activity Overview -->
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title">
-                    <i class="fas fa-chart-line mr-1"></i>
-                    Recent System Activity Overview
-                </h3>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-3">
-                        <div class="info-box bg-info">
-                            <span class="info-box-icon"><i class="fas fa-sign-in-alt"></i></span>
-                            <div class="info-box-content">
-                                <span class="info-box-text">Admin Logins Today</span>
-                                <span class="info-box-number">{{ \App\Models\AdminUser::whereDate('last_login_at', today())->count() }}</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="info-box bg-success">
-                            <span class="info-box-icon"><i class="fas fa-users"></i></span>
-                            <div class="info-box-content">
-                                <span class="info-box-text">Active Admin Users</span>
-                                <span class="info-box-number">{{ \App\Models\AdminUser::where('status', 'Active')->count() }}</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="info-box bg-warning">
-                            <span class="info-box-icon"><i class="fas fa-database"></i></span>
-                            <div class="info-box-content">
-                                <span class="info-box-text">System Health</span>
-                                <span class="info-box-number text-success">Good</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="info-box bg-danger">
-                            <span class="info-box-icon"><i class="fas fa-server"></i></span>
-                            <div class="info-box-content">
-                                <span class="info-box-text">Memory Usage</span>
-                                <span class="info-box-number">{{ round(memory_get_usage(true) / 1024 / 1024, 1) }}MB</span>
-                            </div>
-                        </div>
-                    </div>
+    <!-- Activity Details Modal -->
+    <div class="modal fade" id="activityDetailsModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">Activity Details</h4>
+                    <button type="button" class="close" data-dismiss="modal">
+                        <span>&times;</span>
+                    </button>
                 </div>
-            </div>
-        </div>
-
-        <!-- Recent Actions Preview -->
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title">
-                    <i class="fas fa-history mr-1"></i>
-                    Recent Administrative Actions
-                </h3>
-            </div>
-            <div class="card-body">
-                <div class="timeline">
-                    @php
-                        $recentAdmins = \App\Models\AdminUser::latest()->limit(5)->get();
-                    @endphp
-                    @foreach($recentAdmins as $admin)
-                    <div class="time-label">
-                        <span class="bg-info">{{ $admin->created_at->format('M d') }}</span>
-                    </div>
-                    <div>
-                        <i class="fas fa-user-plus bg-blue"></i>
-                        <div class="timeline-item">
-                            <span class="time">
-                                <i class="fas fa-clock"></i> {{ $admin->created_at->format('H:i') }}
-                            </span>
-                            <h3 class="timeline-header">
-                                Admin User Created
-                            </h3>
-                            <div class="timeline-body">
-                                New admin user "{{ $admin->name }}" was created with role "{{ $admin->role }}"
-                            </div>
-                        </div>
-                    </div>
-                    @endforeach
-                    
-                    <div>
-                        <i class="fas fa-clock bg-gray"></i>
-                    </div>
+                <div class="modal-body" id="activityDetailsContent">
+                    <!-- Content will be loaded here -->
                 </div>
             </div>
         </div>
     </div>
 @endsection
 
-@push('styles')
-<style>
-.info-box {
-    border-radius: 10px;
-    transition: transform 0.3s ease;
+@push('scripts')
+<script>
+function showActivityDetails(activityId) {
+    // This would typically make an AJAX call to get detailed activity info
+    // For now, we'll show a placeholder
+    $('#activityDetailsContent').html(`
+        <div class="text-center">
+            <i class="fas fa-spinner fa-spin fa-2x"></i>
+            <p>Loading activity details...</p>
+        </div>
+    `);
+
+    $('#activityDetailsModal').modal('show');
+
+    // Simulate loading (replace with actual AJAX call)
+    setTimeout(() => {
+        $('#activityDetailsContent').html(`
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>Basic Information</h5>
+                    <table class="table table-sm">
+                        <tr><td><strong>Activity ID:</strong></td><td>${activityId}</td></tr>
+                        <tr><td><strong>Action:</strong></td><td>Sample Action</td></tr>
+                        <tr><td><strong>Timestamp:</strong></td><td>2024-01-01 12:00:00</td></tr>
+                    </table>
+                </div>
+                <div class="col-md-6">
+                    <h5>Additional Data</h5>
+                    <pre class="bg-light p-2 rounded"><code>{
+  "user_id": 1,
+  "ip_address": "192.168.1.1",
+  "user_agent": "Mozilla/5.0..."
+}</code></pre>
+                </div>
+            </div>
+        `);
+    }, 500);
 }
 
-.info-box:hover {
-    transform: translateY(-2px);
-}
-
-.timeline-item {
-    border-radius: 8px;
-}
-
-.card-outline.card-primary {
-    border-color: #007bff;
-}
-</style>
+$(document).ready(function() {
+    // Auto-refresh functionality could be added here
+    console.log('Audit Logs page loaded');
+});
+</script>
 @endpush

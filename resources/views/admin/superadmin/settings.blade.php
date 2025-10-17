@@ -1,4 +1,4 @@
-@extends('layouts.admin_cdn')
+@extends('layouts.admin_master')
 
 @section('title', 'System Settings')
 

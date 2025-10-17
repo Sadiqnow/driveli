@@ -793,8 +793,9 @@ class Drivers extends Authenticatable
     public function scopeForAdminList($query)
     {
         return $query->select([
-            'id', 'driver_id', 'first_name', 'surname', 'email', 'phone',
-            'status', 'verification_status', 'is_active', 'created_at', 'verified_at'
+            'id', 'driver_id', 'first_name', 'middle_name', 'surname', 'nickname', 'email', 'phone',
+            'status', 'verification_status', 'is_active', 'created_at', 'verified_at',
+            'verification_notes', 'profile_picture', 'profile_photo'
         ])->with([
             'nationality:id,name',
             'verifiedBy:id,name'

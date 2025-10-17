@@ -37,7 +37,7 @@ class DriverDocument extends Model
 
     public function driver()
     {
-        return $this->belongsTo(DriverNormalized::class, 'driver_id', 'id');
+        return $this->belongsTo(Driver::class, 'driver_id', 'id');
     }
 
     public function getDocumentUrlAttribute()

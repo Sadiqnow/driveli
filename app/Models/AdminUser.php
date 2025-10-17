@@ -301,7 +301,7 @@ class AdminUser extends Authenticatable
     // Legacy fallback method
     public function hasRole(string $role): bool
     {
-        return $this->role === $role;
+        return $this->role === $role || strtolower(str_replace(' ', '_', $this->role)) === strtolower(str_replace(' ', '_', $role));
     }
 
     
@@ -378,6 +378,14 @@ class AdminUser extends Authenticatable
             'Viewer' => 1
         ];
         return $levels[$this->role] ?? 1;
+    }
+
+    /**
+     * Get role names as collection (for compatibility with layout)
+     */
+    public function getRoleNames()
+    {
+        return collect([$this->role ?? 'Administrator']);
     }
 
     /**

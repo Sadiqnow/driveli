@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Drivers;
+use App\Models\Driver;
 use App\Services\VerificationStatusService;
 use App\Services\DriverVerificationWorkflow;
 use Illuminate\Http\Request;
@@ -35,27 +35,32 @@ class VerificationController extends Controller
         $statistics = $this->verificationStatusService->getVerificationStatistics($dateRange);
 
         // Get pending manual reviews
-        $pendingReviews = Drivers::where('verification_status', 'requires_manual_review')
+        $pendingReviews = Driver::where('verification_status', 'requires_manual_review')
             ->with(['driverMatches', 'driverPerformances'])
-            ->orderBy('verification_started_at', 'desc')
+            ->orderBy('created_at', 'desc')
             ->take(10)
             ->get();
 
-        // Get recent verification activities
-        $recentActivities = DB::table('driver_verifications')
-            ->join('drivers', 'driver_verifications.driver_id', '=', 'drivers.id')
-            ->select([
-                'driver_verifications.*',
-                'drivers.first_name',
-                'drivers.last_name',
-                'drivers.email'
-            ])
-            ->orderBy('driver_verifications.created_at', 'desc')
-            ->take(20)
-            ->get();
+        // Get recent verification activities - fallback if table doesn't exist
+        try {
+            $recentActivities = DB::table('driver_verifications')
+                ->join('drivers', 'driver_verifications.driver_id', '=', 'drivers.id')
+                ->select([
+                    'driver_verifications.*',
+                    'drivers.first_name',
+                    'drivers.last_name',
+                    'drivers.email'
+                ])
+                ->orderBy('driver_verifications.created_at', 'desc')
+                ->take(20)
+                ->get();
+        } catch (\Exception $e) {
+            // Fallback to empty collection if table doesn't exist
+            $recentActivities = collect();
+        }
 
         // Get failed verifications
-        $failedVerifications = Drivers::where('verification_status', 'failed')
+        $failedVerifications = Driver::where('verification_status', 'failed')
             ->orderBy('updated_at', 'desc')
             ->take(10)
             ->get();
@@ -90,7 +95,7 @@ class VerificationController extends Controller
         try {
             DB::beginTransaction();
 
-            $driver = Drivers::findOrFail($driverId);
+            $driver = Driver::findOrFail($driverId);
 
             // Override score if provided
             $finalScore = $request->input('override_score', $driver->overall_verification_score);
@@ -143,7 +148,7 @@ class VerificationController extends Controller
         try {
             DB::beginTransaction();
 
-            $driver = Drivers::findOrFail($driverId);
+            $driver = Driver::findOrFail($driverId);
 
             // Update verification status to failed
             $verificationData = [

@@ -4,19 +4,25 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class UserActivity extends Model
 {
     use HasFactory;
 
+    protected $table = 'user_activities';
+
     protected $fillable = [
+        'user_type',
         'user_id',
         'action',
         'description',
-        'model_type',
-        'model_id',
+        'resource_type',
+        'resource_id',
+        'resource_name',
         'old_values',
         'new_values',
+        'metadata',
         'ip_address',
         'user_agent',
     ];
@@ -24,122 +30,109 @@ class UserActivity extends Model
     protected $casts = [
         'old_values' => 'array',
         'new_values' => 'array',
+        'metadata' => 'array',
         'created_at' => 'datetime',
+        'updated_at' => 'datetime',
     ];
 
-    public $timestamps = false;
-
-    protected static function boot()
-    {
-        parent::boot();
-        
-        static::creating(function ($model) {
-            $model->created_at = now();
-        });
-    }
-
-    public function user()
-    {
-        return $this->belongsTo(AdminUser::class, 'user_id');
-    }
-
-    public function model()
+    public function user(): BelongsTo
     {
         return $this->morphTo();
     }
 
-    public function getActionColorAttribute()
+    public function getFormattedActionAttribute(): string
     {
-        $colors = [
-            'login' => 'success',
-            'logout' => 'secondary',
-            'create' => 'primary',
-            'update' => 'info',
-            'delete' => 'danger',
-            'restore' => 'success',
-            'force_delete' => 'danger',
-            'view' => 'light',
-            'export' => 'warning',
-            'import' => 'info',
-            'approve' => 'success',
-            'reject' => 'danger',
-            'verify' => 'success',
-            'suspend' => 'warning',
-            'activate' => 'success',
-            'deactivate' => 'warning',
-        ];
-
-        return $colors[$this->action] ?? 'secondary';
+        return match($this->action) {
+            'create' => 'Created',
+            'update' => 'Updated',
+            'delete' => 'Deleted',
+            'approve' => 'Approved',
+            'reject' => 'Rejected',
+            'flag' => 'Flagged',
+            'restore' => 'Restored',
+            'bulk_operation' => 'Bulk Operation',
+            default => ucfirst(str_replace('_', ' ', $this->action)),
+        };
     }
 
-    public function getActionIconAttribute()
+    public function getActionBadgeClassAttribute(): string
     {
-        $icons = [
-            'login' => 'fas fa-sign-in-alt',
-            'logout' => 'fas fa-sign-out-alt',
-            'create' => 'fas fa-plus',
-            'update' => 'fas fa-edit',
-            'delete' => 'fas fa-trash',
-            'restore' => 'fas fa-undo',
-            'force_delete' => 'fas fa-times',
-            'view' => 'fas fa-eye',
-            'export' => 'fas fa-download',
-            'import' => 'fas fa-upload',
-            'approve' => 'fas fa-check',
-            'reject' => 'fas fa-times',
-            'verify' => 'fas fa-check-circle',
-            'suspend' => 'fas fa-pause',
-            'activate' => 'fas fa-play',
-            'deactivate' => 'fas fa-pause',
-        ];
-
-        return $icons[$this->action] ?? 'fas fa-info';
+        return match($this->action) {
+            'create' => 'badge-success',
+            'update' => 'badge-info',
+            'delete' => 'badge-danger',
+            'approve' => 'badge-success',
+            'reject' => 'badge-danger',
+            'flag' => 'badge-warning',
+            'restore' => 'badge-info',
+            'bulk_operation' => 'badge-primary',
+            default => 'badge-secondary',
+        };
     }
 
-    public static function log($action, $description, $model = null, $oldValues = null, $newValues = null)
-    {
-        if (!auth('admin')->check()) {
-            return;
-        }
+    public static function log(
+        string $action,
+        string $description,
+        Model $resource = null,
+        array $oldValues = null,
+        array $newValues = null,
+        array $metadata = null,
+        $user = null
+    ): UserActivity {
+        $user = $user ?? auth('admin')->user();
 
-        $activity = new static([
-            'user_id' => auth('admin')->id(),
+        $logData = [
             'action' => $action,
             'description' => $description,
             'ip_address' => request()->ip(),
             'user_agent' => request()->userAgent(),
-        ]);
+        ];
 
-        if ($model) {
-            $activity->model_type = get_class($model);
-            $activity->model_id = $model->id ?? $model->getKey();
+        if ($user) {
+            $logData['user_type'] = get_class($user);
+            $logData['user_id'] = $user->getKey();
+        }
+
+        if ($resource) {
+            $logData['resource_type'] = self::getResourceType($resource);
+            $logData['resource_id'] = $resource->getKey();
+            $logData['resource_name'] = self::getResourceName($resource);
         }
 
         if ($oldValues) {
-            $activity->old_values = $oldValues;
+            $logData['old_values'] = $oldValues;
         }
 
         if ($newValues) {
-            $activity->new_values = $newValues;
+            $logData['new_values'] = $newValues;
         }
 
-        $activity->save();
+        if ($metadata) {
+            $logData['metadata'] = $metadata;
+        }
 
-        return $activity;
+        return self::create($logData);
     }
 
-    public function scopeForUser($query, $userId)
+    private static function getResourceType(Model $resource): string
     {
-        return $query->where('user_id', $userId);
+        return match(get_class($resource)) {
+            'App\Models\Drivers' => 'driver',
+            'App\Models\AdminUser' => 'admin_user',
+            'App\Models\Company' => 'company',
+            'App\Models\CompanyRequest' => 'company_request',
+            default => strtolower(class_basename($resource)),
+        };
     }
 
-    public function scopeWithAction($query, $action)
+    private static function getResourceName(Model $resource): ?string
     {
-        return $query->where('action', $action);
-    }
-
-    public function scopeRecent($query, $days = 30)
-    {
-        return $query->where('created_at', '>=', now()->subDays($days));
+        return match(get_class($resource)) {
+            'App\Models\Drivers' => $resource->full_name ?? $resource->driver_id,
+            'App\Models\AdminUser' => $resource->name ?? $resource->email,
+            'App\Models\Company' => $resource->name ?? $resource->company_id,
+            'App\Models\CompanyRequest' => $resource->request_id ?? "Request #{$resource->id}",
+            default => $resource->name ?? $resource->title ?? "ID: {$resource->getKey()}",
+        };
     }
 }

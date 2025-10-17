@@ -568,14 +568,14 @@ Route::bind('company', function ($value) {
 
 Route::bind('driver', function ($value) {
     try {
-        // Bind to Drivers model
+        // Bind to Driver model (normalized architecture)
         // First try by primary key if numeric
         if (is_numeric($value)) {
-            return \App\Models\Drivers::findOrFail($value);
+            return \App\Models\Driver::findOrFail($value);
         }
 
         // Try to find by driver_id if it's a string
-        return \App\Models\Drivers::where('driver_id', $value)->firstOrFail();
+        return \App\Models\Driver::where('driver_id', $value)->firstOrFail();
     } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
         abort(404, 'Driver not found');
     } catch (\Exception $e) {
@@ -591,6 +591,7 @@ Route::bind('driver', function ($value) {
 Route::prefix('admin/superadmin')->name('admin.superadmin.')->group(function () {
     Route::middleware(['auth:admin', 'rbac:role,Super Admin'])->group(function () {
         Route::get('/', [App\Http\Controllers\Admin\SuperAdminController::class, 'index'])->name('dashboard');
+        Route::get('/index', [App\Http\Controllers\Admin\SuperAdminController::class, 'index'])->name('index');
         Route::get('/users', [App\Http\Controllers\Admin\SuperAdminController::class, 'users'])->name('users');
         Route::get('/audit-logs', [App\Http\Controllers\Admin\SuperAdminController::class, 'auditLogs'])->name('audit-logs');
         Route::get('/settings', [App\Http\Controllers\Admin\SuperAdminController::class, 'settings'])->name('settings');
@@ -598,6 +599,64 @@ Route::prefix('admin/superadmin')->name('admin.superadmin.')->group(function () 
         Route::get('/settings/group/{group}', [App\Http\Controllers\Admin\SuperAdminController::class, 'getSettingGroup'])->name('settings.group');
         Route::post('/settings/test-api', [App\Http\Controllers\Admin\SuperAdminController::class, 'testApiConnection'])->name('settings.test-api');
         Route::post('/settings/reset', [App\Http\Controllers\Admin\SuperAdminController::class, 'resetSettings'])->name('settings.reset');
+        Route::get('/system-health', [App\Http\Controllers\Admin\SuperAdminController::class, 'systemHealth'])->name('system-health');
+
+        // SUPERADMIN DRIVER MANAGEMENT ROUTES
+        Route::prefix('drivers')->name('drivers.')->middleware('SuperAdminDriverAccess')->group(function () {
+            Route::get('/', [App\Http\Controllers\SuperadminDriverController::class, 'index'])->name('index');
+            Route::get('/create', [App\Http\Controllers\SuperadminDriverController::class, 'create'])->name('create');
+            Route::post('/', [App\Http\Controllers\SuperadminDriverController::class, 'store'])->name('store');
+            Route::get('/{driver}', [App\Http\Controllers\SuperadminDriverController::class, 'show'])->name('show');
+            Route::get('/{driver}/edit', [App\Http\Controllers\SuperadminDriverController::class, 'edit'])->name('edit');
+            Route::put('/{driver}', [App\Http\Controllers\SuperadminDriverController::class, 'update'])->name('update');
+            Route::delete('/{driver}', [App\Http\Controllers\SuperadminDriverController::class, 'destroy'])->name('destroy');
+
+            // Decision workflow routes
+            Route::post('/{driver}/approve', [App\Http\Controllers\SuperadminDriverController::class, 'approve'])->name('approve');
+            Route::post('/{driver}/reject', [App\Http\Controllers\SuperadminDriverController::class, 'reject'])->name('reject');
+            Route::post('/{driver}/flag', [App\Http\Controllers\SuperadminDriverController::class, 'flag'])->name('flag');
+
+            // ONBOARDING WIZARD ROUTES
+            Route::prefix('onboarding')->name('onboarding.')->group(function () {
+                Route::get('/start', [App\Http\Controllers\DriverOnboardingController::class, 'start'])->name('start');
+                Route::get('/{driver}/step/{step}', [App\Http\Controllers\DriverOnboardingController::class, 'showStep'])->name('step');
+                Route::post('/{driver}/step/{step}', [App\Http\Controllers\DriverOnboardingController::class, 'processStep'])->name('step.process');
+                Route::get('/{driver}/review', [App\Http\Controllers\DriverOnboardingController::class, 'showReview'])->name('review');
+                Route::post('/{driver}/review', [App\Http\Controllers\DriverOnboardingController::class, 'processReview'])->name('review.process');
+                Route::post('/{driver}/previous/{step}', [App\Http\Controllers\DriverOnboardingController::class, 'previousStep'])->name('previous');
+                Route::post('/{driver}/save-draft', [App\Http\Controllers\DriverOnboardingController::class, 'saveDraft'])->name('save-draft');
+            });
+
+            // Bulk operations
+            Route::post('/bulk-approve', [App\Http\Controllers\Admin\SuperAdminController::class, 'driversBulkApprove'])->name('bulk-approve');
+            Route::post('/bulk-reject', [App\Http\Controllers\Admin\SuperAdminController::class, 'driversBulkReject'])->name('bulk-reject');
+            Route::post('/bulk-flag', [App\Http\Controllers\Admin\SuperAdminController::class, 'driversBulkFlag'])->name('bulk-flag');
+            Route::post('/bulk-restore', [App\Http\Controllers\Admin\SuperAdminController::class, 'driversBulkRestore'])->name('bulk-restore');
+            Route::post('/bulk-delete', [App\Http\Controllers\Admin\SuperAdminController::class, 'driversBulkDelete'])->name('bulk-delete');
+            Route::post('/export', [App\Http\Controllers\Admin\SuperAdminController::class, 'driversExport'])->name('export');
+        });
+
+        // SUPERADMIN ADMIN MANAGEMENT ROUTES
+        Route::prefix('admins')->name('admins.')->group(function () {
+            Route::get('/', [App\Http\Controllers\Admin\SuperAdminController::class, 'users'])->name('index');
+            Route::get('/create', [App\Http\Controllers\Admin\SuperAdminController::class, 'createAdmin'])->name('create');
+            Route::post('/', [App\Http\Controllers\Admin\SuperAdminController::class, 'storeAdmin'])->name('store');
+            Route::get('/{admin}', [App\Http\Controllers\Admin\SuperAdminController::class, 'showAdmin'])->name('show');
+            Route::get('/{admin}/edit', [App\Http\Controllers\Admin\SuperAdminController::class, 'editAdmin'])->name('edit');
+            Route::put('/{admin}', [App\Http\Controllers\Admin\SuperAdminController::class, 'updateAdmin'])->name('update');
+            Route::delete('/{admin}', [App\Http\Controllers\Admin\SuperAdminController::class, 'destroyAdmin'])->name('destroy');
+
+            // Decision workflow routes
+            Route::post('/{admin}/approve', [App\Http\Controllers\Admin\SuperAdminController::class, 'approveAdmin'])->name('approve');
+            Route::post('/{admin}/reject', [App\Http\Controllers\Admin\SuperAdminController::class, 'rejectAdmin'])->name('reject');
+            Route::post('/{admin}/flag', [App\Http\Controllers\Admin\SuperAdminController::class, 'flagAdmin'])->name('flag');
+            Route::post('/{admin}/suspend', [App\Http\Controllers\Admin\SuperAdminController::class, 'suspendAdmin'])->name('suspend');
+
+            // Bulk operations
+            Route::post('/bulk-activate', [App\Http\Controllers\Admin\SuperAdminController::class, 'bulkActivateAdmins'])->name('bulk-activate');
+            Route::post('/bulk-deactivate', [App\Http\Controllers\Admin\SuperAdminController::class, 'bulkDeactivateAdmins'])->name('bulk-deactivate');
+            Route::post('/bulk-delete', [App\Http\Controllers\Admin\SuperAdminController::class, 'bulkDeleteAdmins'])->name('bulk-delete');
+        });
 
         // AJAX routes
         Route::post('/assign-role', [App\Http\Controllers\Admin\SuperAdminController::class, 'assignRole'])->name('assign-role');

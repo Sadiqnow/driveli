@@ -198,6 +198,7 @@ class DriverController extends Controller
     {
         // Get pending drivers with complete details for verification
         $query = Driver::where('verification_status', 'pending')
+                      ->where('kyc_status', 'completed')
                       ->with(['documents', 'nationality', 'verifiedBy']);
 
         // Apply search if provided

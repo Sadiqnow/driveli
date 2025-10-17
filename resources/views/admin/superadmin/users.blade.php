@@ -1,4 +1,4 @@
-@extends('layouts.admin_cdn')
+@extends('layouts.admin_master')
 
 @section('title', 'SuperAdmin - User Management')
 
@@ -83,8 +83,8 @@
                         <button class="btn btn-warning mr-2" onclick="bulkOperations()">
                             <i class="fas fa-tasks"></i> Bulk Actions
                         </button>
-                        <a href="{{ route('admin.users.create') }}" class="btn btn-primary">
-                            <i class="fas fa-plus"></i> Add User
+                        <a href="{{ route('admin.superadmin.admins.create') }}" class="btn btn-primary">
+                            <i class="fas fa-plus mr-1"></i> Create Admin
                         </a>
                     </div>
                 </div>

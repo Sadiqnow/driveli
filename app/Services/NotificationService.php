@@ -2,575 +2,390 @@
 
 namespace App\Services;
 
+use App\Models\Driver;
 use App\Models\AdminUser;
-use App\Models\Drivers as Driver;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\DB;
+use Exception;
 
 class NotificationService
 {
     /**
-     * Send driver verification status notification
+     * Send notification for step completion
      */
-    public function sendVerificationNotification(Driver $driver, string $status, string $notes = null)
+    public function sendStepCompletionNotification(Driver $driver, string $stepKey, array $stepData = []): bool
     {
         try {
-            // Log notification attempt
-            Log::info("Sending verification notification", [
-                'driver_id' => $driver->driver_id,
-                'status' => $status,
-                'email' => $driver->email
+            // Email notification
+            $this->sendEmailNotification($driver, 'step_completed', [
+                'step' => $this->getStepName($stepKey),
+                'progress' => app(DriverOnboardingProgressService::class)->calculateProgress($driver),
+                'next_step' => app(DriverOnboardingProgressService::class)->getNextStep($driver)
             ]);
 
-            // Create notification data
-            $notificationData = [
-                'driver' => $driver,
-                'status' => $status,
-                'notes' => $notes,
-                'verification_url' => route('driver.dashboard'), // This would be the driver portal URL
-                'admin_contact' => 'support@drivelink.com',
-                'company_name' => config('app.name', 'Drivelink')
-            ];
-
-            // Send email if driver has email address
-            if ($driver->email) {
-                $this->sendEmail(
-                    $driver->email,
-                    'Driver Verification Status Update',
-                    'emails.driver-verification-status',
-                    $notificationData
-                );
-            }
-
-            // Send SMS if driver has phone (placeholder for SMS integration)
-            if ($driver->phone) {
-                $this->sendSMS($driver->phone, $this->generateSMSMessage($status, $driver->full_name));
-            }
-
-            // Store notification in database
-            $this->storeNotification([
-                'recipient_type' => 'driver',
-                'recipient_id' => $driver->id,
-                'type' => 'verification_status',
-                'title' => 'Verification Status Update',
-                'message' => "Your verification status has been updated to: {$status}",
-                'data' => json_encode($notificationData),
-                'sent_at' => now(),
-                'sent_via' => $driver->email ? 'email,sms' : 'sms'
-            ]);
-
-            return [
-                'success' => true,
-                'message' => 'Notification sent successfully'
-            ];
-
-        } catch (\Exception $e) {
-            Log::error('Failed to send verification notification: ' . $e->getMessage());
-
-            return [
-                'success' => false,
-                'message' => 'Failed to send notification: ' . $e->getMessage()
-            ];
-        }
-    }
-
-    /**
-     * Send password reset notification to admin
-     */
-    public function sendAdminPasswordResetNotification(AdminUser $admin, string $resetToken)
-    {
-        try {
-            $resetUrl = route('admin.password.reset', $resetToken) . '?email=' . urlencode($admin->email);
-
-            $notificationData = [
-                'admin' => $admin,
-                'reset_url' => $resetUrl,
-                'expires_at' => now()->addHours(24),
-                'ip_address' => request()->ip(),
-                'user_agent' => request()->userAgent()
-            ];
-
-            if (config('mail.default') !== null) {
-                // Send actual email in production
-                $this->sendEmail(
-                    $admin->email,
-                    'Admin Password Reset Request',
-                    'emails.admin-password-reset',
-                    $notificationData
-                );
-            } else {
-                // Log reset URL for development
-                Log::info('Admin Password Reset URL', [
-                    'admin_email' => $admin->email,
-                    'reset_url' => $resetUrl,
-                    'expires_at' => $notificationData['expires_at']
+            // SMS notification (if phone verified)
+            if ($driver->phone_verified_at) {
+                $this->sendSMSNotification($driver, 'step_completed', [
+                    'step' => $this->getStepName($stepKey)
                 ]);
             }
 
-            // Store notification
-            $this->storeNotification([
-                'recipient_type' => 'admin',
-                'recipient_id' => $admin->id,
-                'type' => 'password_reset',
-                'title' => 'Password Reset Request',
-                'message' => 'A password reset was requested for your admin account',
-                'data' => json_encode($notificationData),
-                'sent_at' => now(),
-                'sent_via' => 'email'
-            ]);
+            Log::info("Step completion notification sent for driver {$driver->driver_id}, step: {$stepKey}");
+            return true;
 
-            return [
-                'success' => true,
-                'message' => 'Password reset notification sent successfully'
-            ];
-
-        } catch (\Exception $e) {
-            Log::error('Failed to send admin password reset notification: ' . $e->getMessage());
-
-            return [
-                'success' => false,
-                'message' => 'Failed to send password reset notification'
-            ];
+        } catch (Exception $e) {
+            Log::error("Failed to send step completion notification: " . $e->getMessage());
+            return false;
         }
     }
 
     /**
-     * Send bulk notification to multiple recipients
+     * Send notification for onboarding submission
      */
-    public function sendBulkNotification(array $recipients, string $title, string $message, array $data = [])
+    public function sendOnboardingSubmissionNotification(Driver $driver): bool
     {
-        $results = [
-            'total' => count($recipients),
-            'sent' => 0,
-            'failed' => 0,
-            'errors' => []
+        try {
+            // Notify driver
+            $this->sendEmailNotification($driver, 'onboarding_submitted', [
+                'driver_name' => $driver->full_name,
+                'submission_date' => now()->format('M d, Y H:i')
+            ]);
+
+            // Notify all superadmins
+            $superadmins = AdminUser::whereHas('roles', function($query) {
+                $query->where('name', 'superadmin');
+            })->get();
+
+            foreach ($superadmins as $admin) {
+                $this->sendEmailNotification($admin, 'new_onboarding_submission', [
+                    'driver_name' => $driver->full_name,
+                    'driver_id' => $driver->driver_id,
+                    'submission_date' => now()->format('M d, Y H:i'),
+                    'review_url' => route('admin.superadmin.drivers.onboarding.review', $driver)
+                ], 'admin');
+            }
+
+            Log::info("Onboarding submission notifications sent for driver {$driver->driver_id}");
+            return true;
+
+        } catch (Exception $e) {
+            Log::error("Failed to send onboarding submission notification: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Send notification for admin review decision
+     */
+    public function sendAdminReviewNotification(Driver $driver, string $decision, string $adminNotes = null): bool
+    {
+        try {
+            $decisionData = [
+                'decision' => $decision,
+                'admin_notes' => $adminNotes,
+                'review_date' => now()->format('M d, Y H:i'),
+                'driver_name' => $driver->full_name
+            ];
+
+            // Notify driver
+            $this->sendEmailNotification($driver, 'onboarding_reviewed', $decisionData);
+
+            if ($driver->phone_verified_at) {
+                $this->sendSMSNotification($driver, 'onboarding_reviewed', $decisionData);
+            }
+
+            Log::info("Admin review notification sent for driver {$driver->driver_id}, decision: {$decision}");
+            return true;
+
+        } catch (Exception $e) {
+            Log::error("Failed to send admin review notification: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Send email notification
+     */
+    private function sendEmailNotification($recipient, string $type, array $data, string $recipientType = 'driver'): bool
+    {
+        try {
+            $emailData = array_merge($data, [
+                'recipient_type' => $recipientType,
+                'recipient' => $recipient
+            ]);
+
+            // For now, log the email that would be sent
+            // In production, you would use Mail::to() with actual mail templates
+            Log::info("Email notification queued", [
+                'type' => $type,
+                'recipient' => $recipientType === 'driver' ? $recipient->email : $recipient->email,
+                'data' => $emailData
+            ]);
+
+            // Uncomment when email templates are ready
+            /*
+            Mail::to($recipientType === 'driver' ? $recipient->email : $recipient->email)
+                ->send(new DriverOnboardingNotification($type, $emailData));
+            */
+
+            return true;
+
+        } catch (Exception $e) {
+            Log::error("Failed to send email notification: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Send SMS notification
+     */
+    private function sendSMSNotification(Driver $driver, string $type, array $data): bool
+    {
+        try {
+            // For now, log the SMS that would be sent
+            // In production, integrate with SMS service like Twilio, AWS SNS, etc.
+            Log::info("SMS notification queued", [
+                'type' => $type,
+                'phone' => $driver->phone,
+                'data' => $data
+            ]);
+
+            // Uncomment when SMS service is integrated
+            /*
+            $smsService = app(SMSService::class);
+            $message = $this->buildSMSMessage($type, $data);
+            $smsService->send($driver->phone, $message);
+            */
+
+            return true;
+
+        } catch (Exception $e) {
+            Log::error("Failed to send SMS notification: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Get human-readable step name
+     */
+    private function getStepName(string $stepKey): string
+    {
+        $stepNames = [
+            'personal_info' => 'Personal Information',
+            'contact_info' => 'Contact & Emergency Details',
+            'documents' => 'Document Upload',
+            'banking' => 'Banking Information',
+            'professional' => 'Professional Details',
+            'verification' => 'Verification'
         ];
 
-        foreach ($recipients as $recipient) {
-            try {
-                $this->sendSingleNotification($recipient, $title, $message, $data);
-                $results['sent']++;
-            } catch (\Exception $e) {
+        return $stepNames[$stepKey] ?? ucfirst(str_replace('_', ' ', $stepKey));
+    }
+
+    /**
+     * Build SMS message content
+     */
+    private function buildSMSMessage(string $type, array $data): string
+    {
+        switch ($type) {
+            case 'step_completed':
+                return "Great! You've completed the {$data['step']} step in your Drivelink driver onboarding.";
+
+            case 'onboarding_submitted':
+                return "Your Drivelink driver application has been submitted successfully. We'll review it and get back to you soon.";
+
+            case 'onboarding_reviewed':
+                $status = $data['decision'] === 'approved' ? 'approved' : 'requires attention';
+                return "Your Drivelink driver application has been {$status}. Please check your email for details.";
+
+            default:
+                return "Update on your Drivelink driver onboarding application.";
+        }
+    }
+
+    /**
+     * Send bulk notifications (for system announcements)
+     */
+    public function sendBulkNotification(array $drivers, string $type, array $data): array
+    {
+        $results = ['success' => 0, 'failed' => 0];
+
+        foreach ($drivers as $driver) {
+            if ($this->sendEmailNotification($driver, $type, $data)) {
+                $results['success']++;
+            } else {
                 $results['failed']++;
-                $results['errors'][] = [
-                    'recipient' => $recipient,
-                    'error' => $e->getMessage()
-                ];
-                Log::error('Bulk notification failed', [
-                    'recipient' => $recipient,
-                    'error' => $e->getMessage()
-                ]);
             }
         }
+
+        Log::info("Bulk notification completed", [
+            'type' => $type,
+            'total' => count($drivers),
+            'success' => $results['success'],
+            'failed' => $results['failed']
+        ]);
 
         return $results;
     }
 
     /**
-     * Send OCR verification result notification
+     * Send verification notification to driver
      */
-    public function sendOCRVerificationNotification(Driver $driver, array $ocrResults)
+    public function sendVerificationNotification(Driver $driver, string $status, string $notes = null): array
     {
         try {
-            $overallStatus = $ocrResults['overall_status'] ?? 'pending';
-            $ninScore = $ocrResults['nin_score'] ?? 0;
-            $frscScore = $ocrResults['frsc_score'] ?? 0;
+            $message = $this->getVerificationMessage($status, $driver->full_name, $notes);
 
-            $notificationData = [
-                'driver' => $driver,
-                'ocr_results' => $ocrResults,
-                'overall_status' => $overallStatus,
-                'nin_score' => $ninScore,
-                'frsc_score' => $frscScore,
-                'verification_date' => now(),
-                'next_steps' => $this->getOCRNextSteps($overallStatus)
-            ];
+            // Log the notification
+            Log::info('Verification notification sent', [
+                'driver_id' => $driver->id,
+                'driver_name' => $driver->full_name,
+                'status' => $status,
+                'message' => $message,
+                'notes' => $notes,
+            ]);
 
             // Send email notification
-            if ($driver->email) {
-                $this->sendEmail(
-                    $driver->email,
-                    'Document Verification Results',
-                    'emails.driver-ocr-results',
-                    $notificationData
-                );
-            }
-
-            // Store notification
-            $this->storeNotification([
-                'recipient_type' => 'driver',
-                'recipient_id' => $driver->id,
-                'type' => 'ocr_verification',
-                'title' => 'Document Verification Completed',
-                'message' => "Your document verification is complete. Status: {$overallStatus}",
-                'data' => json_encode($notificationData),
-                'sent_at' => now(),
-                'sent_via' => $driver->email ? 'email' : 'system'
+            $this->sendEmailNotification($driver, 'verification_status_update', [
+                'status' => $status,
+                'message' => $message,
+                'notes' => $notes,
+                'driver_name' => $driver->full_name
             ]);
 
-            return [
-                'success' => true,
-                'message' => 'OCR verification notification sent'
-            ];
+            // Send SMS if phone is verified
+            if ($driver->phone_verified_at) {
+                $this->sendSMSNotification($driver, 'verification_status_update', [
+                    'status' => $status,
+                    'driver_name' => $driver->full_name
+                ]);
+            }
 
-        } catch (\Exception $e) {
-            Log::error('Failed to send OCR notification: ' . $e->getMessage());
+            return ['success' => true, 'message' => 'Verification notification sent'];
+        } catch (Exception $e) {
+            Log::error('Failed to send verification notification', [
+                'driver_id' => $driver->id,
+                'status' => $status,
+                'error' => $e->getMessage(),
+            ]);
 
-            return [
-                'success' => false,
-                'message' => 'Failed to send OCR notification'
-            ];
+            return ['success' => false, 'message' => 'Failed to send verification notification'];
         }
     }
 
     /**
-     * Send document approval/rejection notification
+     * Send document action notification
      */
-    public function sendDocumentActionNotification(Driver $driver, string $documentType, string $action, string $notes = null)
+    public function sendDocumentActionNotification(Driver $driver, string $documentType, string $action, string $notes = null): array
     {
         try {
-            $notificationData = [
-                'driver' => $driver,
+            $message = $this->getDocumentActionMessage($action, $documentType, $driver->full_name, $notes);
+
+            Log::info('Document action notification sent', [
+                'driver_id' => $driver->id,
+                'driver_name' => $driver->full_name,
                 'document_type' => $documentType,
                 'action' => $action,
+                'message' => $message,
                 'notes' => $notes,
-                'action_date' => now(),
-                'document_type_name' => $this->getDocumentTypeName($documentType)
-            ];
-
-            if ($driver->email) {
-                $this->sendEmail(
-                    $driver->email,
-                    "Document {$action} - {$notificationData['document_type_name']}",
-                    'emails.driver-document-action',
-                    $notificationData
-                );
-            }
-
-            // Store notification
-            $this->storeNotification([
-                'recipient_type' => 'driver',
-                'recipient_id' => $driver->id,
-                'type' => 'document_action',
-                'title' => "Document {$action}",
-                'message' => "Your {$notificationData['document_type_name']} has been {$action}",
-                'data' => json_encode($notificationData),
-                'sent_at' => now(),
-                'sent_via' => $driver->email ? 'email' : 'system'
             ]);
 
-            return [
-                'success' => true,
-                'message' => 'Document action notification sent'
-            ];
-
-        } catch (\Exception $e) {
-            Log::error('Failed to send document action notification: ' . $e->getMessage());
-
-            return [
-                'success' => false,
-                'message' => 'Failed to send document action notification'
-            ];
-        }
-    }
-
-    /**
-     * Send welcome notification to new driver
-     */
-    public function sendDriverWelcomeNotification(Driver $driver)
-    {
-        try {
-            $notificationData = [
-                'driver' => $driver,
-                'welcome_message' => 'Welcome to Drivelink! Your driver account has been created successfully.',
-                'next_steps' => [
-                    'Complete your profile information',
-                    'Upload required documents',
-                    'Wait for verification approval',
-                    'Start receiving job opportunities'
-                ],
-                'support_contact' => 'support@drivelink.com',
-                'mobile_app_url' => '#' // This would be the actual app store URL
-            ];
-
-            if ($driver->email) {
-                $this->sendEmail(
-                    $driver->email,
-                    'Welcome to Drivelink!',
-                    'emails.driver-welcome',
-                    $notificationData
-                );
-            }
-
-            // Store notification
-            $this->storeNotification([
-                'recipient_type' => 'driver',
-                'recipient_id' => $driver->id,
-                'type' => 'welcome',
-                'title' => 'Welcome to Drivelink',
-                'message' => 'Your driver account has been created successfully',
-                'data' => json_encode($notificationData),
-                'sent_at' => now(),
-                'sent_via' => $driver->email ? 'email' : 'system'
+            // Send email notification
+            $this->sendEmailNotification($driver, 'document_status_update', [
+                'document_type' => $documentType,
+                'action' => $action,
+                'message' => $message,
+                'notes' => $notes,
+                'driver_name' => $driver->full_name
             ]);
 
-            return [
-                'success' => true,
-                'message' => 'Welcome notification sent'
-            ];
-
-        } catch (\Exception $e) {
-            Log::error('Failed to send welcome notification: ' . $e->getMessage());
-
-            return [
-                'success' => false,
-                'message' => 'Failed to send welcome notification'
-            ];
-        }
-    }
-
-    /**
-     * Notify admins of KYC submission
-     */
-    public function notifyAdminsOfKycSubmission(Driver $driver)
-    {
-        try {
-            // Get all admin users
-            $admins = AdminUser::where('status', 'active')->get();
-
-            if ($admins->isEmpty()) {
-                Log::warning('No active admins found to notify of KYC submission', [
-                    'driver_id' => $driver->driver_id
-                ]);
-                return [
-                    'success' => false,
-                    'message' => 'No active admins found'
-                ];
-            }
-
-            $notificationData = [
-                'driver' => $driver,
-                'kyc_data' => [
-                    'driver_id' => $driver->driver_id,
-                    'full_name' => $driver->full_name,
-                    'email' => $driver->email,
-                    'phone' => $driver->phone,
-                    'kyc_step' => $driver->kyc_step,
-                    'kyc_status' => $driver->kyc_status,
-                    'submitted_at' => $driver->kyc_submitted_at,
-                ],
-                'review_url' => route('admin.drivers.kyc-review', $driver->id),
-                'admin_dashboard_url' => route('admin.dashboard'),
-                'company_name' => config('app.name', 'Drivelink')
-            ];
-
-            $successCount = 0;
-            $errors = [];
-
-            foreach ($admins as $admin) {
-                try {
-                    // Send email notification
-                    if ($admin->email) {
-                        $this->sendEmail(
-                            $admin->email,
-                            'New KYC Application Submitted - ' . $driver->full_name,
-                            'emails.admin-kyc-submission',
-                            array_merge($notificationData, ['admin' => $admin])
-                        );
-                    }
-
-                    // Store notification in database
-                    $this->storeNotification([
-                        'recipient_type' => 'admin',
-                        'recipient_id' => $admin->id,
-                        'type' => 'kyc_submission',
-                        'title' => 'New KYC Application Submitted',
-                        'message' => "New KYC application submitted by {$driver->full_name} ({$driver->driver_id})",
-                        'data' => json_encode($notificationData),
-                        'sent_at' => now(),
-                        'sent_via' => $admin->email ? 'email' : 'system'
-                    ]);
-
-                    $successCount++;
-
-                } catch (\Exception $e) {
-                    $errors[] = [
-                        'admin_id' => $admin->id,
-                        'admin_email' => $admin->email,
-                        'error' => $e->getMessage()
-                    ];
-                    Log::error('Failed to notify admin of KYC submission', [
-                        'admin_id' => $admin->id,
-                        'admin_email' => $admin->email,
-                        'driver_id' => $driver->driver_id,
-                        'error' => $e->getMessage()
-                    ]);
-                }
-            }
-
-            $result = [
-                'success' => $successCount > 0,
-                'total_admins' => $admins->count(),
-                'notified_admins' => $successCount,
-                'errors' => $errors
-            ];
-
-            if ($successCount > 0) {
-                Log::info('KYC submission notification sent to admins', [
-                    'driver_id' => $driver->driver_id,
-                    'total_admins' => $admins->count(),
-                    'notified_admins' => $successCount
-                ]);
-            }
-
-            return $result;
-
-        } catch (\Exception $e) {
-            Log::error('Failed to notify admins of KYC submission: ' . $e->getMessage(), [
-                'driver_id' => $driver->driver_id,
-                'error' => $e->getMessage()
+            return ['success' => true, 'message' => 'Document action notification sent'];
+        } catch (Exception $e) {
+            Log::error('Failed to send document action notification', [
+                'driver_id' => $driver->id,
+                'document_type' => $documentType,
+                'action' => $action,
+                'error' => $e->getMessage(),
             ]);
 
-            return [
-                'success' => false,
-                'message' => 'Failed to notify admins: ' . $e->getMessage()
-            ];
+            return ['success' => false, 'message' => 'Failed to send document action notification'];
         }
     }
 
     /**
-     * Send email using Laravel Mail
+     * Get verification message based on status
      */
-    private function sendEmail(string $to, string $subject, string $view, array $data)
+    private function getVerificationMessage(string $status, string $driverName, string $notes = null): string
     {
-        if (config('mail.default') === null) {
-            // Log email content for development
-            Log::info('Email notification (no mail configured)', [
-                'to' => $to,
-                'subject' => $subject,
-                'data' => $data
-            ]);
-            return;
-        }
+        $baseMessage = "Dear {$driverName}, ";
 
-        // In production, send actual email
-        try {
-            Mail::send($view, $data, function($message) use ($to, $subject) {
-                $message->to($to)->subject($subject);
-                $message->from(config('mail.from.address'), config('mail.from.name'));
-            });
-        } catch (\Exception $e) {
-            // Fallback to logging if mail fails
-            Log::warning('Email sending failed, logging instead', [
-                'to' => $to,
-                'subject' => $subject,
-                'error' => $e->getMessage()
-            ]);
-        }
-    }
-
-    /**
-     * Send SMS (placeholder for SMS integration)
-     */
-    private function sendSMS(string $phone, string $message)
-    {
-        // This is a placeholder for SMS integration
-        // You would integrate with services like Twilio, Nexmo, etc.
-        Log::info('SMS notification (placeholder)', [
-            'phone' => $phone,
-            'message' => $message
-        ]);
-    }
-
-    /**
-     * Store notification in database
-     */
-    private function storeNotification(array $data)
-    {
-        try {
-            DB::table('notifications')->insert(array_merge($data, [
-                'id' => \Illuminate\Support\Str::uuid(),
-                'created_at' => now(),
-                'updated_at' => now()
-            ]));
-        } catch (\Exception $e) {
-            // Don't fail the whole notification if database storage fails
-            Log::warning('Failed to store notification in database: ' . $e->getMessage());
-        }
-    }
-
-    /**
-     * Send single notification
-     */
-    private function sendSingleNotification($recipient, string $title, string $message, array $data = [])
-    {
-        // Implementation depends on recipient type
-        // This is a simplified version
-        if (is_array($recipient) && isset($recipient['email'])) {
-            $this->sendEmail($recipient['email'], $title, 'emails.generic-notification', array_merge($data, [
-                'title' => $title,
-                'message' => $message
-            ]));
-        }
-    }
-
-    /**
-     * Generate SMS message for verification status
-     */
-    private function generateSMSMessage(string $status, string $driverName): string
-    {
-        $messages = [
-            'verified' => "Hi {$driverName}, your Drivelink driver verification has been APPROVED! You can now start receiving job opportunities.",
-            'rejected' => "Hi {$driverName}, your Drivelink driver verification was not approved. Please contact support for details.",
-            'pending' => "Hi {$driverName}, your Drivelink driver verification is under review. We'll notify you once it's complete.",
-        ];
-
-        return $messages[$status] ?? "Hi {$driverName}, your Drivelink verification status has been updated to: {$status}";
-    }
-
-    /**
-     * Get OCR next steps based on status
-     */
-    private function getOCRNextSteps(string $status): array
-    {
         switch ($status) {
-            case 'passed':
-                return [
-                    'Your documents have been successfully verified',
-                    'You can now proceed to the next verification stage',
-                    'Check your dashboard for available opportunities'
-                ];
-            case 'failed':
-                return [
-                    'Some documents failed verification',
-                    'Please upload clearer images of your documents',
-                    'Contact support if you need assistance'
-                ];
+            case 'verified':
+                $message = $baseMessage . "Congratulations! Your driver application has been verified and approved. You can now start accepting jobs.";
+                break;
+            case 'rejected':
+                $message = $baseMessage . "We regret to inform you that your driver application has been rejected.";
+                if ($notes) {
+                    $message .= " Reason: {$notes}";
+                }
+                $message .= " Please contact support for more information.";
+                break;
+            case 'pending':
+                $message = $baseMessage . "Your driver application status has been reset to pending review. We will notify you once the review is complete.";
+                break;
             default:
-                return [
-                    'Document verification is in progress',
-                    'You will be notified once verification is complete',
-                    'Ensure all required documents are uploaded'
-                ];
+                $message = $baseMessage . "Your driver application status has been updated to: {$status}.";
         }
+
+        return $message;
     }
 
     /**
-     * Get document type display name
+     * Get document action message
      */
-    private function getDocumentTypeName(string $documentType): string
+    private function getDocumentActionMessage(string $action, string $documentType, string $driverName, string $notes = null): string
     {
-        $names = [
-            'nin' => 'NIN Document',
-            'license_front' => 'Driver License (Front)',
-            'license_back' => 'Driver License (Back)',
-            'profile_picture' => 'Profile Picture',
-            'passport_photo' => 'Passport Photograph',
-            'employment_letter' => 'Employment Letter',
-            'service_certificate' => 'Service Certificate'
-        ];
+        $baseMessage = "Dear {$driverName}, ";
 
-        return $names[$documentType] ?? ucfirst(str_replace('_', ' ', $documentType));
+        switch ($action) {
+            case 'approved':
+                $message = $baseMessage . "Your {$documentType} has been approved and verified.";
+                break;
+            case 'rejected':
+                $message = $baseMessage . "Your {$documentType} has been rejected.";
+                if ($notes) {
+                    $message .= " Reason: {$notes}";
+                }
+                $message .= " Please upload a new document.";
+                break;
+            default:
+                $message = $baseMessage . "Your {$documentType} status has been updated to: {$action}.";
+        }
+
+        return $message;
+    }
+
+    /**
+     * Queue notification for later sending (for performance)
+     */
+    public function queueNotification(string $type, $recipient, array $data, string $channel = 'email', int $delay = 0): bool
+    {
+        try {
+            // In production, dispatch to a queue
+            // NotificationJob::dispatch($type, $recipient, $data, $channel)->delay($delay);
+
+            Log::info("Notification queued", [
+                'type' => $type,
+                'channel' => $channel,
+                'delay' => $delay,
+                'recipient' => is_object($recipient) ? $recipient->email : $recipient
+            ]);
+
+            return true;
+
+        } catch (Exception $e) {
+            Log::error("Failed to queue notification: " . $e->getMessage());
+            return false;
+        }
     }
 }

@@ -46,7 +46,7 @@ class DriverService
      * - Configuring driver preferences
      *
      * @param array $data Driver registration data containing all required fields
-     * @return DriverNormalized The created driver instance with relationships loaded
+     * @return Drivers The created driver instance with relationships loaded
      * @throws DriverException If driver creation fails or validation errors occur
      * @throws \Exception If database transaction fails
      * 
@@ -136,9 +136,9 @@ class DriverService
      * contact information, and optional document uploads. Only provided fields
      * will be updated, existing values are preserved for null/missing fields.
      *
-     * @param DriverNormalized $driver The driver instance to update
+     * @param Drivers $driver The driver instance to update
      * @param array $data Array of updated driver data
-     * @return DriverNormalized The updated driver instance
+     * @return Drivers The updated driver instance
      * @throws DriverException If driver update fails or validation errors occur
      * @throws \Exception If database transaction fails
      * 
@@ -193,16 +193,16 @@ class DriverService
      * and enabling them to receive job matches. This is a critical business
      * operation that affects driver eligibility for work assignments.
      *
-     * @param DriverNormalized $driver The driver to verify
+     * @param Drivers $driver The driver to verify
      * @param AdminUser $admin The admin performing the verification
      * @param string|null $notes Optional verification notes
-     * @return DriverNormalized The verified driver instance
+     * @return Drivers The verified driver instance
      * @throws DriverException If driver is already verified or not eligible
      * 
      * @example
      * $verifiedDriver = $driverService->verifyDriver($driver, $admin, 'All documents verified');
      */
-    public function verifyDriver(DriverNormalized $driver, AdminUser $admin, string $notes = null): DriverNormalized
+    public function verifyDriver(Drivers $driver, AdminUser $admin, string $notes = null): Drivers
     {
         // Check if driver is already verified
         if ($driver->isVerified()) {
@@ -232,16 +232,16 @@ class DriverService
      * Marks a driver verification as rejected with a specific reason.
      * The driver will need to address the issues and resubmit for verification.
      *
-     * @param DriverNormalized $driver The driver to reject
+     * @param Drivers $driver The driver to reject
      * @param AdminUser $admin The admin performing the rejection
      * @param string $reason Detailed reason for rejection
-     * @return DriverNormalized The rejected driver instance
+     * @return Drivers The rejected driver instance
      * @throws DriverException If driver is already rejected or verified
      * 
      * @example
      * $rejectedDriver = $driverService->rejectDriver($driver, $admin, 'Incomplete documentation');
      */
-    public function rejectDriver(DriverNormalized $driver, AdminUser $admin, string $reason): DriverNormalized
+    public function rejectDriver(Drivers $driver, AdminUser $admin, string $reason): Drivers 
     {
         // Check if driver is already verified
         if ($driver->isVerified()) {
@@ -295,7 +295,7 @@ class DriverService
      */
     public function getDrivers(array $filters = [], int $perPage = 15)
     {
-        $query = DriverNormalized::query()
+        $query = Drivers::query()
             ->with(['nationality', 'verifiedBy', 'performance']);
 
         // Apply filters
@@ -344,15 +344,15 @@ class DriverService
     public function getDashboardStats(): array
     {
         $basicStats = [
-            'verified' => DriverNormalized::where('verification_status', 'verified')->count(),
-            'pending' => DriverNormalized::where('verification_status', 'pending')->count(),
-            'rejected' => DriverNormalized::where('verification_status', 'rejected')->count(),
-            'active' => DriverNormalized::active()->count(),
-            'new_this_month' => DriverNormalized::whereMonth('created_at', now()->month)
+            'verified' => Drivers::where('verification_status', 'verified')->count(),
+            'pending' => Drivers::where('verification_status', 'pending')->count(),
+            'rejected' => Drivers::where('verification_status', 'rejected')->count(),
+            'active' => Drivers::active()->count(),
+            'new_this_month' => Drivers::whereMonth('created_at', now()->month)
                                     ->whereYear('created_at', now()->year)
                                     ->count(),
-            'active_today' => DriverNormalized::where('last_active_at', '>=', now()->startOfDay())->count(),
-            'online' => DriverNormalized::where('last_active_at', '>=', now()->subMinutes(15))
+            'active_today' => Drivers::where('last_active_at', '>=', now()->startOfDay())->count(),
+            'online' => Drivers::where('last_active_at', '>=', now()->subMinutes(15))
                              ->where('is_active', true)
                              ->count(),
         ];
@@ -381,30 +381,30 @@ class DriverService
     public function getDriverStatistics(): array
     {
         return [
-            'total' => DriverNormalized::count(),
-            'verified' => DriverNormalized::verified()->count(),
-            'pending' => DriverNormalized::where('verification_status', 'pending')->count(),
-            'rejected' => DriverNormalized::where('verification_status', 'rejected')->count(),
-            'active' => DriverNormalized::active()->count(),
-            'available' => DriverNormalized::available()->count(),
+            'total' => Drivers::count(),
+            'verified' => Drivers::verified()->count(),
+            'pending' => Drivers::where('verification_status', 'pending')->count(),
+            'rejected' => Drivers::where('verification_status', 'rejected')->count(),
+            'active' => Drivers::active()->count(),
+            'available' => Drivers::available()->count(),
             'by_gender' => [
-                'male' => DriverNormalized::where('gender', 'Male')->count(),
-                'female' => DriverNormalized::where('gender', 'Female')->count(),
+                'male' => Drivers::where('gender', 'Male')->count(),
+                'female' => Drivers::where('gender', 'Female')->count(),
             ],
             'by_status' => [
-                'active' => DriverNormalized::where('status', 'active')->count(),
-                'inactive' => DriverNormalized::where('status', 'inactive')->count(),
-                'suspended' => DriverNormalized::where('status', 'suspended')->count(),
+                'active' => Drivers::where('status', 'active')->count(),
+                'inactive' => Drivers::where('status', 'inactive')->count(),
+                'suspended' => Drivers::where('status', 'suspended')->count(),
             ],
-            'recent_registrations' => DriverNormalized::where('created_at', '>=', now()->subDays(30))->count(),
-            'recent_verifications' => DriverNormalized::where('verified_at', '>=', now()->subDays(30))->count(),
+            'recent_registrations' => Drivers::where('created_at', '>=', now()->subDays(30))->count(),
+            'recent_verifications' => Drivers::where('verified_at', '>=', now()->subDays(30))->count(),
         ];
     }
 
     /**
      * Handle document approval/rejection with notifications
      */
-    public function handleDocumentAction(DriverNormalized $driver, string $documentType, string $action, AdminUser $admin, string $notes = null): array
+    public function handleDocumentAction(Drivers $driver, string $documentType, string $action, AdminUser $admin, string $notes = null): array
     {
         return DB::transaction(function () use ($driver, $documentType, $action, $admin, $notes) {
             $adminName = $admin->name ?? $admin->email ?? 'Admin';
@@ -436,7 +436,7 @@ class DriverService
     /**
      * Update driver verification status with notifications
      */
-    public function updateVerificationStatus(DriverNormalized $driver, string $status, AdminUser $admin, string $notes = null, string $adminPassword = null): array
+    public function updateVerificationStatus(Drivers $driver, string $status, AdminUser $admin, string $notes = null, string $adminPassword = null): array
     {
         // Verify admin password if provided
         if ($adminPassword && !\Hash::check($adminPassword, $admin->password)) {
@@ -479,7 +479,7 @@ class DriverService
     {
         do {
             $id = 'DRV' . str_pad(random_int(1, 99999), 5, '0', STR_PAD_LEFT);
-        } while (DriverNormalized::where('driver_id', $id)->exists());
+        } while (Drivers::where('driver_id', $id)->exists());
 
         return $id;
     }
@@ -487,11 +487,11 @@ class DriverService
     /**
      * Store driver documents.
      *
-     * @param DriverNormalized $driver
+     * @param Drivers $driver
      * @param array $data
      * @return void
      */
-    private function storeDriverDocuments(DriverNormalized $driver, array $data): void
+    private function storeDriverDocuments(Drivers $driver, array $data): void
     {
         $documents = [
             'nin_document' => 'nin',
@@ -535,11 +535,11 @@ class DriverService
     /**
      * Store driver location information.
      *
-     * @param DriverNormalized $driver
+     * @param Drivers $driver
      * @param array $data
      * @return void
      */
-    private function storeDriverLocations(DriverNormalized $driver, array $data): void
+    private function storeDriverLocations(Drivers $driver, array $data): void
     {
         $locations = [
             [
@@ -571,11 +571,11 @@ class DriverService
     /**
      * Store driver banking details.
      *
-     * @param DriverNormalized $driver
+     * @param Drivers $driver
      * @param array $data
      * @return void
      */
-    private function storeDriverBankingDetails(DriverNormalized $driver, array $data): void
+    private function storeDriverBankingDetails(Drivers $driver, array $data): void
     {
         DriverBankingDetail::create([
             'driver_id' => $driver->driver_id,
@@ -591,11 +591,11 @@ class DriverService
     /**
      * Store driver next of kin information.
      *
-     * @param DriverNormalized $driver
+     * @param Drivers $driver
      * @param array $data
      * @return void
      */
-    private function storeDriverNextOfKin(DriverNormalized $driver, array $data): void
+    private function storeDriverNextOfKin(Drivers $driver, array $data): void
     {
         DriverNextOfKin::create([
             'driver_id' => $driver->driver_id,
@@ -610,11 +610,11 @@ class DriverService
     /**
      * Store driver employment history.
      *
-     * @param DriverNormalized $driver
+     * @param Drivers $driver
      * @param array $data
      * @return void
      */
-    private function storeDriverEmploymentHistory(DriverNormalized $driver, array $data): void
+    private function storeDriverEmploymentHistory(Drivers $driver, array $data): void
     {
         if (isset($data['current_employment_status']) && $data['current_employment_status'] !== 'Unemployed') {
             DriverEmploymentHistory::create([
@@ -632,11 +632,11 @@ class DriverService
     /**
      * Store driver preferences.
      *
-     * @param DriverNormalized $driver
+     * @param Drivers $driver
      * @param array $data
      * @return void
      */
-    private function storeDriverPreferences(DriverNormalized $driver, array $data): void
+    private function storeDriverPreferences(Drivers $driver, array $data): void
     {
         DriverPreference::create([
             'driver_id' => $driver->driver_id,
@@ -651,11 +651,11 @@ class DriverService
     /**
      * Update driver profile picture.
      *
-     * @param DriverNormalized $driver
+     * @param Drivers $driver
      * @param UploadedFile $file
      * @return void
      */
-    private function updateDriverProfilePicture(DriverNormalized $driver, UploadedFile $file): void
+    private function updateDriverProfilePicture(Drivers $driver, UploadedFile $file): void
     {
         // Delete old profile picture
         if ($driver->profile_picture) {
@@ -670,11 +670,11 @@ class DriverService
     /**
      * Update driver documents.
      *
-     * @param DriverNormalized $driver
+     * @param Drivers $driver
      * @param array $data
      * @return void
      */
-    private function updateDriverDocuments(DriverNormalized $driver, array $data): void
+    private function updateDriverDocuments(Drivers $driver, array $data): void
     {
         $documents = [
             'nin_document' => 'nin',

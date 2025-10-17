@@ -39,9 +39,9 @@ class AdminUserFactory extends Factory
     {
         return $this->state(function (array $attributes) {
             return [
-                'role' => 'super_admin',
+                'role' => 'Super Admin',
                 'status' => 'Active',
-                'permissions' => null, // Super admin has all permissions
+                'permissions' => ['manage_drivers'], // Super admin has all permissions
             ];
         });
     }
