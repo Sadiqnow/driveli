@@ -86,6 +86,11 @@ class Driver extends Authenticatable
     }
 
     // Reverse relationships
+    public function verifiedBy()
+    {
+        return $this->belongsTo(AdminUser::class, 'verified_by');
+    }
+
     public function verifiedByAdmin()
     {
         return $this->belongsTo(AdminUser::class, 'verified_by');

@@ -634,6 +634,9 @@ Route::prefix('admin/superadmin')->name('admin.superadmin.')->group(function () 
             Route::post('/bulk-restore', [App\Http\Controllers\Admin\SuperAdminController::class, 'driversBulkRestore'])->name('bulk-restore');
             Route::post('/bulk-delete', [App\Http\Controllers\Admin\SuperAdminController::class, 'driversBulkDelete'])->name('bulk-delete');
             Route::post('/export', [App\Http\Controllers\Admin\SuperAdminController::class, 'driversExport'])->name('export');
+
+            // Analytics route
+            Route::get('/analytics', [App\Http\Controllers\Admin\SuperAdminController::class, 'driversAnalytics'])->name('analytics');
         });
 
         // SUPERADMIN ADMIN MANAGEMENT ROUTES
