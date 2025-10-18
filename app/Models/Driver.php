@@ -14,7 +14,7 @@ class Driver extends Authenticatable
 
     protected $fillable = [
         // Core Blackbox fields only
-        'driver_id', 'first_name', 'middle_name', 'surname', 'email', 'phone', 'phone_2',
+        'driver_id', 'first_name', 'middle_name', 'surname', 'email', 'phone', 'phone_2', 'national_id',
         'password', 'remember_token', 'email_verified_at', 'phone_verified_at',
         'phone_verification_status', 'email_verification_status',
         'status', 'verification_status', 'is_active', 'is_available',

@@ -464,7 +464,7 @@ class SuperadminDriverController extends Controller
     public function flag(Request $request, Driver $driver)
     {
         $request->validate([
-            'reason' => 'required|string|max:1000'
+            'reason' => 'required|string|max=1000'
         ]);
 
         try {
@@ -935,5 +935,34 @@ class SuperadminDriverController extends Controller
         };
 
         return response()->stream($callback, 200, $headers);
+    }
+
+    /**
+     * Verification dashboard for Superadmin
+     */
+    public function verificationDashboard(Request $request)
+    {
+        // Get drivers requiring verification
+        $pendingDrivers = Driver::where('verification_status', 'pending')
+            ->with(['documents', 'performance'])
+            ->orderBy('created_at', 'desc')
+            ->paginate(20);
+
+        // Get verification statistics
+        $stats = [
+            'pending' => Driver::where('verification_status', 'pending')->count(),
+            'verified' => Driver::where('verification_status', 'verified')->count(),
+            'rejected' => Driver::where('verification_status', 'rejected')->count(),
+            'total' => Driver::count(),
+        ];
+
+        // Get recent verification activities
+        $recentActivities = Driver::whereNotNull('verified_at')
+            ->with('verifiedBy:id,name')
+            ->orderBy('verified_at', 'desc')
+            ->limit(10)
+            ->get();
+
+        return view('admin.superadmin.drivers.verification-dashboard', compact('pendingDrivers', 'stats', 'recentActivities'));
     }
 }

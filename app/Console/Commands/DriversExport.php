@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Models\Driver;
+use App\Models\Drivers as Driver; // Using normalized Driver model
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Storage;
 use League\Csv\Writer;

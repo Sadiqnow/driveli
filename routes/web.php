@@ -604,16 +604,78 @@ Route::prefix('admin/superadmin')->name('admin.superadmin.')->group(function () 
         // SUPERADMIN DRIVER MANAGEMENT ROUTES
         Route::prefix('drivers')->name('drivers.')->middleware('SuperAdminDriverAccess')->group(function () {
             Route::get('/', [App\Http\Controllers\SuperadminDriverController::class, 'index'])->name('index');
+            Route::get('/verification', [App\Http\Controllers\SuperadminDriverController::class, 'verificationDashboard'])->name('verification');
             Route::get('/create', [App\Http\Controllers\SuperadminDriverController::class, 'create'])->name('create');
             Route::post('/', [App\Http\Controllers\SuperadminDriverController::class, 'store'])->name('store');
+
+            // Comprehensive KYC driver creation (Full form)
+            Route::get('/create-comprehensive', [App\Http\Controllers\SuperadminDriverController::class, 'createComprehensive'])->name('create-comprehensive');
+            Route::post('/create-comprehensive', [App\Http\Controllers\SuperadminDriverController::class, 'storeComprehensive'])->name('store-comprehensive');
+
+            // Simplified driver creation (Step 1 - Account Only)
+            Route::get('/create-simple', [App\Http\Controllers\SuperadminDriverController::class, 'createSimple'])->name('create-simple');
+            Route::post('/create-simple', [App\Http\Controllers\SuperadminDriverController::class, 'storeSimple'])->name('store-simple');
+
+            // OTP Verification (Step 2 - Contact Verification)
+            Route::get('/{driver}/verify-otp', [App\Http\Controllers\SuperadminDriverController::class, 'showOTPVerification'])->name('verify-otp');
+            Route::post('/{driver}/verify-otp', [App\Http\Controllers\SuperadminDriverController::class, 'verifyOTP'])->name('verify-otp.submit');
+            Route::post('/{driver}/resend-otp', [App\Http\Controllers\SuperadminDriverController::class, 'resendOTP'])->name('resend-otp');
+
+            // KYC completion (Step 2)
+            Route::get('/{driver}/kyc-complete', [App\Http\Controllers\SuperadminDriverController::class, 'showKycForm'])->name('kyc-form');
+            Route::put('/{driver}/kyc-complete', [App\Http\Controllers\SuperadminDriverController::class, 'completeKyc'])->name('kyc-complete');
+            Route::get('/bulk-operations', [App\Http\Controllers\SuperadminDriverController::class, 'bulkOperations'])->name('bulk-operations');
+            Route::get('/bulk-list', [App\Http\Controllers\SuperadminDriverController::class, 'bulkList'])->name('bulk-list');
+            Route::post('/bulk-action', [App\Http\Controllers\SuperadminDriverController::class, 'bulkAction'])->name('bulk-action');
+
+            // KYC Review Routes
+            Route::get('/kyc-review', [App\Http\Controllers\SuperadminDriverController::class, 'kycReviewDashboard'])->name('kyc-review');
+            Route::get('/{driver}/kyc-details', [App\Http\Controllers\SuperadminDriverController::class, 'showKycDetails'])->name('kyc-details');
+            Route::post('/{driver}/approve-kyc', [App\Http\Controllers\SuperadminDriverController::class, 'approveKyc'])->name('approve-kyc');
+            Route::post('/{driver}/reject-kyc', [App\Http\Controllers\SuperadminDriverController::class, 'rejectKyc'])->name('reject-kyc');
+            Route::post('/{driver}/request-kyc-info', [App\Http\Controllers\SuperadminDriverController::class, 'requestKycInfo'])->name('request-kyc-info');
+            Route::post('/bulk-kyc-action', [App\Http\Controllers\SuperadminDriverController::class, 'bulkKycAction'])->name('bulk-kyc-action');
+            Route::post('/bulk-ocr-verification', [App\Http\Controllers\SuperadminDriverController::class, 'bulkOCRVerification'])->name('bulk-ocr-verification');
+            Route::get('/export', [App\Http\Controllers\SuperadminDriverController::class, 'export'])->name('export');
+            Route::post('/import', [App\Http\Controllers\SuperadminDriverController::class, 'import'])->name('import');
+
+            // OCR verification dashboard (must be before parameterized routes to avoid conflicts)
+            Route::get('/ocr-verification', [App\Http\Controllers\SuperadminDriverController::class, 'ocrVerification'])->name('ocr-verification');
+            Route::get('/ocr-dashboard', [App\Http\Controllers\SuperadminDriverController::class, 'ocrDashboard'])->name('ocr-dashboard');
+
             Route::get('/{driver}', [App\Http\Controllers\SuperadminDriverController::class, 'show'])->name('show');
             Route::get('/{driver}/edit', [App\Http\Controllers\SuperadminDriverController::class, 'edit'])->name('edit');
             Route::put('/{driver}', [App\Http\Controllers\SuperadminDriverController::class, 'update'])->name('update');
             Route::delete('/{driver}', [App\Http\Controllers\SuperadminDriverController::class, 'destroy'])->name('destroy');
 
+            // Driver verification actions
+            Route::post('/{driver}/verify', [App\Http\Controllers\SuperadminDriverController::class, 'verify'])->name('verify');
+            Route::post('/{driver}/reject', [App\Http\Controllers\SuperadminDriverController::class, 'reject'])->name('reject');
+            Route::post('/{driver}/toggle-status', [App\Http\Controllers\SuperadminDriverController::class, 'toggleStatus'])->name('toggle-status');
+
+            // Document management
+            Route::get('/{driver}/documents', [App\Http\Controllers\SuperadminDriverController::class, 'viewDocuments'])->name('documents');
+            Route::post('/{driver}/documents/approve', [App\Http\Controllers\SuperadminDriverController::class, 'approveDocument'])->name('documents.approve');
+            Route::post('/{driver}/documents/reject', [App\Http\Controllers\SuperadminDriverController::class, 'rejectDocument'])->name('documents.reject');
+
+            // Accept PUT for documents upload (tests expect PUT)
+            Route::put('/{driver}/documents', [App\Http\Controllers\Drivers\DriverFileController::class, 'uploadDocument'])->name('documents.upload.put');
+
+            // File upload routes
+            Route::post('/{driver}/files/upload', [App\Http\Controllers\Drivers\DriverFileController::class, 'uploadDocument'])->name('files.upload');
+            Route::get('/{driver}/files', [App\Http\Controllers\Drivers\DriverFileController::class, 'getDocuments'])->name('files.index');
+            Route::get('/{driver}/files/list', [App\Http\Controllers\Drivers\DriverFileController::class, 'getDocuments'])->name('files.list');
+            Route::delete('/{driver}/files/{document}', [App\Http\Controllers\Drivers\DriverFileController::class, 'deleteDocument'])->name('files.delete');
+            Route::get('/{driver}/files/{document}/download', [App\Http\Controllers\Drivers\DriverFileController::class, 'downloadDocument'])->name('files.download');
+            Route::post('/{driver}/files/bulk-upload', [App\Http\Controllers\Drivers\DriverFileController::class, 'bulkUpload'])->name('files.bulk-upload');
+
+            // OCR verification actions (driver-specific)
+            Route::post('/{driver}/ocr-verify', [App\Http\Controllers\SuperadminDriverController::class, 'initiateOCRVerification'])->name('ocr-verify');
+            Route::get('/{driver}/ocr-details', [App\Http\Controllers\SuperadminDriverController::class, 'getOCRVerificationDetails'])->name('ocr-details');
+            Route::post('/{driver}/ocr-override', [App\Http\Controllers\SuperadminDriverController::class, 'manualOCROverride'])->name('ocr-override');
+
             // Decision workflow routes
             Route::post('/{driver}/approve', [App\Http\Controllers\SuperadminDriverController::class, 'approve'])->name('approve');
-            Route::post('/{driver}/reject', [App\Http\Controllers\SuperadminDriverController::class, 'reject'])->name('reject');
             Route::post('/{driver}/flag', [App\Http\Controllers\SuperadminDriverController::class, 'flag'])->name('flag');
 
             // ONBOARDING WIZARD ROUTES
@@ -628,15 +690,17 @@ Route::prefix('admin/superadmin')->name('admin.superadmin.')->group(function () 
             });
 
             // Bulk operations
-            Route::post('/bulk-approve', [App\Http\Controllers\Admin\SuperAdminController::class, 'driversBulkApprove'])->name('bulk-approve');
-            Route::post('/bulk-reject', [App\Http\Controllers\Admin\SuperAdminController::class, 'driversBulkReject'])->name('bulk-reject');
-            Route::post('/bulk-flag', [App\Http\Controllers\Admin\SuperAdminController::class, 'driversBulkFlag'])->name('bulk-flag');
-            Route::post('/bulk-restore', [App\Http\Controllers\Admin\SuperAdminController::class, 'driversBulkRestore'])->name('bulk-restore');
-            Route::post('/bulk-delete', [App\Http\Controllers\Admin\SuperAdminController::class, 'driversBulkDelete'])->name('bulk-delete');
-            Route::post('/export', [App\Http\Controllers\Admin\SuperAdminController::class, 'driversExport'])->name('export');
+            Route::post('/bulk-approve', [App\Http\Controllers\SuperadminDriverController::class, 'bulkVerify'])->name('bulk-approve');
+            Route::post('/bulk-reject', [App\Http\Controllers\SuperadminDriverController::class, 'bulkVerify'])->name('bulk-reject');
+            Route::post('/bulk-flag', [App\Http\Controllers\SuperadminDriverController::class, 'bulkVerify'])->name('bulk-flag');
+            Route::post('/bulk-restore', [App\Http\Controllers\SuperadminDriverController::class, 'bulkVerify'])->name('bulk-restore');
+            Route::post('/bulk-delete', [App\Http\Controllers\SuperadminDriverController::class, 'bulkVerify'])->name('bulk-delete');
 
             // Analytics route
-            Route::get('/analytics', [App\Http\Controllers\Admin\SuperAdminController::class, 'driversAnalytics'])->name('analytics');
+            Route::get('/analytics', [App\Http\Controllers\SuperadminDriverController::class, 'analytics'])->name('analytics');
+
+            // Audit trail route
+            Route::get('/audit', [App\Http\Controllers\SuperadminDriverController::class, 'audit'])->name('audit');
         });
 
         // SUPERADMIN ADMIN MANAGEMENT ROUTES

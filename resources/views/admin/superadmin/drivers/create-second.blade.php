@@ -1,40 +1,43 @@
-@extends('layouts.superadmin_master')
+@extends('layouts.admin_master')
 
 @section('title', 'Superadmin - Create Driver')
 
-@section('breadcrumbs')
-    <li class="breadcrumb-item"><a href="{{ route('admin.superadmin.drivers.index') }}">Drivers</a></li>
-    <li class="breadcrumb-item active">Create</li>
+@section('content_header')
+    <div class="content-header">
+        <div class="container-fluid">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1 class="m-0">Create New Driver</h1>
+                </div>
+                <div class="col-sm-6">
+                    <ol class="breadcrumb float-sm-right">
+                        <li class="breadcrumb-item"><a href="{{ route('admin.superadmin.dashboard') }}">Super Admin</a></li>
+                        <li class="breadcrumb-item"><a href="{{ route('admin.superadmin.drivers.index') }}">Drivers</a></li>
+                        <li class="breadcrumb-item active">Create</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection
 
 @section('content')
     <div class="container-fluid">
-        <!-- Super Admin Exclusive Features Banner -->
-        <div class="alert alert-superadmin">
-            <h5><i class="fas fa-crown"></i> Super Administrator Privileges</h5>
-            <p class="mb-0">You have full system access to create drivers with advanced settings, bypass verification requirements, and set custom system parameters.</p>
-        </div>
-
         <div class="row">
             <div class="col-md-12">
-                <div class="card card-superadmin">
+                <div class="card card-primary">
                     <div class="card-header">
-                        <h3 class="card-title">
-                            <i class="fas fa-user-plus text-superadmin"></i> Create New Driver
-                        </h3>
-                        <div class="card-tools">
-                            <span class="badge badge-superadmin">Super Admin Mode</span>
-                        </div>
+                        <h3 class="card-title">Driver Information</h3>
                     </div>
 
-                    <form method="POST" action="{{ route('admin.superadmin.drivers.store') }}" id="driverForm">
+                    <form method="POST" action="{{ route('admin.superadmin.drivers.store') }}">
                         @csrf
 
                         <div class="card-body">
                             <div class="row">
                                 <!-- Basic Information -->
                                 <div class="col-md-6">
-                                    <h5 class="text-superadmin"><i class="fas fa-user"></i> Basic Information</h5>
+                                    <h5 class="text-primary"><i class="fas fa-user"></i> Basic Information</h5>
 
                                     <div class="form-group">
                                         <label for="first_name">First Name <span class="text-danger">*</span></label>
@@ -95,17 +98,16 @@
                                     </div>
                                 </div>
 
-                                <!-- Super Admin System Settings -->
+                                <!-- System Settings -->
                                 <div class="col-md-6">
-                                    <h5 class="text-superadmin"><i class="fas fa-cogs"></i> Super Admin System Settings</h5>
+                                    <h5 class="text-primary"><i class="fas fa-cogs"></i> System Settings</h5>
 
                                     <div class="form-group">
-                                        <label for="status">Account Status <span class="text-danger">*</span></label>
+                                        <label for="status">Status <span class="text-danger">*</span></label>
                                         <select class="form-control @error('status') is-invalid @enderror" id="status" name="status" required>
                                             <option value="active" {{ old('status', 'active') == 'active' ? 'selected' : '' }}>Active</option>
                                             <option value="inactive" {{ old('status') == 'inactive' ? 'selected' : '' }}>Inactive</option>
                                             <option value="flagged" {{ old('status') == 'flagged' ? 'selected' : '' }}>Flagged</option>
-                                            <option value="suspended" {{ old('status') == 'suspended' ? 'selected' : '' }}>Suspended</option>
                                         </select>
                                         @error('status')
                                             <div class="invalid-feedback">{{ $message }}</div>
@@ -113,65 +115,29 @@
                                     </div>
 
                                     <div class="form-group">
-                                        <label for="verification_status">Verification Status</label>
-                                        <select class="form-control @error('verification_status') is-invalid @enderror" id="verification_status" name="verification_status">
+                                        <label for="verification_status">Verification Status <span class="text-danger">*</span></label>
+                                        <select class="form-control @error('verification_status') is-invalid @enderror" id="verification_status" name="verification_status" required>
                                             <option value="pending" {{ old('verification_status', 'pending') == 'pending' ? 'selected' : '' }}>Pending</option>
-                                            <option value="verified" {{ old('verification_status') == 'verified' ? 'selected' : '' }}>Verified (Skip KYC)</option>
+                                            <option value="verified" {{ old('verification_status') == 'verified' ? 'selected' : '' }}>Verified</option>
                                             <option value="rejected" {{ old('verification_status') == 'rejected' ? 'selected' : '' }}>Rejected</option>
-                                            <option value="bypass" {{ old('verification_status') == 'bypass' ? 'selected' : '' }}>Bypass All Checks</option>
                                         </select>
-                                        <small class="form-text text-muted">Super Admin can bypass verification requirements</small>
                                         @error('verification_status')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
 
-                                    <!-- Super Admin Exclusive Options -->
-                                    <div class="form-group">
-                                        <label for="admin_priority">Admin Priority Level</label>
-                                        <select class="form-control @error('admin_priority') is-invalid @enderror" id="admin_priority" name="admin_priority">
-                                            <option value="normal" {{ old('admin_priority', 'normal') == 'normal' ? 'selected' : '' }}>Normal</option>
-                                            <option value="high" {{ old('admin_priority') == 'high' ? 'selected' : '' }}>High Priority</option>
-                                            <option value="critical" {{ old('admin_priority') == 'critical' ? 'selected' : '' }}>Critical (Super Admin Only)</option>
-                                        </select>
-                                        <small class="form-text text-superadmin">Critical priority drivers get immediate system attention</small>
-                                        @error('admin_priority')
-                                            <div class="invalid-feedback">{{ $message }}</div>
-                                        @enderror
-                                    </div>
-
-                                    <div class="form-group">
-                                        <label for="system_notes">System Notes</label>
-                                        <textarea class="form-control @error('system_notes') is-invalid @enderror"
-                                                  id="system_notes" name="system_notes" rows="3"
-                                                  placeholder="Internal notes visible only to Super Admins">{{ old('system_notes') }}</textarea>
-                                        <small class="form-text text-muted">These notes are for Super Admin internal use only</small>
-                                        @error('system_notes')
-                                            <div class="invalid-feedback">{{ $message }}</div>
-                                        @enderror
-                                    </div>
-
-                                    <div class="alert alert-superadmin">
+                                    <div class="alert alert-info">
                                         <i class="fas fa-info-circle"></i>
-                                        <strong>Super Admin Capabilities:</strong>
-                                        <ul class="mb-0 mt-2">
-                                            <li>Bypass KYC verification requirements</li>
-                                            <li>Set custom verification statuses</li>
-                                            <li>Assign admin priority levels</li>
-                                            <li>Add internal system notes</li>
-                                            <li>Override system restrictions</li>
-                                        </ul>
+                                        <strong>Note:</strong> The driver will be created with a system-generated Driver ID.
+                                        Additional information like KYC details, employment history, and documents can be added after creation.
                                     </div>
                                 </div>
                             </div>
                         </div>
 
                         <div class="card-footer">
-                            <button type="submit" class="btn btn-superadmin">
-                                <i class="fas fa-save"></i> Create Driver (Super Admin)
-                            </button>
-                            <button type="button" class="btn btn-outline-superadmin" onclick="advancedOptions()">
-                                <i class="fas fa-cogs"></i> Advanced Options
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Create Driver
                             </button>
                             <a href="{{ route('admin.superadmin.drivers.index') }}" class="btn btn-secondary">
                                 <i class="fas fa-times"></i> Cancel
@@ -202,43 +168,6 @@
 .btn {
     margin-right: 0.5rem;
 }
-
-.btn-superadmin {
-    background: linear-gradient(135deg, #8B5CF6 0%, #A855F7 100%);
-    border: none;
-    color: white;
-}
-
-.btn-superadmin:hover {
-    background: linear-gradient(135deg, #A855F7 0%, #C084FC 100%);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(139, 92, 246, 0.3);
-}
-
-.btn-outline-superadmin {
-    border-color: #8B5CF6;
-    color: #8B5CF6;
-}
-
-.btn-outline-superadmin:hover {
-    background-color: #8B5CF6;
-    border-color: #8B5CF6;
-}
-
-.text-superadmin {
-    color: #8B5CF6 !important;
-}
-
-.alert-superadmin {
-    border-left: 4px solid #8B5CF6;
-    background: linear-gradient(90deg, #F3E8FF 0%, rgba(139, 92, 246, 0.05) 100%);
-    border-color: rgba(139, 92, 246, 0.2);
-}
-
-.badge-superadmin {
-    background: linear-gradient(135deg, #8B5CF6 0%, #A855F7 100%);
-    color: white;
-}
 </style>
 @endpush
 
@@ -258,9 +187,9 @@ $(document).ready(function() {
 
     $('#first_name, #surname').on('input', updateDriverIdPreview);
 
-    // Form validation with Super Admin enhancements
-    $('#driverForm').on('submit', function(e) {
-        const requiredFields = ['first_name', 'surname', 'email', 'phone', 'status'];
+    // Form validation
+    $('form').on('submit', function(e) {
+        const requiredFields = ['first_name', 'surname', 'email', 'phone', 'status', 'verification_status'];
         let isValid = true;
 
         requiredFields.forEach(field => {
@@ -276,34 +205,8 @@ $(document).ready(function() {
         if (!isValid) {
             e.preventDefault();
             alert('Please fill in all required fields.');
-            return false;
-        }
-
-        // Super Admin confirmation for bypass actions
-        if ($('#verification_status').val() === 'bypass' || $('#verification_status').val() === 'verified') {
-            if (!confirm('You are bypassing verification requirements. As a Super Admin, confirm this action.')) {
-                e.preventDefault();
-                return false;
-            }
-        }
-
-        // Show loading state
-        const submitBtn = $(this).find('button[type="submit"]');
-        submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Creating Driver...');
-    });
-
-    // Super Admin priority level warnings
-    $('#admin_priority').on('change', function() {
-        if ($(this).val() === 'critical') {
-            alert('Warning: Critical priority will trigger immediate system notifications and may affect other operations.');
         }
     });
 });
-
-// Advanced options for Super Admin
-function advancedOptions() {
-    // This could open a modal with additional Super Admin options
-    alert('Advanced options would include:\n- Custom field assignments\n- System integration settings\n- Priority queue management\n- Audit trail configuration');
-}
 </script>
 @endpush

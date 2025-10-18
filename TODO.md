@@ -1,42 +1,45 @@
-# Driver Management Module Regeneration - TODO List
+# Superadmin Driver Portal Enhancement Plan
 
-## Phase 1: Core Infrastructure Setup
-- [ ] Create unified RBAC middleware and access controls
-- [ ] Update SuperadminDriverController with advanced features
-- [ ] Create unified service layer for driver operations
-- [ ] Implement audit logging system
-- [ ] Set up notification dispatcher
+## Current Status
+- Admin drivers: 18 files with advanced features
+- Superadmin drivers: Only 4 basic files (create, edit, index, show)
+- Missing: OCR dashboard, bulk operations, KYC forms, onboarding wizard, advanced analytics
 
-## Phase 2: Base Views Regeneration
-- [ ] Regenerate Superadmin driver index with Admin's advanced UI
-- [ ] Create driver profile page with full details
-- [ ] Implement progressive disclosure components
-- [ ] Add real-time verification workflow
-- [ ] Create unified forms and modals
+## Implementation Plan
 
-## Phase 3: Core Mechanisms Implementation
-- [ ] Verification workflow (Pending → Verified → Rejected)
-- [ ] Document management system with status tracking
-- [ ] Performance tracking and analytics
-- [ ] Audit trail implementation
-- [ ] Notification system integration
+### Phase 1: Core Missing Views
+- [ ] Create OCR verification dashboard view
+- [ ] Create bulk operations view
+- [ ] Create comprehensive KYC forms
+- [ ] Create advanced analytics view
+- [ ] Create documents management view
 
-## Phase 4: Advanced Features
-- [ ] Driver analytics dashboard
-- [ ] Category and requirements management
-- [ ] Employment and linkage tracking
-- [ ] Superadmin tools (system-wide operations)
-- [ ] Access control management
+### Phase 2: Onboarding Wizard
+- [ ] Create onboarding start page
+- [ ] Create step-by-step forms (personal, contact, documents, banking, professional, verification)
+- [ ] Create review page
+- [ ] Add progress tracking
 
-## Phase 5: Testing and Validation
-- [ ] Functional integrity tests
-- [ ] RBAC enforcement verification
-- [ ] Data consistency checks
-- [ ] Performance optimization
-- [ ] Generate comparison report
+### Phase 3: Controller Enhancements
+- [ ] Add OCR verification methods
+- [ ] Add bulk operation methods
+- [ ] Add KYC management methods
+- [ ] Add advanced analytics methods
+- [ ] Add document management methods
 
-## Phase 6: Final Deployment
-- [ ] Deploy to staging branch
-- [ ] Run differential tests
-- [ ] Create DriverManagement_ComparisonReport.json
-- [ ] Documentation updates
+### Phase 4: Data Scope & Navigation
+- [ ] Fix data scope to show appropriate records
+- [ ] Update sidebar navigation
+- [ ] Add missing routes
+- [ ] Update breadcrumbs
+
+### Phase 5: Testing & Validation
+- [ ] Test all new features
+- [ ] Validate data integrity
+- [ ] Check performance
+- [ ] Update documentation
+
+## Progress Tracking
+- Started: 2025-01-XX
+- Target Completion: Within current session
+- Priority: High (Feature parity critical)
