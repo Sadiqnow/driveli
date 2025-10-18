@@ -185,31 +185,31 @@ class PermissionController extends Controller
         ]);
 
         $permissions = Permission::whereIn('id', $request->permissions);
-        
+
         switch ($request->action) {
             case 'activate':
                 $permissions->update(['is_active' => true]);
                 $message = 'Permissions activated successfully.';
                 break;
-                
+
             case 'deactivate':
                 $permissions->update(['is_active' => false]);
                 $message = 'Permissions deactivated successfully.';
                 break;
-                
+
             case 'delete':
                 // Check if any permission is being used
                 $usedPermissions = $permissions->withCount('roles')
                                               ->having('roles_count', '>', 0)
                                               ->pluck('display_name');
-                
+
                 if ($usedPermissions->count() > 0) {
                     return response()->json([
                         'success' => false,
                         'message' => 'Cannot delete permissions that are assigned to roles: ' . $usedPermissions->join(', ')
                     ], 400);
                 }
-                
+
                 $permissions->delete();
                 $message = 'Permissions deleted successfully.';
                 break;
@@ -219,5 +219,72 @@ class PermissionController extends Controller
             'success' => true,
             'message' => $message
         ]);
+    }
+
+    /**
+     * API: Fetch all permissions
+     */
+    public function apiIndex()
+    {
+        $permissions = Permission::active()
+                                ->orderBy('category')
+                                ->orderBy('display_name')
+                                ->get()
+                                ->groupBy('category');
+
+        return response()->json([
+            'success' => true,
+            'data' => $permissions
+        ]);
+    }
+
+    /**
+     * API: Assign roles to a user
+     */
+    public function apiAssignRolesToUser(Request $request)
+    {
+        $request->validate([
+            'user_id' => 'required|exists:admin_users,id',
+            'roles' => 'required|array',
+            'roles.*' => 'exists:roles,id'
+        ]);
+
+        $user = \App\Models\AdminUser::findOrFail($request->user_id);
+        $currentUser = Auth::guard('admin')->user();
+
+        DB::beginTransaction();
+        try {
+            // Remove all current roles
+            $user->roles()->updateExistingPivot($user->roles()->pluck('roles.id'), [
+                'is_active' => false,
+                'updated_at' => now()
+            ]);
+
+            // Add new roles
+            if ($request->roles) {
+                $roles = Role::whereIn('id', $request->roles)->get();
+                foreach ($roles as $role) {
+                    $user->assignRole($role, $currentUser);
+                }
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Roles assigned successfully',
+                'data' => [
+                    'user' => $user->load('roles'),
+                    'roles_count' => $user->roles()->count()
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to assign roles: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

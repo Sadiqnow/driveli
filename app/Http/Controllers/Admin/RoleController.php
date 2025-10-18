@@ -262,4 +262,68 @@ class RoleController extends Controller
             'data' => $permissions
         ]);
     }
+
+    /**
+     * API: Fetch all roles
+     */
+    public function apiIndex()
+    {
+        $roles = Role::active()
+                    ->withCount(['users', 'permissions'])
+                    ->orderBy('level')
+                    ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $roles
+        ]);
+    }
+
+    /**
+     * API: Assign permissions to a role
+     */
+    public function apiAssignPermissions(Request $request, Role $role)
+    {
+        $request->validate([
+            'permissions' => 'required|array',
+            'permissions.*' => 'exists:permissions,id'
+        ]);
+
+        $currentUser = Auth::guard('admin')->user();
+
+        DB::beginTransaction();
+        try {
+            // Remove all current permissions
+            $role->permissions()->updateExistingPivot($role->permissions()->pluck('permissions.id'), [
+                'is_active' => false,
+                'updated_at' => now()
+            ]);
+
+            // Add new permissions
+            if ($request->permissions) {
+                $permissions = Permission::whereIn('id', $request->permissions)->get();
+                foreach ($permissions as $permission) {
+                    $role->givePermission($permission, $currentUser);
+                }
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Permissions assigned successfully',
+                'data' => [
+                    'role' => $role->load('permissions'),
+                    'permissions_count' => $role->permissions()->count()
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to assign permissions: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

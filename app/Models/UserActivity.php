@@ -17,9 +17,8 @@ class UserActivity extends Model
         'user_id',
         'action',
         'description',
-        'resource_type',
-        'resource_id',
-        'resource_name',
+        'model_type',
+        'model_id',
         'old_values',
         'new_values',
         'metadata',
@@ -91,12 +90,15 @@ class UserActivity extends Model
         if ($user) {
             $logData['user_type'] = get_class($user);
             $logData['user_id'] = $user->getKey();
+        } else {
+            // If no user is provided, we need to set default values or skip logging
+            $logData['user_type'] = 'system';
+            $logData['user_id'] = 0;
         }
 
         if ($resource) {
-            $logData['resource_type'] = self::getResourceType($resource);
-            $logData['resource_id'] = $resource->getKey();
-            $logData['resource_name'] = self::getResourceName($resource);
+            $logData['model_type'] = get_class($resource);
+            $logData['model_id'] = $resource->getKey();
         }
 
         if ($oldValues) {

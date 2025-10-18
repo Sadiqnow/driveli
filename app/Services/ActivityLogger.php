@@ -10,9 +10,9 @@ class ActivityLogger
     /**
      * Log a general activity
      */
-    public static function log($user, string $action, string $description, array $metadata = []): UserActivity
+    public static function log($user, string $action, string $description, Model $resource = null, array $oldValues = null, array $newValues = null, array $metadata = null): UserActivity
     {
-        return UserActivity::log($user, $action, $description, $metadata);
+        return UserActivity::log($action, $description, $resource, $oldValues, $newValues, $metadata, $user);
     }
 
     /**

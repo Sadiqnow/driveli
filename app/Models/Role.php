@@ -29,8 +29,13 @@ class Role extends SpatieRole
 
     public function users(): BelongsToMany
     {
-        return $this->belongsToMany(AdminUser::class, 'role_user', 'role_id', 'user_id')
-                    ->withPivot(['assigned_at', 'assigned_by', 'expires_at', 'is_active'])
+        return $this->belongsToMany(AdminUser::class, 'user_roles', 'role_id', 'user_id')
+                    ->withTimestamps();
+    }
+
+    public function permissions(): BelongsToMany
+    {
+        return $this->belongsToMany(Permission::class, 'role_permissions', 'role_id', 'permission_id')
                     ->withTimestamps();
     }
 

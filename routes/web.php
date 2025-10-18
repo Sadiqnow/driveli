@@ -725,8 +725,23 @@ Route::prefix('admin/superadmin')->name('admin.superadmin.')->group(function () 
             Route::post('/bulk-delete', [App\Http\Controllers\Admin\SuperAdminController::class, 'bulkDeleteAdmins'])->name('bulk-delete');
         });
 
+        // ROLE MANAGEMENT ROUTES
+        Route::prefix('roles')->name('roles.')->group(function () {
+            Route::get('/', [App\Http\Controllers\Admin\SuperAdminController::class, 'rolesIndex'])->name('index');
+            Route::get('/api', [App\Http\Controllers\Admin\SuperAdminController::class, 'getRoles'])->name('api');
+            Route::get('/permissions/api', [App\Http\Controllers\Admin\SuperAdminController::class, 'getPermissions'])->name('permissions.api');
+            Route::get('/{role}/permissions/api', [App\Http\Controllers\Admin\SuperAdminController::class, 'getRolePermissions'])->name('role.permissions.api');
+            Route::post('/{role}/permissions', [App\Http\Controllers\Admin\SuperAdminController::class, 'updateRolePermissions'])->name('permissions.update');
+        });
+
+        // USER ROLE MANAGEMENT ROUTES
+        Route::prefix('users')->name('users.')->group(function () {
+            Route::get('/roles', [App\Http\Controllers\Admin\SuperAdminController::class, 'userRoles'])->name('roles');
+        });
+
         // AJAX routes
         Route::post('/assign-role', [App\Http\Controllers\Admin\SuperAdminController::class, 'assignRole'])->name('assign-role');
+        Route::post('/assign-permissions', [App\Http\Controllers\Admin\SuperAdminController::class, 'assignPermissionsToRole'])->name('assign-permissions');
         Route::post('/remove-role', [App\Http\Controllers\Admin\SuperAdminController::class, 'removeRole'])->name('remove-role');
         Route::post('/search-users', [App\Http\Controllers\Admin\SuperAdminController::class, 'searchUsers'])->name('search-users');
         Route::post('/bulk-user-operations', [App\Http\Controllers\Admin\SuperAdminController::class, 'bulkUserOperations'])->name('bulk-user-operations');
@@ -789,6 +804,38 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:admin'])->group(functi
         Route::delete('users/{id}/force-delete', [App\Http\Controllers\Admin\AdminUserController::class, 'forceDelete'])->name('users.force-delete');
         Route::get('api/users', [App\Http\Controllers\Admin\AdminUserController::class, 'getUsers'])->name('users.api');
         Route::post('users/{user}/send-welcome', [App\Http\Controllers\Admin\AdminUserController::class, 'sendWelcomeEmail'])->name('users.send-welcome');
+    });
+});
+
+// ===================================================================================================
+// SUPERADMIN ROLE MANAGEMENT ROUTES
+// ===================================================================================================
+
+Route::middleware(['auth:admin', 'SuperAdminDriverAccess'])->prefix('superadmin')->name('superadmin.')->group(function () {
+    // Role Management
+    Route::prefix('roles')->name('roles.')->group(function () {
+        Route::get('/', [App\Http\Controllers\Admin\RoleController::class, 'index'])->name('index');
+        Route::get('/create', [App\Http\Controllers\Admin\RoleController::class, 'create'])->name('create');
+        Route::post('/', [App\Http\Controllers\Admin\RoleController::class, 'store'])->name('store');
+        Route::get('/{role}', [App\Http\Controllers\Admin\RoleController::class, 'show'])->name('show');
+        Route::get('/{role}/edit', [App\Http\Controllers\Admin\RoleController::class, 'edit'])->name('edit');
+        Route::put('/{role}', [App\Http\Controllers\Admin\RoleController::class, 'update'])->name('update');
+        Route::delete('/{role}', [App\Http\Controllers\Admin\RoleController::class, 'destroy'])->name('destroy');
+        Route::patch('/{role}/toggle-status', [App\Http\Controllers\Admin\RoleController::class, 'toggleStatus'])->name('toggle-status');
+        Route::get('/{role}/permissions', [App\Http\Controllers\Admin\RoleController::class, 'permissions'])->name('permissions');
+    });
+
+    // Permission Management
+    Route::prefix('permissions')->name('permissions.')->group(function () {
+        Route::get('/', [App\Http\Controllers\Admin\PermissionController::class, 'index'])->name('index');
+        Route::get('/create', [App\Http\Controllers\Admin\PermissionController::class, 'create'])->name('create');
+        Route::post('/', [App\Http\Controllers\Admin\PermissionController::class, 'store'])->name('store');
+        Route::get('/{permission}', [App\Http\Controllers\Admin\PermissionController::class, 'show'])->name('show');
+        Route::get('/{permission}/edit', [App\Http\Controllers\Admin\PermissionController::class, 'edit'])->name('edit');
+        Route::put('/{permission}', [App\Http\Controllers\Admin\PermissionController::class, 'update'])->name('update');
+        Route::delete('/{permission}', [App\Http\Controllers\Admin\PermissionController::class, 'destroy'])->name('destroy');
+        Route::patch('/{permission}/toggle-status', [App\Http\Controllers\Admin\PermissionController::class, 'toggleStatus'])->name('toggle-status');
+        Route::post('/bulk-action', [App\Http\Controllers\Admin\PermissionController::class, 'bulkAction'])->name('bulk-action');
     });
 });
 

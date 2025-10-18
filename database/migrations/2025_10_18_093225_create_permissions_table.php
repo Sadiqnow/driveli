@@ -13,9 +13,15 @@ return new class extends Migration
      */
     public function up()
     {
-        // The permissions table already exists, so we just need to ensure it has the right structure
-        // This migration is a no-op since the table already exists with the correct structure
-        // from the earlier migration that created it
+        Schema::create('permissions', function (Blueprint $table) {
+            $table->id();
+            $table->string('name')->unique();
+            $table->string('group_name')->nullable();
+            $table->timestamps();
+
+            $table->index('name');
+            $table->index('group_name');
+        });
     }
 
     /**
@@ -25,8 +31,6 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::table('permissions', function (Blueprint $table) {
-            //
-        });
+        Schema::dropIfExists('permissions');
     }
 };

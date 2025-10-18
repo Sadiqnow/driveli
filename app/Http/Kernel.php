@@ -78,6 +78,7 @@ class Kernel extends HttpKernel
         // RBAC middleware
         'role' => \App\Http\Middleware\RoleMiddleware::class,
         'permission' => \App\Http\Middleware\PermissionMiddleware::class,
+        'check.permission' => \App\Http\Middleware\CheckPermission::class,
         'rbac' => \App\Http\Middleware\RBACMiddleware::class,
     'ability' => \App\Http\Middleware\AbilityMiddleware::class,
         

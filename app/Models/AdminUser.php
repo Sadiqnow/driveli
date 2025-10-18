@@ -202,19 +202,14 @@ class AdminUser extends Authenticatable
     
     public function roles(): BelongsToMany
     {
-        return $this->belongsToMany(Role::class, 'role_user', 'user_id', 'role_id')
-                    ->withPivot(['assigned_at', 'assigned_by', 'expires_at', 'is_active'])
+        return $this->belongsToMany(Role::class, 'user_roles', 'user_id', 'role_id')
                     ->withTimestamps();
     }
 
     public function activeRoles(): BelongsToMany
     {
         return $this->roles()
-                    ->wherePivot('is_active', true)
-                    ->where(function ($query) {
-                        $query->whereNull('role_user.expires_at')
-                              ->orWhere('role_user.expires_at', '>', now());
-                    });
+                    ->wherePivot('model_type', self::class);
     }
 
     // Enhanced Scopes

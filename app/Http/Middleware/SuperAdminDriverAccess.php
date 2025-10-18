@@ -42,7 +42,8 @@ class SuperAdminDriverAccess
         }
 
         // Check if user has the specific permission for driver management
-        if (!$user->hasPermission('manage_drivers')) {
+        // Temporarily bypass permission check for Super Admin role
+        if ($user->role !== 'Super Admin' && !$user->hasPermission('manage_drivers')) {
             if ($request->expectsJson()) {
                 return response()->json([
                     'success' => false,

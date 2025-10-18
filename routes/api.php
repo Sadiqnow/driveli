@@ -153,6 +153,35 @@ Route::get('/lgas/{stateId}', [LocationController::class, 'getLocalGovernments']
 Route::get('/lgas/{state}', [App\Http\Controllers\API\LGAFallbackController::class, 'getLGAs'])->name('api.lgas');
 
 // ===================================================================================================
+// ROLE & PERMISSION MANAGEMENT API ROUTES
+// ===================================================================================================
+
+Route::middleware(['auth:sanctum', 'ability:admin'])->group(function () {
+    // Role API routes
+    Route::prefix('roles')->name('api.roles.')->group(function () {
+        Route::get('/', [App\Http\Controllers\Admin\RoleController::class, 'apiIndex'])->name('index');
+        Route::post('/{role}/permissions', [App\Http\Controllers\Admin\RoleController::class, 'apiAssignPermissions'])->name('assign-permissions');
+    });
+
+    // Permission API routes
+    Route::prefix('permissions')->name('api.permissions.')->group(function () {
+        Route::get('/', [App\Http\Controllers\Admin\PermissionController::class, 'apiIndex'])->name('index');
+        Route::post('/assign-roles', [App\Http\Controllers\Admin\PermissionController::class, 'apiAssignRolesToUser'])->name('assign-roles');
+    });
+
+    // User role management API routes
+    Route::prefix('user')->name('api.user.')->group(function () {
+        Route::post('/roles', [App\Http\Controllers\Admin\SuperAdminController::class, 'manageUserRoles'])->name('roles');
+    });
+
+    // Admin users API routes for the frontend
+    Route::prefix('admin')->name('api.admin.')->group(function () {
+        Route::get('/users', [App\Http\Controllers\Admin\SuperAdminController::class, 'getUsersApi'])->name('users');
+        Route::get('/users/{user}/roles', [App\Http\Controllers\Admin\SuperAdminController::class, 'getUserRolesApi'])->name('users.roles');
+    });
+});
+
+// ===================================================================================================
 // FRONTEND EXPECTED ROUTES (matching JavaScript calls)
 // ===================================================================================================
 // Add routes that match what the frontend JavaScript is calling
