@@ -496,8 +496,8 @@
                         </li>
 
                         <!-- Audit & Compliance -->
-                        <li class="nav-item {{ request()->routeIs('admin.superadmin.audit*') ? 'menu-open' : '' }}">
-                            <a href="#" class="nav-link {{ request()->routeIs('admin.superadmin.audit*') ? 'active' : '' }}">
+                        <li class="nav-item {{ request()->routeIs('admin.superadmin.audit*') || request()->routeIs('admin.superadmin.audit-trails*') ? 'menu-open' : '' }}">
+                            <a href="#" class="nav-link {{ request()->routeIs('admin.superadmin.audit*') || request()->routeIs('admin.superadmin.audit-trails*') ? 'active' : '' }}">
                                 <i class="nav-icon fas fa-shield-alt text-superadmin"></i>
                                 <p>
                                     Audit & Compliance
@@ -505,6 +505,12 @@
                                 </p>
                             </a>
                             <ul class="nav nav-treeview">
+                                <li class="nav-item">
+                                    <a href="{{ route('admin.superadmin.audit-trails.index') }}" class="nav-link {{ request()->routeIs('admin.superadmin.audit-trails*') ? 'active' : '' }}">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>Audit Trails</p>
+                                    </a>
+                                </li>
                                 <li class="nav-item">
                                     <a href="{{ route('admin.superadmin.audit.logs') }}" class="nav-link {{ request()->routeIs('admin.superadmin.audit.logs') ? 'active' : '' }}">
                                         <i class="far fa-circle nav-icon"></i>

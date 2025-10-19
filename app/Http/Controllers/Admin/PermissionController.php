@@ -8,6 +8,7 @@ use App\Models\Permission;
 use App\Models\Role;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Str;
 
 class PermissionController extends Controller
@@ -236,6 +237,48 @@ class PermissionController extends Controller
             'success' => true,
             'data' => $permissions
         ]);
+    }
+
+    /**
+     * API: Sync permissions from controllers
+     */
+    public function syncPermissions(Request $request)
+    {
+        try {
+            Artisan::call('permissions:sync');
+
+            $output = Artisan::output();
+
+            // Parse the output to get the summary
+            $lines = explode("\n", trim($output));
+            $newCount = 0;
+            $existingCount = 0;
+
+            foreach ($lines as $line) {
+                if (preg_match('/(\d+) new permissions added/', $line, $matches)) {
+                    $newCount = (int) $matches[1];
+                }
+                if (preg_match('/(\d+) permissions already exist/', $line, $matches)) {
+                    $existingCount = (int) $matches[1];
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Permissions synced successfully',
+                'data' => [
+                    'new_count' => $newCount,
+                    'existing_count' => $existingCount,
+                    'total_count' => $newCount + $existingCount
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to sync permissions: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     /**

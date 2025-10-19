@@ -21,6 +21,49 @@ Laravel is a web application framework with expressive, elegant syntax. We belie
 
 Laravel is accessible, powerful, and provides tools required for large, robust applications.
 
+## Drivelink - Dynamic Permission System
+
+This Laravel application includes a sophisticated **Dynamic Permission Auto-Registration System** that automatically detects and manages permissions based on your controllers and actions.
+
+### Permission Sync Features
+
+- **Automatic Detection**: Scans all controllers in `app/Http/Controllers` and generates permissions
+- **CRUD Actions**: Detects standard actions (index, create, store, show, edit, update, destroy)
+- **Group Organization**: Permissions organized by functional modules (Driver Management, Admin Management, etc.)
+- **Audit Logging**: All permission changes logged to the audit_logs table
+- **Scheduled Sync**: Daily automatic sync via cron job
+- **UI Integration**: "Sync Permissions" button in Super Admin dashboard
+
+### Usage
+
+```bash
+# Manual permission sync
+php artisan permissions:sync
+
+# Preview changes without applying them
+php artisan permissions:sync --dry-run
+
+# Run during database seeding
+php artisan db:seed --class=PermissionSeeder
+```
+
+### API Endpoints
+
+```bash
+# Sync permissions via API
+POST /api/permissions/sync
+Authorization: Bearer {token}
+```
+
+### Generated Permissions
+
+The system automatically creates permissions like:
+- `drivers.view`, `drivers.create`, `drivers.edit`, `drivers.delete`
+- `companies.view`, `companies.create`, `companies.edit`, `companies.delete`
+- `admins.view`, `admins.create`, `admins.edit`, `admins.delete`
+
+All permissions are grouped by module and include proper display names and descriptions.
+
 ## Learning Laravel
 
 Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.

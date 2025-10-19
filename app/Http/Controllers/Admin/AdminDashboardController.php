@@ -16,10 +16,15 @@ class AdminDashboardController extends Controller
 {
     public function index()
     {
+        // Check if user has permission to view dashboard
+        if (!auth('admin')->user()->hasPermission('view_dashboard')) {
+            abort(403, 'Access denied. Insufficient permissions.');
+        }
+
         $stats = $this->getDetailedStats();
         $recentActivity = $this->getRecentActivity();
         $chartData = $this->getChartData();
-        
+
         return view('admin.dashboard', compact('stats', 'recentActivity', 'chartData'));
     }
     

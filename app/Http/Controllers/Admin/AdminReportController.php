@@ -9,6 +9,11 @@ class AdminReportController extends Controller
 {
     public function index()
     {
+        // Check if user has permission to view reports
+        if (!auth('admin')->user()->hasPermission('view_reports')) {
+            abort(403, 'Access denied. Insufficient permissions.');
+        }
+
         return view('admin.reports.index');
     }
 

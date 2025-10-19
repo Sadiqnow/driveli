@@ -35,6 +35,11 @@ class DriverController extends Controller
 
     public function index(Request $request)
     {
+        // Check if user has permission to view drivers
+        if (!auth('admin')->user()->hasPermission('manage_drivers')) {
+            abort(403, 'Access denied. Insufficient permissions.');
+        }
+
         $query = Driver::forAdminList();
 
         // Search functionality

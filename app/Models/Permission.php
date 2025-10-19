@@ -17,6 +17,7 @@ class Permission extends Model
         'display_name',
         'description',
         'category',
+        'group_name',
         'resource',
         'action',
         'is_active',
@@ -92,6 +93,7 @@ class Permission extends Model
     public function roles(): BelongsToMany
     {
         return $this->belongsToMany(Role::class, 'role_permissions', 'permission_id', 'role_id')
+                    ->withPivot('is_active')
                     ->withTimestamps();
     }
 
@@ -108,11 +110,11 @@ class Permission extends Model
      */
     public function users(): BelongsToMany
     {
-        return $this->belongsToMany(AdminUser::class, 'role_user', 'role_id', 'user_id')
-                    ->join('permission_role', 'roles.id', '=', 'permission_role.role_id')
-                    ->where('permission_role.permission_id', $this->id)
-                    ->where('permission_role.is_active', true)
-                    ->where('role_user.is_active', true);
+        return $this->belongsToMany(AdminUser::class, 'user_roles', 'role_id', 'user_id')
+                    ->join('role_permissions', 'roles.id', '=', 'role_permissions.role_id')
+                    ->where('role_permissions.permission_id', $this->id)
+                    ->where('role_permissions.is_active', true)
+                    ->where('user_roles.is_active', true);
     }
 
     /**

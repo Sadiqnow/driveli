@@ -13,10 +13,15 @@ class AdminRequestController extends Controller
 {
     public function index()
     {
+        // Check if user has permission to manage requests
+        if (!auth('admin')->user()->hasPermission('manage_requests')) {
+            abort(403, 'Access denied. Insufficient permissions.');
+        }
+
         $requests = CompanyRequest::with(['company', 'matches'])
                                  ->orderBy('created_at', 'desc')
                                  ->paginate(20);
-                                 
+
         return view('admin.requests.index', compact('requests'));
     }
 

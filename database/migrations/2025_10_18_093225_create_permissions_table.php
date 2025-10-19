@@ -13,15 +13,24 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('permissions', function (Blueprint $table) {
-            $table->id();
-            $table->string('name')->unique();
-            $table->string('group_name')->nullable();
-            $table->timestamps();
+        if (!Schema::hasTable('permissions')) {
+            Schema::create('permissions', function (Blueprint $table) {
+                $table->id();
+                $table->string('name')->unique();
+                $table->string('group_name')->nullable();
+                $table->timestamps();
 
-            $table->index('name');
-            $table->index('group_name');
-        });
+                $table->index('name');
+                $table->index('group_name');
+            });
+        } else {
+            // Update existing table if needed
+            Schema::table('permissions', function (Blueprint $table) {
+                if (!Schema::hasColumn('permissions', 'group_name')) {
+                    $table->string('group_name')->nullable()->after('name');
+                }
+            });
+        }
     }
 
     /**

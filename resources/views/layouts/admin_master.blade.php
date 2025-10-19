@@ -256,7 +256,7 @@
                         </li>
 
                         <!-- Users Management -->
-                        @can('view_users')
+                        @can('manage_users')
                         <li class="nav-item {{ request()->routeIs('admin.users*') ? 'menu-open' : '' }}">
                             <a href="#" class="nav-link {{ request()->routeIs('admin.users*') ? 'active' : '' }}">
                                 <i class="nav-icon fas fa-users"></i>
@@ -280,6 +280,33 @@
                                     </a>
                                 </li>
                                 @endcan
+                            </ul>
+                        </li>
+                        @endcan
+
+                        <!-- Roles & Permissions Management -->
+                        @can('view_roles')
+                        <li class="nav-item {{ request()->routeIs('admin.roles*', 'admin.permissions*') ? 'menu-open' : '' }}">
+                            <a href="#" class="nav-link {{ request()->routeIs('admin.roles*', 'admin.permissions*') ? 'active' : '' }}">
+                                <i class="nav-icon fas fa-shield-alt"></i>
+                                <p>
+                                    Roles & Permissions
+                                    <i class="right fas fa-angle-left"></i>
+                                </p>
+                            </a>
+                            <ul class="nav nav-treeview">
+                                <li class="nav-item">
+                                    <a href="{{ route('admin.roles.index') }}" class="nav-link {{ request()->routeIs('admin.roles.index') ? 'active' : '' }}">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>Roles</p>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="{{ route('admin.permissions.index') }}" class="nav-link {{ request()->routeIs('admin.permissions.index') ? 'active' : '' }}">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>Permissions</p>
+                                    </a>
+                                </li>
                             </ul>
                         </li>
                         @endcan

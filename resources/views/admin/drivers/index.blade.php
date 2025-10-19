@@ -367,23 +367,28 @@
                                         <!-- Primary Actions -->
                                         <div class="driver-primary-actions d-flex flex-column flex-md-row gap-2">
                                             @if($driver->verification_status == 'pending')
+                                                @can('manage_drivers')
                                                 <button class="btn btn-success btn-sm btn-lg-md me-2 verify-driver-btn"
                                                         data-driver-id="{{ $driver->id }}"
                                                         data-driver-name="{{ $driver->full_name ?? $driver->first_name }}"
                                                         aria-label="Verify {{ $driver->full_name ?? $driver->first_name }}">
                                                     <i class="fas fa-check-circle" aria-hidden="true"></i> <span class="d-none d-md-inline">Verify</span>
                                                 </button>
+                                                @endcan
+                                                @can('manage_drivers')
                                                 <button class="btn btn-danger btn-sm btn-lg-md me-2 reject-driver-btn"
                                                         data-driver-id="{{ $driver->id }}"
                                                         data-driver-name="{{ $driver->full_name ?? $driver->first_name }}"
                                                         aria-label="Reject verification for {{ $driver->full_name ?? $driver->first_name }}">
                                                     <i class="fas fa-times-circle" aria-hidden="true"></i> <span class="d-none d-md-inline">Reject</span>
                                                 </button>
+                                                @endcan
                                             @elseif($driver->verification_status == 'verified')
                                                 <div class="verification-actions d-flex align-items-center gap-2" data-driver-id="{{ $driver->id }}">
                                                     <span class="badge bg-success" aria-label="Status: Verified">
                                                         <i class="fas fa-check-circle" aria-hidden="true"></i> <span class="d-none d-md-inline">Verified</span>
                                                     </span>
+                                                    @can('manage_drivers')
                                                     <button class="btn btn-outline-warning btn-sm undo-verification-btn"
                                                             data-driver-id="{{ $driver->id }}"
                                                             data-driver-name="{{ $driver->full_name ?? $driver->first_name }}"
@@ -391,12 +396,14 @@
                                                             aria-label="Undo verification for {{ $driver->full_name ?? $driver->first_name }}">
                                                         <i class="fas fa-undo" aria-hidden="true"></i>
                                                     </button>
+                                                    @endcan
                                                 </div>
                                             @elseif($driver->verification_status == 'rejected')
                                                 <div class="verification-actions d-flex align-items-center gap-2" data-driver-id="{{ $driver->id }}">
                                                     <span class="badge bg-danger" aria-label="Status: Rejected">
                                                         <i class="fas fa-times-circle" aria-hidden="true"></i> <span class="d-none d-md-inline">Rejected</span>
                                                     </span>
+                                                    @can('manage_drivers')
                                                     <button class="btn btn-outline-success btn-sm undo-rejection-btn"
                                                             data-driver-id="{{ $driver->id }}"
                                                             data-driver-name="{{ $driver->full_name ?? $driver->first_name }}"
@@ -404,6 +411,7 @@
                                                             aria-label="Undo rejection for {{ $driver->full_name ?? $driver->first_name }}">
                                                         <i class="fas fa-undo" aria-hidden="true"></i>
                                                     </button>
+                                                    @endcan
                                                 </div>
                                             @endif
 

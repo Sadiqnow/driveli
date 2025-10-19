@@ -15,6 +15,12 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
+        // Run permission sync daily at 2 AM
+        $schedule->command('permissions:sync')
+                ->dailyAt('02:00')
+                ->withoutOverlapping()
+                ->runInBackground();
+
         // $schedule->command('inspire')->hourly();
     }
 

@@ -166,6 +166,7 @@ Route::middleware(['auth:sanctum', 'ability:admin'])->group(function () {
     // Permission API routes
     Route::prefix('permissions')->name('api.permissions.')->group(function () {
         Route::get('/', [App\Http\Controllers\Admin\PermissionController::class, 'apiIndex'])->name('index');
+        Route::post('/sync', [App\Http\Controllers\Admin\PermissionController::class, 'syncPermissions'])->name('sync');
         Route::post('/assign-roles', [App\Http\Controllers\Admin\PermissionController::class, 'apiAssignRolesToUser'])->name('assign-roles');
     });
 
@@ -178,6 +179,13 @@ Route::middleware(['auth:sanctum', 'ability:admin'])->group(function () {
     Route::prefix('admin')->name('api.admin.')->group(function () {
         Route::get('/users', [App\Http\Controllers\Admin\SuperAdminController::class, 'getUsersApi'])->name('users');
         Route::get('/users/{user}/roles', [App\Http\Controllers\Admin\SuperAdminController::class, 'getUserRolesApi'])->name('users.roles');
+    });
+
+    // Analytics API routes for Super Admin
+    Route::prefix('analytics')->name('api.analytics.')->middleware(['role.permission:Super Admin,view_permission_analytics'])->group(function () {
+        Route::get('/roles', [App\Http\Controllers\SuperAdmin\AnalyticsController::class, 'roles'])->name('roles');
+        Route::get('/violations', [App\Http\Controllers\SuperAdmin\AnalyticsController::class, 'violations'])->name('violations');
+        Route::get('/usage', [App\Http\Controllers\SuperAdmin\AnalyticsController::class, 'usage'])->name('usage');
     });
 });
 

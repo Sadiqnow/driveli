@@ -80,6 +80,7 @@ class Kernel extends HttpKernel
         'permission' => \App\Http\Middleware\PermissionMiddleware::class,
         'check.permission' => \App\Http\Middleware\CheckPermission::class,
         'rbac' => \App\Http\Middleware\RBACMiddleware::class,
+        'role.permission' => \App\Http\Middleware\RolePermissionMiddleware::class,
     'ability' => \App\Http\Middleware\AbilityMiddleware::class,
         
         // KYC middleware
@@ -90,5 +91,6 @@ class Kernel extends HttpKernel
         'superadmin.driver.access' => \App\Http\Middleware\SuperAdminDriverAccess::class,
         'SuperAdminDriverAccess' => \App\Http\Middleware\SuperAdminDriverAccess::class,
         'register.superadmin.middleware' => \App\Http\Middleware\RegisterSuperAdminMiddleware::class,
+        'audit.trail.access' => \App\Http\Middleware\AuditTrailAccess::class,
     ];
 }

@@ -106,16 +106,15 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
 
         // Company Request Management
-        Route::get('requests', [AdminRequestController::class, 'index'])->name('requests.index');
+        Route::prefix('requests')->name('requests.')->middleware(['role.permission:Admin,manage_requests'])->group(function () {
+            Route::get('/', [AdminRequestController::class, 'index'])->name('index');
+            Route::get('/create', [AdminRequestController::class, 'create'])->name('create');
+            Route::post('/', [AdminRequestController::class, 'store'])->name('store');
+            Route::get('/{request}', [AdminRequestController::class, 'show'])->name('show');
+            Route::get('/{request}/edit', [AdminRequestController::class, 'edit'])->name('edit');
+            Route::put('/{request}', [AdminRequestController::class, 'update'])->name('update');
+            Route::delete('/{request}', [AdminRequestController::class, 'destroy'])->name('destroy');
 
-        Route::get('requests/create', [AdminRequestController::class, 'create'])->name('requests.create');
-        Route::post('requests', [AdminRequestController::class, 'store'])->name('requests.store');
-        Route::get('requests/{request}', [AdminRequestController::class, 'show'])->name('requests.show');
-        Route::get('requests/{request}/edit', [AdminRequestController::class, 'edit'])->name('requests.edit');
-        Route::put('requests/{request}', [AdminRequestController::class, 'update'])->name('requests.update');
-        Route::delete('requests/{request}', [AdminRequestController::class, 'destroy'])->name('requests.destroy');
-
-        Route::prefix('requests')->name('requests.')->group(function () {
             Route::post('{request}/approve', [AdminRequestController::class, 'approve'])->name('approve');
             Route::post('{request}/reject', [AdminRequestController::class, 'reject'])->name('reject');
             Route::post('{request}/cancel', [AdminRequestController::class, 'cancel'])->name('cancel');
@@ -123,7 +122,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::post('{request}/match', [AdminRequestController::class, 'createMatch'])->name('match');
             Route::post('bulk-action', [AdminRequestController::class, 'bulkAction'])->name('bulk-action');
             Route::get('export', [AdminRequestController::class, 'export'])->name('export');
-            
+
             // Enhanced Request Management Routes
             Route::get('/accept', [AdminRequestController::class, 'acceptPage'])->name('accept');
             Route::get('/queue', [AdminRequestController::class, 'queueManagement'])->name('queue');
@@ -138,7 +137,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         });
 
         // Driver-Request Matching System
-        Route::prefix('matching')->name('matching.')->group(function () {
+        Route::prefix('matching')->name('matching.')->middleware(['role.permission:Admin,manage_matching'])->group(function () {
             Route::get('/', [MatchingController::class, 'index'])->name('index');
             Route::get('/dashboard', [MatchingController::class, 'dashboard'])->name('dashboard');
             Route::post('/auto-match', [MatchingController::class, 'autoMatch'])->name('auto-match');
@@ -164,7 +163,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         });
 
         // Reports & Analytics
-        Route::prefix('reports')->name('reports.')->group(function () {
+        Route::prefix('reports')->name('reports.')->middleware(['role.permission:Admin,view_reports'])->group(function () {
             Route::get('/', [AdminReportController::class, 'index'])->name('index');
             Route::get('/dashboard', [AdminReportController::class, 'dashboard'])->name('dashboard');
             Route::get('/commission', [AdminReportController::class, 'commission'])->name('commission');
@@ -177,7 +176,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         });
 
         // Commission Management
-        Route::prefix('commissions')->name('commissions.')->group(function () {
+        Route::prefix('commissions')->name('commissions.')->middleware(['role.permission:Admin,manage_commissions'])->group(function () {
             Route::get('/', [CommissionsController::class, 'index'])->name('index');
             Route::get('/{commission}', [CommissionsController::class, 'show'])->name('show');
             Route::post('/{commission}/mark-paid', [CommissionsController::class, 'markAsPaid'])->name('mark-paid');
@@ -187,7 +186,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         });
 
         // Driver Management (DriverNormalized)
-        Route::prefix('drivers')->name('drivers.')->group(function () {
+        Route::prefix('drivers')->name('drivers.')->middleware(['auth:admin', 'role.permission:Admin,manage_drivers'])->group(function () {
             Route::get('/', [DriverController::class, 'index'])->name('index');
             Route::get('/verification', [DriverController::class, 'verificationDashboard'])->name('verification');
             Route::get('/create', [DriverController::class, 'create'])->name('create');
@@ -261,7 +260,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         });
 
         // Verification Management
-        Route::prefix('verification')->name('verification.')->group(function () {
+        Route::prefix('verification')->name('verification.')->middleware(['role.permission:Admin,manage_verification'])->group(function () {
             Route::get('/dashboard', [VerificationController::class, 'dashboard'])->name('dashboard');
             Route::get('/driver/{driver}', [VerificationController::class, 'driverDetails'])->name('driver-details');
             Route::post('/driver/{driver}/approve', [VerificationController::class, 'approveVerification'])->name('approve');
@@ -589,8 +588,8 @@ Route::bind('driver', function ($value) {
 // ===================================================================================================
 
 Route::prefix('admin/superadmin')->name('admin.superadmin.')->group(function () {
-    Route::middleware(['auth:admin', 'rbac:role,Super Admin'])->group(function () {
-        Route::get('/', [App\Http\Controllers\Admin\SuperAdminController::class, 'index'])->name('dashboard');
+    Route::middleware(['auth:admin', 'role.permission:Super Admin,manage_superadmin'])->group(function () {
+        Route::get('/', [App\Http\Controllers\Admin\SuperAdminController::class, 'dashboard'])->name('dashboard');
         Route::get('/index', [App\Http\Controllers\Admin\SuperAdminController::class, 'index'])->name('index');
         Route::get('/users', [App\Http\Controllers\Admin\SuperAdminController::class, 'users'])->name('users');
         Route::get('/audit-logs', [App\Http\Controllers\Admin\SuperAdminController::class, 'auditLogs'])->name('audit-logs');
@@ -727,24 +726,66 @@ Route::prefix('admin/superadmin')->name('admin.superadmin.')->group(function () 
 
         // ROLE MANAGEMENT ROUTES
         Route::prefix('roles')->name('roles.')->group(function () {
-            Route::get('/', [App\Http\Controllers\Admin\SuperAdminController::class, 'rolesIndex'])->name('index');
-            Route::get('/api', [App\Http\Controllers\Admin\SuperAdminController::class, 'getRoles'])->name('api');
-            Route::get('/permissions/api', [App\Http\Controllers\Admin\SuperAdminController::class, 'getPermissions'])->name('permissions.api');
-            Route::get('/{role}/permissions/api', [App\Http\Controllers\Admin\SuperAdminController::class, 'getRolePermissions'])->name('role.permissions.api');
-            Route::post('/{role}/permissions', [App\Http\Controllers\Admin\SuperAdminController::class, 'updateRolePermissions'])->name('permissions.update');
+            Route::get('/', [App\Http\Controllers\SuperAdmin\RoleController::class, 'index'])->name('index');
+            Route::get('/create', [App\Http\Controllers\SuperAdmin\RoleController::class, 'create'])->name('create');
+            Route::post('/', [App\Http\Controllers\SuperAdmin\RoleController::class, 'store'])->name('store');
+            Route::get('/{role}', [App\Http\Controllers\SuperAdmin\RoleController::class, 'show'])->name('show');
+            Route::get('/{role}/edit', [App\Http\Controllers\SuperAdmin\RoleController::class, 'edit'])->name('edit');
+            Route::put('/{role}', [App\Http\Controllers\SuperAdmin\RoleController::class, 'update'])->name('update');
+            Route::delete('/{role}', [App\Http\Controllers\SuperAdmin\RoleController::class, 'destroy'])->name('destroy');
+            Route::patch('/{role}/toggle-status', [App\Http\Controllers\SuperAdmin\RoleController::class, 'toggleStatus'])->name('toggle-status');
+
+            // API routes
+            Route::get('/api', [App\Http\Controllers\SuperAdmin\RoleController::class, 'apiIndex'])->name('api');
+            Route::get('/{role}/permissions/api', [App\Http\Controllers\SuperAdmin\RoleController::class, 'apiGetPermissions'])->name('permissions.api');
+            Route::post('/{role}/permissions', [App\Http\Controllers\SuperAdmin\RoleController::class, 'apiUpdatePermissions'])->name('permissions.update');
+        });
+
+        // PERMISSION MANAGEMENT ROUTES
+        Route::prefix('permissions')->name('permissions.')->group(function () {
+            Route::get('/', [App\Http\Controllers\SuperAdmin\PermissionController::class, 'index'])->name('index');
+            Route::get('/create', [App\Http\Controllers\SuperAdmin\PermissionController::class, 'create'])->name('create');
+            Route::post('/', [App\Http\Controllers\SuperAdmin\PermissionController::class, 'store'])->name('store');
+            Route::get('/{permission}', [App\Http\Controllers\SuperAdmin\PermissionController::class, 'show'])->name('show');
+            Route::get('/{permission}/edit', [App\Http\Controllers\SuperAdmin\PermissionController::class, 'edit'])->name('edit');
+            Route::put('/{permission}', [App\Http\Controllers\SuperAdmin\PermissionController::class, 'update'])->name('update');
+            Route::delete('/{permission}', [App\Http\Controllers\SuperAdmin\PermissionController::class, 'destroy'])->name('destroy');
+            Route::patch('/{permission}/toggle-status', [App\Http\Controllers\SuperAdmin\PermissionController::class, 'toggleStatus'])->name('toggle-status');
+            Route::post('/bulk-action', [App\Http\Controllers\SuperAdmin\PermissionController::class, 'bulkAction'])->name('bulk-action');
+            Route::post('/sync', [App\Http\Controllers\SuperAdmin\PermissionController::class, 'syncPermissions'])->name('sync');
+
+            // API routes
+            Route::get('/api', [App\Http\Controllers\SuperAdmin\PermissionController::class, 'apiIndex'])->name('api');
         });
 
         // USER ROLE MANAGEMENT ROUTES
         Route::prefix('users')->name('users.')->group(function () {
             Route::get('/roles', [App\Http\Controllers\Admin\SuperAdminController::class, 'userRoles'])->name('roles');
+            Route::get('/by-role', [App\Http\Controllers\SuperAdmin\RoleController::class, 'getUsersByRole'])->name('by-role');
         });
 
         // AJAX routes
-        Route::post('/assign-role', [App\Http\Controllers\Admin\SuperAdminController::class, 'assignRole'])->name('assign-role');
-        Route::post('/assign-permissions', [App\Http\Controllers\Admin\SuperAdminController::class, 'assignPermissionsToRole'])->name('assign-permissions');
-        Route::post('/remove-role', [App\Http\Controllers\Admin\SuperAdminController::class, 'removeRole'])->name('remove-role');
+        Route::post('/assign-role', [App\Http\Controllers\SuperAdmin\RoleController::class, 'assignToUser'])->name('assign-role');
+        Route::post('/remove-role', [App\Http\Controllers\SuperAdmin\RoleController::class, 'removeFromUser'])->name('remove-role');
+        Route::post('/assign-permissions', [App\Http\Controllers\SuperAdmin\PermissionController::class, 'apiAssignToRole'])->name('assign-permissions');
         Route::post('/search-users', [App\Http\Controllers\Admin\SuperAdminController::class, 'searchUsers'])->name('search-users');
         Route::post('/bulk-user-operations', [App\Http\Controllers\Admin\SuperAdminController::class, 'bulkUserOperations'])->name('bulk-user-operations');
+
+        // PERMISSION ANALYTICS ROUTES
+        Route::prefix('analytics')->name('analytics.')->group(function () {
+            Route::get('/roles', [App\Http\Controllers\SuperAdmin\AnalyticsController::class, 'index'])->name('roles');
+            Route::get('/export/{type}', [App\Http\Controllers\SuperAdmin\AnalyticsController::class, 'export'])->name('export');
+            Route::post('/send-weekly-report', [App\Http\Controllers\SuperAdmin\AnalyticsController::class, 'sendWeeklyReport'])->name('send-weekly-report');
+        });
+
+        // AUDIT TRAIL ROUTES
+        Route::prefix('audit-trails')->name('audit-trails.')->middleware('audit.trail.access')->group(function () {
+            Route::get('/', [App\Http\Controllers\SuperAdmin\AuditTrailController::class, 'index'])->name('index');
+            Route::get('/{auditTrail}', [App\Http\Controllers\SuperAdmin\AuditTrailController::class, 'show'])->name('show');
+            Route::get('/export/csv', [App\Http\Controllers\SuperAdmin\AuditTrailController::class, 'exportCsv'])->name('export.csv');
+            Route::get('/export/pdf', [App\Http\Controllers\SuperAdmin\AuditTrailController::class, 'exportPdf'])->name('export.pdf');
+            Route::get('/statistics', [App\Http\Controllers\SuperAdmin\AuditTrailController::class, 'statistics'])->name('statistics');
+        });
     });
 });
 
@@ -771,16 +812,17 @@ Route::prefix('superadmin/admins')->name('superadmin.admins.')->group(function (
 // ===================================================================================================
 
 Route::prefix('admin')->name('admin.')->middleware(['auth:admin'])->group(function () {
-    // Role Management - TEMPORARILY DISABLED until role system is implemented
-    // Route::resource('roles', App\Http\Controllers\Admin\RoleController::class);
-    // Route::post('roles/{role}/toggle-status', [App\Http\Controllers\Admin\RoleController::class, 'toggleStatus'])->name('roles.toggle-status');
-    // Route::get('roles/{role}/permissions', [App\Http\Controllers\Admin\RoleController::class, 'permissions'])->name('roles.permissions');
+    // Role Management
+    Route::resource('roles', App\Http\Controllers\Admin\RoleController::class);
+    Route::post('roles/{role}/toggle-status', [App\Http\Controllers\Admin\RoleController::class, 'toggleStatus'])->name('roles.toggle-status');
+    Route::get('roles/{role}/permissions', [App\Http\Controllers\Admin\RoleController::class, 'permissions'])->name('roles.permissions');
     
-    // Permission Management - TEMPORARILY DISABLED until permission system is implemented
-    // Route::resource('permissions', App\Http\Controllers\Admin\PermissionController::class);
+    // Permission Management
+    Route::resource('permissions', App\Http\Controllers\Admin\PermissionController::class);
     
     // User Management (Enhanced with RBAC)
-    Route::middleware(['rbac:permission,manage_users'])->group(function () {
+
+    Route::middleware(['role.permission:Admin,manage_users'])->group(function () {
         Route::resource('users', App\Http\Controllers\Admin\AdminUserController::class);
         Route::post('users/{user}/assign-role', [App\Http\Controllers\Admin\AdminUserController::class, 'assignRole'])->name('users.assign-role');
         Route::post('users/{user}/remove-role', [App\Http\Controllers\Admin\AdminUserController::class, 'removeRole'])->name('users.remove-role');

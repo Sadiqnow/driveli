@@ -9,6 +9,11 @@ class CommissionsController extends Controller
 {
     public function index()
     {
+        // Check if user has permission to manage commissions
+        if (!auth('admin')->user()->hasPermission('manage_commissions')) {
+            abort(403, 'Access denied. Insufficient permissions.');
+        }
+
         $commissions = Commission::with(['driver', 'match'])->paginate(20);
         return view('admin.commissions.index', compact('commissions'));
     }

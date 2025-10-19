@@ -86,18 +86,22 @@
                                         <i class="fas fa-edit"></i>
                                     </a>
                                     @if($request->status == 'pending')
+                                        @can('approve_requests')
                                         <form action="{{ route('admin.requests.approve', $request->id) }}" method="POST" style="display:inline-block">
                                             @csrf
                                             <button class="btn btn-success btn-sm" onclick="return confirm('Approve this request?')" title="Approve">
                                                 <i class="fas fa-check"></i>
                                             </button>
                                         </form>
+                                        @endcan
+                                        @can('reject_requests')
                                         <form action="{{ route('admin.requests.reject', $request->id) }}" method="POST" style="display:inline-block">
                                             @csrf
                                             <button class="btn btn-warning btn-sm" onclick="return confirm('Reject this request?')" title="Reject">
                                                 <i class="fas fa-times"></i>
                                             </button>
                                         </form>
+                                        @endcan
                                     @endif
                                     <form action="{{ route('admin.requests.destroy', $request->id) }}" method="POST" style="display:inline-block">
                                         @csrf @method('DELETE')

@@ -1,45 +1,56 @@
-# Superadmin Driver Portal Enhancement Plan
+# SuperAdmin Role & Permission Management - Implementation Plan
 
-## Current Status
-- Admin drivers: 18 files with advanced features
-- Superadmin drivers: Only 4 basic files (create, edit, index, show)
-- Missing: OCR dashboard, bulk operations, KYC forms, onboarding wizard, advanced analytics
+## Phase 1: Database Schema Updates
+- [ ] Create unified migration for permissions table with all required fields
+- [ ] Update roles table migration with proper constraints
+- [ ] Ensure foreign key constraints and cascading deletes
+- [ ] Add indexes for performance
 
-## Implementation Plan
+## Phase 2: Model Updates
+- [ ] Update Permission model relationships and methods
+- [ ] Update Role model to use custom implementation consistently
+- [ ] Update AdminUser model role/permission methods
+- [ ] Standardize all relationships across models
 
-### Phase 1: Core Missing Views
-- [ ] Create OCR verification dashboard view
-- [ ] Create bulk operations view
-- [ ] Create comprehensive KYC forms
-- [ ] Create advanced analytics view
-- [ ] Create documents management view
+## Phase 3: Controller Development
+- [ ] Create SuperAdmin/RoleController for unified role management
+- [ ] Create SuperAdmin/PermissionController for permission management
+- [ ] Add API endpoints for assign/revoke/update operations
+- [ ] Implement backend verification (SuperAdmin only)
 
-### Phase 2: Onboarding Wizard
-- [ ] Create onboarding start page
-- [ ] Create step-by-step forms (personal, contact, documents, banking, professional, verification)
-- [ ] Create review page
-- [ ] Add progress tracking
+## Phase 4: Views and UI
+- [ ] Create SuperAdmin dashboard role management views
+- [ ] Build permission assignment interfaces
+- [ ] Add user filtering by roles (SuperAdmin, Admin, Moderator, Agent, Driver, Company, Matching Officer, Verification Manager)
+- [ ] Implement dynamic UI updates
 
-### Phase 3: Controller Enhancements
-- [ ] Add OCR verification methods
-- [ ] Add bulk operation methods
-- [ ] Add KYC management methods
-- [ ] Add advanced analytics methods
-- [ ] Add document management methods
+## Phase 5: APIs and Middleware
+- [ ] Add API routes for role/permission operations
+- [ ] Update middleware for dynamic access control
+- [ ] Implement permission caching and cache invalidation
 
-### Phase 4: Data Scope & Navigation
-- [ ] Fix data scope to show appropriate records
-- [ ] Update sidebar navigation
-- [ ] Add missing routes
-- [ ] Update breadcrumbs
+## Phase 6: Seeding and Testing
+- [ ] Create RolePermissionSeeder with sample roles and permissions
+- [ ] Test role assignments and permission checks
+- [ ] Verify access control reflects dynamically
+- [ ] Test user filtering functionality
 
-### Phase 5: Testing & Validation
-- [ ] Test all new features
-- [ ] Validate data integrity
-- [ ] Check performance
-- [ ] Update documentation
+## Phase 7: Integration and Verification
+- [ ] Integrate with existing admin/superadmin systems
+- [ ] Test full CRUD operations
+- [ ] Verify backend verification logic
+- [ ] Performance testing and optimization
 
-## Progress Tracking
-- Started: 2025-01-XX
-- Target Completion: Within current session
-- Priority: High (Feature parity critical)
+## Files to Create/Modify:
+- database/migrations/*_unified_rbac_tables.php
+- app/Models/Role.php
+- app/Models/Permission.php
+- app/Models/AdminUser.php
+- app/Http/Controllers/SuperAdmin/RoleController.php
+- app/Http/Controllers/SuperAdmin/PermissionController.php
+- resources/views/superadmin/roles/*
+- resources/views/superadmin/permissions/*
+- routes/web.php
+- routes/api.php
+- app/Http/Middleware/RolePermissionMiddleware.php
+- database/seeders/RolePermissionSeeder.php

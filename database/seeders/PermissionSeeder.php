@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Artisan;
 use App\Models\Permission;
 
 class PermissionSeeder extends Seeder
@@ -13,6 +14,11 @@ class PermissionSeeder extends Seeder
      */
     public function run(): void
     {
+        // First run the permission sync command to auto-detect permissions
+        $this->command->info('Running permission sync...');
+        Artisan::call('permissions:sync');
+
+        // Then add any additional manual permissions if needed
         $permissions = [
             // System Management
             [
@@ -292,13 +298,61 @@ class PermissionSeeder extends Seeder
                 'action' => 'export'
             ],
 
-            // Additional specific permissions
+            // Additional specific permissions for RBAC
+            [
+                'name' => 'manage_requests',
+                'display_name' => 'Manage Requests',
+                'description' => 'Manage company requests and applications',
+                'category' => Permission::CATEGORY_COMPANY,
+                'resource' => 'requests',
+                'action' => Permission::ACTION_MANAGE
+            ],
             [
                 'name' => 'manage_matching',
                 'display_name' => 'Manage Matching',
                 'description' => 'Manage driver-company matching system',
                 'category' => Permission::CATEGORY_SYSTEM,
                 'resource' => 'matching',
+                'action' => Permission::ACTION_MANAGE
+            ],
+            [
+                'name' => 'manage_verification',
+                'display_name' => 'Manage Verification',
+                'description' => 'Manage document verification and approval processes',
+                'category' => Permission::CATEGORY_DRIVER,
+                'resource' => 'verification',
+                'action' => Permission::ACTION_MANAGE
+            ],
+            [
+                'name' => 'manage_commissions',
+                'display_name' => 'Manage Commissions',
+                'description' => 'Manage commission payments and calculations',
+                'category' => Permission::CATEGORY_SYSTEM,
+                'resource' => 'commissions',
+                'action' => Permission::ACTION_MANAGE
+            ],
+            [
+                'name' => 'manage_drivers',
+                'display_name' => 'Manage Drivers',
+                'description' => 'Full driver management including verification and approval',
+                'category' => Permission::CATEGORY_DRIVER,
+                'resource' => 'drivers',
+                'action' => Permission::ACTION_MANAGE
+            ],
+            [
+                'name' => 'view_reports',
+                'display_name' => 'View Reports',
+                'description' => 'Access to reports and analytics dashboard',
+                'category' => Permission::CATEGORY_REPORT,
+                'resource' => 'reports',
+                'action' => Permission::ACTION_VIEW
+            ],
+            [
+                'name' => 'manage_superadmin',
+                'display_name' => 'Manage Super Admin',
+                'description' => 'Super admin system management functions',
+                'category' => Permission::CATEGORY_SYSTEM,
+                'resource' => 'superadmin',
                 'action' => Permission::ACTION_MANAGE
             ],
             [
@@ -316,6 +370,14 @@ class PermissionSeeder extends Seeder
                 'category' => Permission::CATEGORY_SYSTEM,
                 'resource' => 'notifications',
                 'action' => Permission::ACTION_MANAGE
+            ],
+            [
+                'name' => 'view_permission_analytics',
+                'display_name' => 'View Permission Analytics',
+                'description' => 'Access to permission and role analytics dashboard',
+                'category' => Permission::CATEGORY_SYSTEM,
+                'resource' => 'analytics',
+                'action' => Permission::ACTION_VIEW
             ],
         ];
 

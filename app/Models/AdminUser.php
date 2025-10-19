@@ -196,20 +196,26 @@ class AdminUser extends Authenticatable
     }
 
     /**
-     * Future role system - ready for implementation when role tables are created
-     * Uncomment these methods when roles, permissions, and role_user tables are available
+     * Get roles for this user
      */
-    
     public function roles(): BelongsToMany
     {
         return $this->belongsToMany(Role::class, 'user_roles', 'user_id', 'role_id')
+                    ->withPivot(['is_active', 'expires_at'])
                     ->withTimestamps();
     }
 
+    /**
+     * Get active roles for this user
+     */
     public function activeRoles(): BelongsToMany
     {
         return $this->roles()
-                    ->wherePivot('model_type', self::class);
+                    ->wherePivot('is_active', true)
+                    ->where(function ($query) {
+                        $query->whereNull('user_roles.expires_at')
+                              ->orWhere('user_roles.expires_at', '>', now());
+                    });
     }
 
     // Enhanced Scopes
@@ -294,7 +300,7 @@ class AdminUser extends Authenticatable
     */
     
     // Legacy fallback method
-    public function hasRole(string $role): bool
+    public function hasRoleLegacy(string $role): bool
     {
         return $this->role === $role || strtolower(str_replace(' ', '_', $this->role)) === strtolower(str_replace(' ', '_', $role));
     }
@@ -315,50 +321,168 @@ class AdminUser extends Authenticatable
 
     
     // Legacy fallback method
-    public function getAllPermissions(): array
+    public function getAllPermissionsLegacy(): array
     {
         return $this->permissions ?? [];
     }
 
     /**
-     * Check if user has permission (legacy version)
+     * Check if user has permission with caching and RBAC support
      */
     public function hasPermission($permission): bool
     {
-        // Super admin has all permissions
-        if ($this->role === 'super_admin') {
+        // Super admin bypass - they have all permissions
+        if ($this->isSuperAdmin()) {
             return true;
         }
 
-        // Check in direct permissions
-        $allPermissions = $this->getAllPermissions();
-        return in_array($permission, $allPermissions);
+        // Cache key for user permissions
+        $cacheKey = "user_permissions_{$this->id}";
+        $userPermissions = Cache::remember($cacheKey, now()->addMinutes(30), function () {
+            $permissions = [];
+
+            // Get permissions from legacy array
+            if ($this->permissions && is_array($this->permissions)) {
+                $permissions = array_merge($permissions, $this->permissions);
+            }
+
+            // Get permissions from roles
+            try {
+                if ($this->roles) {
+                    foreach ($this->roles as $role) {
+                        if ($role->permissions) {
+                            foreach ($role->permissions as $rolePermission) {
+                                $permissions[] = $rolePermission->name;
+                            }
+                        }
+                    }
+                }
+            } catch (\Exception $e) {
+                // Ignore errors and continue
+            }
+
+            return array_unique($permissions);
+        });
+
+        return in_array($permission, $userPermissions);
     }
 
     /**
-     * Check if user has any of the given permissions
+     * Clear user permission cache
+     */
+    public function clearPermissionCache(): void
+    {
+        $cacheKey = "user_permissions_{$this->id}";
+        Cache::forget($cacheKey);
+    }
+
+    /**
+     * Get all user permissions (cached)
+     */
+    public function getAllPermissions(): array
+    {
+        // Super admin bypass - they have all permissions
+        if ($this->isSuperAdmin()) {
+            return ['*']; // Wildcard for all permissions
+        }
+
+        // Cache key for user permissions
+        $cacheKey = "user_permissions_{$this->id}";
+        return Cache::remember($cacheKey, now()->addMinutes(30), function () {
+            $permissions = [];
+
+            // Get permissions from legacy array
+            if ($this->permissions && is_array($this->permissions)) {
+                $permissions = array_merge($permissions, $this->permissions);
+            }
+
+            // Get permissions from roles
+            try {
+                if ($this->roles) {
+                    foreach ($this->roles as $role) {
+                        if ($role->permissions) {
+                            foreach ($role->permissions as $rolePermission) {
+                                $permissions[] = $rolePermission->name;
+                            }
+                        }
+                    }
+                }
+            } catch (\Exception $e) {
+                // Ignore errors and continue
+            }
+
+            return array_unique($permissions);
+        });
+    }
+
+    /**
+     * Check if user has role with RBAC support
+     */
+    public function hasRole($role): bool
+    {
+        // Check legacy role field
+        if ($this->role === $role) {
+            return true;
+        }
+
+        // Check normalized role
+        $roleNormalized = strtolower(str_replace(' ', '_', $this->role ?? ''));
+        $requiredNormalized = strtolower(str_replace(' ', '_', $role));
+        if ($roleNormalized === $requiredNormalized) {
+            return true;
+        }
+
+        // Check via roles relationship if available
+        try {
+            if (method_exists($this, 'roles')) {
+                $userRole = $this->roles()->where('name', $role)->first();
+                if ($userRole) {
+                    return true;
+                }
+            }
+        } catch (\Exception $e) {
+            // Ignore errors and continue
+        }
+
+        return false;
+    }
+
+    /**
+     * Check if user has any of the given permissions with caching
      */
     public function hasAnyPermission(array $permissions): bool
     {
-        if ($this->role === 'super_admin') {
+        // Super admin bypass
+        if ($this->isSuperAdmin()) {
             return true;
         }
 
-        $allPermissions = $this->getAllPermissions();
-        return !empty(array_intersect($permissions, $allPermissions));
+        foreach ($permissions as $permission) {
+            if ($this->hasPermission($permission)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
-     * Check if user has all of the given permissions
+     * Check if user has all of the given permissions with caching
      */
     public function hasAllPermissions(array $permissions): bool
     {
-        if ($this->role === 'super_admin') {
+        // Super admin bypass
+        if ($this->isSuperAdmin()) {
             return true;
         }
 
-        $allPermissions = $this->getAllPermissions();
-        return empty(array_diff($permissions, $allPermissions));
+        foreach ($permissions as $permission) {
+            if (!$this->hasPermission($permission)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     

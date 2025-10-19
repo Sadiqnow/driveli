@@ -14,6 +14,11 @@ class MatchingController extends Controller
 {
     public function index()
     {
+        // Check if user has permission to manage matching
+        if (!auth('admin')->user()->hasPermission('manage_matching')) {
+            abort(403, 'Access denied. Insufficient permissions.');
+        }
+
         // Get available drivers and requests for the manual matching modal
         $availableDrivers = Drivers::select('id', 'driver_id', 'first_name', 'surname', 'phone', 'email')
             ->where('verification_status', 'verified')
@@ -22,7 +27,7 @@ class MatchingController extends Controller
             ->whereNull('deleted_at')
             ->orderBy('first_name')
             ->get();
-        
+
         $pendingRequests = CompanyRequest::with('company')
             ->whereIn('status', ['pending', 'Pending', 'Active'])
             ->whereNull('deleted_at')
@@ -45,7 +50,7 @@ class MatchingController extends Controller
             ->orderBy('created_at', 'desc')
             ->limit(10)
             ->get();
-        
+
         return view('admin.matching.index', compact('availableDrivers', 'pendingRequests', 'recentMatches'));
     }
 

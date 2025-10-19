@@ -25,6 +25,11 @@ class VerificationController extends Controller
 
     public function dashboard(Request $request)
     {
+        // Check if user has permission to manage verification
+        if (!auth('admin')->user()->hasPermission('manage_verification')) {
+            abort(403, 'Access denied. Insufficient permissions.');
+        }
+
         // Get date range from request or default to last 30 days
         $dateRange = [
             'start' => $request->input('start_date', Carbon::now()->subDays(30)->toDateString()),
