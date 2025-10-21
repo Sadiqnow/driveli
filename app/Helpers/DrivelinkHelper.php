@@ -11,7 +11,7 @@ class DrivelinkHelper
     {
         do {
             $id = 'DR' . str_pad(rand(0, 999999), 6, '0', STR_PAD_LEFT);
-        } while (\App\Models\DriverNormalized::where('driver_id', $id)->exists());
+        } while (\App\Models\Driver::where('driver_id', $id)->exists());
         
         return $id;
     }

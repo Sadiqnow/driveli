@@ -13,76 +13,114 @@ class RoleSeeder extends Seeder
      */
     public function run(): void
     {
+        // Define roles with hierarchy: SuperAdmin → Admin → Moderator → Agent → Driver → Company → Matching Officer → Verification Manager
         $roles = [
             [
-                'name' => 'Super Admin',
+                'name' => 'super_admin',
                 'display_name' => 'Super Administrator',
                 'description' => 'Full system access with all permissions',
-                'level' => 10,
+                'level' => 100,
+                'parent_id' => null, // Root level
                 'is_active' => true
             ],
             [
-                'name' => 'Admin',
+                'name' => 'admin',
                 'display_name' => 'Administrator',
                 'description' => 'High-level admin access for managing users and system',
-                'level' => 8,
+                'level' => 90,
+                'parent_id' => null, // Will be set to super_admin after creation
                 'is_active' => true
             ],
             [
-                'name' => 'Moderator',
+                'name' => 'moderator',
                 'display_name' => 'Moderator',
                 'description' => 'Moderate users and content with limited admin access',
-                'level' => 6,
+                'level' => 50,
+                'parent_id' => null, // Will be set to admin after creation
                 'is_active' => true
             ],
             [
-                'name' => 'Agent',
+                'name' => 'agent',
                 'display_name' => 'Field Agent',
                 'description' => 'Field agent for customer interactions and support',
-                'level' => 4,
+                'level' => 30,
+                'parent_id' => null, // Will be set to moderator after creation
                 'is_active' => true
             ],
             [
-                'name' => 'Driver',
+                'name' => 'driver',
                 'display_name' => 'Driver',
                 'description' => 'Driver role for transportation services',
-                'level' => 2,
+                'level' => 20,
+                'parent_id' => null, // Will be set to agent after creation
                 'is_active' => true
             ],
             [
-                'name' => 'Company',
+                'name' => 'company',
                 'display_name' => 'Company Representative',
                 'description' => 'Company representative for business operations',
-                'level' => 3,
+                'level' => 20,
+                'parent_id' => null, // Will be set to agent after creation (same level as driver)
                 'is_active' => true
             ],
             [
-                'name' => 'Matching Officer',
+                'name' => 'matching_officer',
                 'display_name' => 'Matching Officer',
                 'description' => 'Responsible for matching drivers with companies',
-                'level' => 5,
+                'level' => 40,
+                'parent_id' => null, // Will be set to moderator after creation
                 'is_active' => true
             ],
             [
-                'name' => 'Verification Manager',
+                'name' => 'verification_manager',
                 'display_name' => 'Verification Manager',
                 'description' => 'Manages verification processes and approvals',
-                'level' => 7,
+                'level' => 60,
+                'parent_id' => null, // Will be set to admin after creation
                 'is_active' => true
             ]
         ];
 
-        foreach ($roles as $role) {
-            DB::table('roles')->updateOrInsert(
-                ['name' => $role['name']],
+        // First pass: Create all roles without parent_id
+        $createdRoles = [];
+        foreach ($roles as $roleData) {
+            $role = DB::table('roles')->updateOrInsert(
+                ['name' => $roleData['name']],
                 [
-                    'description' => $role['description'],
+                    'display_name' => $roleData['display_name'],
+                    'description' => $roleData['description'],
+                    'level' => $roleData['level'],
+                    'parent_id' => null, // Set to null initially
+                    'is_active' => $roleData['is_active'],
                     'created_at' => now(),
                     'updated_at' => now()
                 ]
             );
+
+            // Get the created/updated role ID
+            $createdRole = DB::table('roles')->where('name', $roleData['name'])->first();
+            $createdRoles[$roleData['name']] = $createdRole->id;
         }
 
-        $this->command->info('Roles seeded successfully.');
+        // Second pass: Update parent_id relationships
+        $hierarchy = [
+            'admin' => 'super_admin',
+            'verification_manager' => 'admin',
+            'moderator' => 'admin',
+            'matching_officer' => 'moderator',
+            'agent' => 'moderator',
+            'driver' => 'agent',
+            'company' => 'agent',
+        ];
+
+        foreach ($hierarchy as $child => $parent) {
+            if (isset($createdRoles[$child]) && isset($createdRoles[$parent])) {
+                DB::table('roles')
+                    ->where('id', $createdRoles[$child])
+                    ->update(['parent_id' => $createdRoles[$parent]]);
+            }
+        }
+
+        $this->command->info('Roles seeded successfully with hierarchy.');
     }
 }

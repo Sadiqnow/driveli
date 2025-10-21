@@ -34,7 +34,7 @@
                         <div class="icon">
                             <i class="fas fa-users"></i>
                         </div>
-                        <a href="{{ route('admin.drivers.index') }}" class="small-box-footer">
+                        <a href="{{ route('admin.superadmin.drivers.index') }}" class="small-box-footer">
                             View All <i class="fas fa-arrow-circle-right"></i>
                         </a>
                     </div>
@@ -50,7 +50,7 @@
                         <div class="icon">
                             <i class="fas fa-user-check"></i>
                         </div>
-                        <a href="{{ route('admin.drivers.index', ['verification_status' => 'verified']) }}" class="small-box-footer">
+                        <a href="{{ route('admin.superadmin.drivers.index', ['verification_status' => 'verified']) }}" class="small-box-footer">
                             View Verified <i class="fas fa-arrow-circle-right"></i>
                         </a>
                     </div>
@@ -66,7 +66,7 @@
                         <div class="icon">
                             <i class="fas fa-clock"></i>
                         </div>
-                        <a href="{{ route('admin.drivers.index', ['verification_status' => 'pending']) }}" class="small-box-footer">
+                        <a href="{{ route('admin.superadmin.drivers.index', ['verification_status' => 'pending']) }}" class="small-box-footer">
                             Review Pending <i class="fas fa-arrow-circle-right"></i>
                         </a>
                     </div>
@@ -82,7 +82,7 @@
                         <div class="icon">
                             <i class="fas fa-car"></i>
                         </div>
-                        <a href="{{ route('admin.drivers.index', ['status' => 'active']) }}" class="small-box-footer">
+                        <a href="{{ route('admin.superadmin.drivers.index', ['status' => 'active']) }}" class="small-box-footer">
                             View Active <i class="fas fa-arrow-circle-right"></i>
                         </a>
                     </div>
@@ -221,7 +221,7 @@
                 <h2 id="filters-heading" class="visually-hidden">Driver Search and Filters</h2>
                 <div class="card">
                 <div class="card-body">
-                    <form method="GET" action="{{ route('admin.drivers.index') }}" class="row g-2">
+                    <form method="GET" action="{{ route('admin.superadmin.drivers.index') }}" class="row g-2">
                         <div class="col-md-3">
                             <label for="driver-search" class="visually-hidden">Search drivers</label>
                             <input type="text" 

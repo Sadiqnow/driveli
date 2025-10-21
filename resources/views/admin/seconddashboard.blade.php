@@ -134,6 +134,7 @@
             <!-- Top Statistics Cards -->
             <div class="row">
                 <!-- Total Drivers -->
+                @if(\App\Helpers\PermissionHelper::hasPermission('view_drivers'))
                 <div class="col-lg-3 col-md-6">
                     <div class="card stat-card bg-primary text-white">
                         <div class="card-body">
@@ -149,14 +150,16 @@
                             </div>
                         </div>
                         <div class="card-footer">
-                            <a href="{{ route('admin.drivers.index') }}" class="text-white">
+                            <a href="{{ route('admin.superadmin.drivers.index') }}" class="text-white">
                                 View All <i class="fas fa-arrow-right ml-1"></i>
                             </a>
                         </div>
                     </div>
                 </div>
+                @endif
 
                 <!-- Active Drivers -->
+                @if(\App\Helpers\PermissionHelper::hasPermission('view_drivers'))
                 <div class="col-lg-3 col-md-6">
                     <div class="card stat-card bg-success text-white">
                         <div class="card-body">
@@ -172,14 +175,16 @@
                             </div>
                         </div>
                         <div class="card-footer">
-                            <a href="{{ route('admin.drivers.index') }}?status=active" class="text-white">
+                            <a href="{{ route('admin.superadmin.drivers.index', ['status' => 'active']) }}" class="text-white">
                                 View Active <i class="fas fa-arrow-right ml-1"></i>
                             </a>
                         </div>
                     </div>
                 </div>
+                @endif
 
                 <!-- Verified Drivers -->
+                @if(\App\Helpers\PermissionHelper::hasPermission('verify_documents'))
                 <div class="col-lg-3 col-md-6">
                     <div class="card stat-card bg-info text-white">
                         <div class="card-body">
@@ -195,14 +200,16 @@
                             </div>
                         </div>
                         <div class="card-footer">
-                            <a href="{{ route('admin.drivers.verification') }}" class="text-white">
+                            <a href="{{ route('admin.superadmin.drivers.verification') }}" class="text-white">
                                 View Verification <i class="fas fa-arrow-right ml-1"></i>
                             </a>
                         </div>
                     </div>
                 </div>
+                @endif
 
                 <!-- Pending Verifications -->
+                @if(\App\Helpers\PermissionHelper::hasPermission('verify_documents'))
                 <div class="col-lg-3 col-md-6">
                     <div class="card stat-card bg-warning text-white">
                         <div class="card-body">
@@ -218,12 +225,38 @@
                             </div>
                         </div>
                         <div class="card-footer">
-                            <a href="{{ route('admin.drivers.verification') }}?type=pending" class="text-white">
+                            <a href="{{ route('admin.superadmin.drivers.verification') }}?type=pending" class="text-white">
                                 Review Pending <i class="fas fa-arrow-right ml-1"></i>
                             </a>
                         </div>
                     </div>
                 </div>
+                @endif
+
+                <!-- System Analytics - SuperAdmin Only -->
+                @if(\App\Helpers\PermissionHelper::hasRole('super_admin'))
+                <div class="col-lg-3 col-md-6">
+                    <div class="card stat-card bg-danger text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <div class="stat-number">{{ $stats['system_users'] ?? 0 }}</div>
+                                    <div class="text-uppercase">System Users</div>
+                                    <small>All roles combined</small>
+                                </div>
+                                <div class="stat-icon">
+                                    <i class="fas fa-server"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer">
+                            <a href="{{ route('admin.superadmin.audit-logs') }}" class="text-white">
+                                View Audit Logs <i class="fas fa-arrow-right ml-1"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                @endif
             </div>
 
             <!-- Charts and Analytics Row -->
@@ -261,19 +294,22 @@
                         </div>
                         <div class="card-body">
                             <div class="d-grid gap-2">
-                                <a href="{{ route('admin.drivers.create') }}" class="btn btn-block">
+                                <a href="{{ route('admin.superadmin.drivers.create') }}" class="btn btn-block">
                                     <i class="fas fa-user-plus"></i> Add New Driver
-                                </a>
-                                <a href="{{ route('admin.drivers.verification') }}" class="btn btn-block">
+                                </a>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 
+                                <a href="{{ route('admin.superadmin.drivers.verification') }}" class="btn btn-block">
                                     <i class="fas fa-clipboard-check"></i> Review Verifications
                                 </a>
-                                <a href="{{ route('admin.drivers.ocr-verification') }}" class="btn btn-block">
+                                <a href="{{ route('admin.superadmin.drivers.ocr-verification') }}" class="btn btn-block">
                                     <i class="fas fa-robot"></i> OCR Dashboard
                                 </a>
-                                <a href="{{ route('admin.drivers.bulk-operations') }}" class="btn btn-block">
+                                <a href="{{ route('admin.superadmin.drivers.analytics') }}" class="btn btn-block">
+                                    <i class="fas fa-chart-bar"></i> Analytics
+                                </a>
+                                <a href="{{ route('admin.superadmin.drivers.bulk-operations') }}" class="btn btn-block">
                                     <i class="fas fa-tasks"></i> Bulk Operations
                                 </a>
-                                <a href="{{ route('admin.drivers.export') }}" class="btn btn-block">
+                                <a href="{{ route('admin.superadmin.drivers.export') }}" class="btn btn-block">
                                     <i class="fas fa-download"></i> Export Data
                                 </a>
                             </div>

@@ -2,18 +2,18 @@
 
 namespace App\Services;
 
-use App\Models\Drivers;
+use App\Models\Driver;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Database\Eloquent\Builder;
 
 /**
- * Service for optimizing driver queries and reducing N+1 problems
- */
-class DriverQueryOptimizationService
-{
-    /**
-     * Cache TTL for different types of data
+     * Service for optimizing driver queries and reducing N+1 problems
      */
+    class DriverQueryOptimizationService
+    {
+        /**
+         * Cache TTL for different types of data
+         */
     const CACHE_TTL_STATS = 300; // 5 minutes
     const CACHE_TTL_LISTS = 120; // 2 minutes
     const CACHE_TTL_DETAILS = 600; // 10 minutes
@@ -26,12 +26,12 @@ class DriverQueryOptimizationService
         try {
             return Cache::remember('driver_dashboard_stats', self::CACHE_TTL_STATS, function () {
                 return [
-                    'total' => Drivers::count(),
-                    'active' => Drivers::where('status', 'active')->count(),
-                    'inactive' => Drivers::where('status', 'inactive')->count(),
-                    'flagged' => Drivers::where('status', 'flagged')->count(),
-                    'verified' => Drivers::where('verification_status', 'verified')->count(),
-                    'kyc_completed' => Drivers::where('kyc_status', 'completed')->count(),
+                    'total' => Driver::count(),
+                    'active' => Driver::where('status', 'active')->count(),
+                    'inactive' => Driver::where('status', 'inactive')->count(),
+                    'flagged' => Driver::where('status', 'flagged')->count(),
+                    'verified' => Driver::where('verification_status', 'verified')->count(),
+                    'kyc_completed' => Driver::where('kyc_status', 'completed')->count(),
                 ];
             });
         } catch (\Exception $e) {
@@ -56,9 +56,8 @@ class DriverQueryOptimizationService
             $cacheKey = 'admin_driver_list_' . md5(serialize($filters) . $perPage);
 
             return Cache::remember($cacheKey, self::CACHE_TTL_LISTS, function () use ($filters, $perPage) {
-                $query = Drivers::query()
+                $query = Driver::query()
                     ->with([
-                        'nationality:id,name',
                         'verifiedBy:id,name,email',
                         'performance:id,driver_id,average_rating,total_jobs_completed'
                     ])
@@ -75,7 +74,7 @@ class DriverQueryOptimizationService
             });
         } catch (\Exception $e) {
             // Fallback if cache/database fails
-            return Drivers::query()
+            return Driver::query()
                 ->select([
                     'id', 'driver_id', 'first_name', 'middle_name', 'surname', 'nickname',
                     'email', 'phone', 'status', 'verification_status', 'is_active',
@@ -88,20 +87,14 @@ class DriverQueryOptimizationService
     /**
      * Get driver details with optimized relationships
      */
-    public function getDriverDetails(int $driverId): ?Drivers
+    public function getDriverDetails(int $driverId): ?Driver
     {
         $cacheKey = "driver_details_{$driverId}";
 
         return Cache::remember($cacheKey, self::CACHE_TTL_DETAILS, function () use ($driverId) {
-            return Drivers::with([
-                'nationality:id,name,code',
+            return Driver::with([
                 'verifiedBy:id,name,email',
-                'originLocation.state:id,name',
-                'originLocation.lga:id,name',
-                'residenceLocation.state:id,name',
-                'residenceLocation.lga:id,name',
                 'primaryBankingDetail.bank:id,name,code',
-                'primaryNextOfKin:id,name,relationship,phone',
                 'performance:id,total_jobs_completed,average_rating,total_earnings',
                 'documents' => function ($query) {
                     $query->select(['id', 'driver_id', 'document_type', 'verification_status', 'created_at'])
@@ -110,10 +103,10 @@ class DriverQueryOptimizationService
             ])
             ->select([
                 'id', 'driver_id', 'first_name', 'middle_name', 'surname', 'nickname',
-                'email', 'phone', 'date_of_birth', 'gender', 'nationality_id',
+                'email', 'phone', 'date_of_birth', 'gender',
                 'status', 'verification_status', 'is_active', 'verified_by',
                 'profile_picture', 'created_at', 'updated_at', 'kyc_status',
-                'license_number', 'license_class', 'license_expiry_date'
+                'license_number'
             ])
             ->find($driverId);
         });
@@ -124,7 +117,7 @@ class DriverQueryOptimizationService
      */
     public function getDriversForBulkOperations(array $driverIds): \Illuminate\Database\Eloquent\Collection
     {
-        return Drivers::whereIn('id', $driverIds)
+        return Driver::whereIn('id', $driverIds)
             ->select(['id', 'driver_id', 'first_name', 'surname', 'email', 'status', 'verification_status'])
             ->get();
     }
@@ -134,7 +127,7 @@ class DriverQueryOptimizationService
      */
     public function getDriversForMatching(array $criteria = []): \Illuminate\Database\Eloquent\Collection
     {
-        $query = Drivers::verified()
+        $query = Driver::verified()
             ->available()
             ->with([
                 'preferences:id,driver_id,preferred_work_areas,vehicle_type_preference',
@@ -144,7 +137,7 @@ class DriverQueryOptimizationService
             ])
             ->select([
                 'id', 'driver_id', 'first_name', 'surname', 'phone',
-                'license_class', 'last_active_at', 'residence_state_id', 'residence_lga_id',
+                'last_active_at', 'residence_state_id', 'residence_lga_id',
                 'vehicle_types', 'work_regions'
             ]);
 
@@ -223,9 +216,8 @@ class DriverQueryOptimizationService
      */
     public function getDriversCursorPaginated(array $filters = [], int $perPage = 25): \Illuminate\Pagination\CursorPaginator
     {
-        $query = Drivers::query()
+        $query = Driver::query()
             ->with([
-                'nationality:id,name',
                 'verifiedBy:id,name'
             ])
             ->select([

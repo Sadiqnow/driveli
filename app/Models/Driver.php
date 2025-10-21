@@ -182,6 +182,48 @@ class Driver extends Authenticatable
     }
 
     // ===========================
+    // QUERY SCOPES
+    // ===========================
+
+    /**
+     * Scope for admin driver listing with basic relationships
+     */
+    public function scopeForAdminList($query)
+    {
+        return $query->with([
+            'personalInfo:id,driver_id,date_of_birth,gender',
+            'performance:id,driver_id,license_number',
+            'primaryBankingDetail:id,driver_id,bank_id,is_verified',
+            'verifiedBy:id,name,email',
+            'documents' => function($q) {
+                $q->select(['id', 'driver_id', 'document_type', 'verification_status']);
+            }
+        ]);
+    }
+
+    /**
+     * Scope for document verification views
+     */
+    public function scopeForDocumentVerification($query)
+    {
+        return $query->with([
+            'documents:id,driver_id,document_type,document_path,verification_status,verified_at',
+            'verifiedBy:id,name,email'
+        ]);
+    }
+
+    /**
+     * Scope for bulk operations
+     */
+    public function scopeForBulkOperations($query)
+    {
+        return $query->select([
+            'id', 'driver_id', 'first_name', 'surname', 'email', 'phone',
+            'status', 'verification_status', 'kyc_status', 'created_at'
+        ]);
+    }
+
+    // ===========================
     // BUSINESS LOGIC METHODS
     // ===========================
 

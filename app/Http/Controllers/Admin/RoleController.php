@@ -8,6 +8,8 @@ use App\Models\Role;
 use App\Models\Permission;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use App\Events\RoleUpdated;
+use App\Events\UserRoleModified;
 
 class RoleController extends Controller
 {
@@ -23,8 +25,9 @@ class RoleController extends Controller
      */
     public function index()
     {
-        $roles = Role::with(['permissions', 'users'])
+        $roles = Role::with(['permissions', 'users', 'parent', 'children'])
                     ->withCount(['users', 'permissions'])
+                    ->orderBy('level', 'desc')
                     ->paginate(15);
 
         return view('admin.roles.index', compact('roles'));
@@ -54,6 +57,7 @@ class RoleController extends Controller
             'display_name' => 'required|string|max:255',
             'description' => 'nullable|string|max:1000',
             'level' => 'required|integer|min:1|max:99', // Super admin level 100 is reserved
+            'parent_id' => 'nullable|exists:roles,id',
             'permissions' => 'nullable|array',
             'permissions.*' => 'exists:permissions,id'
         ]);
@@ -71,6 +75,7 @@ class RoleController extends Controller
                 'display_name' => $request->display_name,
                 'description' => $request->description,
                 'level' => $request->level,
+                'parent_id' => $request->parent_id,
                 'is_active' => true
             ]);
 
@@ -83,6 +88,9 @@ class RoleController extends Controller
             }
 
             DB::commit();
+
+            // Fire event for role creation
+            event(new RoleUpdated($role, $currentUser, 'created'));
 
             return redirect()->route('admin.roles.index')
                            ->with('success', "Role '{$role->display_name}' created successfully.");
@@ -122,6 +130,10 @@ class RoleController extends Controller
 
         $rolePermissions = $role->activePermissions()->pluck('permissions.id')->toArray();
 
+        // Load role with relationships and counts for the view
+        $role->load(['permissions', 'users']);
+        $role->loadCount(['users', 'permissions']);
+
         return view('admin.roles.edit', compact('role', 'permissions', 'rolePermissions'));
     }
 
@@ -140,6 +152,7 @@ class RoleController extends Controller
             'display_name' => 'required|string|max:255',
             'description' => 'nullable|string|max:1000',
             'level' => 'required|integer|min:1|max:99',
+            'parent_id' => 'nullable|exists:roles,id',
             'permissions' => 'nullable|array',
             'permissions.*' => 'exists:permissions,id',
             'is_active' => 'boolean'
@@ -158,6 +171,7 @@ class RoleController extends Controller
                 'display_name' => $request->display_name,
                 'description' => $request->description,
                 'level' => $request->level,
+                'parent_id' => $request->parent_id,
                 'is_active' => $request->boolean('is_active', true)
             ]);
 
@@ -179,6 +193,10 @@ class RoleController extends Controller
             }
 
             DB::commit();
+
+            // Fire event for role update
+            $changes = $role->getChanges();
+            event(new RoleUpdated($role, $currentUser, 'updated', $changes));
 
             return redirect()->route('admin.roles.index')
                            ->with('success', "Role '{$role->display_name}' updated successfully.");
@@ -269,13 +287,72 @@ class RoleController extends Controller
     public function apiIndex()
     {
         $roles = Role::active()
+                    ->with(['parent', 'children'])
                     ->withCount(['users', 'permissions'])
-                    ->orderBy('level')
+                    ->orderBy('level', 'desc')
                     ->get();
 
         return response()->json([
             'success' => true,
             'data' => $roles
+        ]);
+    }
+
+    /**
+     * API: Get role hierarchy tree
+     */
+    public function hierarchy()
+    {
+        $roles = Role::active()
+                    ->with(['children' => function ($query) {
+                        $query->active()->with('children');
+                    }])
+                    ->whereNull('parent_id')
+                    ->orderBy('level', 'desc')
+                    ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $roles
+        ]);
+    }
+
+    /**
+     * API: Update role parent (set hierarchy)
+     */
+    public function setParent(Request $request, Role $role)
+    {
+        $request->validate([
+            'parent_id' => 'nullable|exists:roles,id'
+        ]);
+
+        // Prevent circular references
+        if ($request->parent_id) {
+            $parentRole = Role::find($request->parent_id);
+            if ($parentRole && ($parentRole->id === $role->id || $role->descendants()->where('id', $parentRole->id)->exists())) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cannot set parent role due to circular reference.'
+                ], 400);
+            }
+        }
+
+        $role->update(['parent_id' => $request->parent_id]);
+
+        $currentUser = Auth::guard('admin')->user();
+
+        // Clear permission caches for all users with this role
+        $role->users()->each(function ($user) {
+            $user->clearPermissionCache();
+        });
+
+        // Fire event for hierarchy change
+        event(new RoleUpdated($role, $currentUser, 'hierarchy_changed', ['parent_id' => $request->parent_id]));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Role hierarchy updated successfully.',
+            'data' => $role->load('parent')
         ]);
     }
 
@@ -308,6 +385,11 @@ class RoleController extends Controller
             }
 
             DB::commit();
+
+            // Fire event for permission assignment
+            event(new RoleUpdated($role, $currentUser, 'permissions_assigned', [
+                'assigned_permissions' => $request->permissions
+            ]));
 
             return response()->json([
                 'success' => true,

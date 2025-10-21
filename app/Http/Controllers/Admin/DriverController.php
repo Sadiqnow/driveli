@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Drivers as Driver;
+use App\Models\Driver;
 use Illuminate\Http\Request;
 use App\Http\Requests\DriverRegistrationRequest;
 use App\Http\Requests\DriverProfileUpdateRequest;
@@ -40,7 +40,7 @@ class DriverController extends Controller
             abort(403, 'Access denied. Insufficient permissions.');
         }
 
-        $query = Driver::forAdminList();
+        $query = Driver::query()->forAdminList();
 
         // Search functionality
         if ($request->filled('search')) {
@@ -381,7 +381,7 @@ class DriverController extends Controller
             ]);
 
             return redirect()
-                ->route('admin.drivers.verify-otp', $driver->id)
+                ->route('admin.superadmin.drivers.verify-otp', $driver->id)
                 ->with('success', 'Driver account created successfully! Please verify the contact information to continue.');
 
         } catch (\Exception $e) {
@@ -448,13 +448,13 @@ class DriverController extends Controller
 
         // Check if driver exists and needs verification
         if (!$driver) {
-            return redirect()->route('admin.drivers.index')
+            return redirect()->route('admin.superadmin.drivers.index')
                 ->with('error', 'Driver not found.');
         }
 
         // Check if already verified
         if ($driver->phone_verified_at && $driver->email_verified_at) {
-            return redirect()->route('admin.drivers.create', $driver->id)
+            return redirect()->route('admin.superadmin.drivers.create', $driver->id)
                 ->with('info', 'Contact information already verified. Continue with registration.');
         }
 
@@ -464,7 +464,7 @@ class DriverController extends Controller
         // Send SMS OTP by default
         $smsResult = $otpService->generateAndSendOTP($driver, 'sms');
         if (!$smsResult['success']) {
-            return redirect()->route('admin.drivers.index')
+            return redirect()->route('admin.superadmin.drivers.index')
                 ->with('error', 'Failed to send verification code. Please try again.');
         }
 
@@ -496,7 +496,7 @@ class DriverController extends Controller
             $driver->refresh();
 
             if ($driver->phone_verified_at && $driver->email_verified_at) {
-                return redirect()->route('admin.drivers.create', $driver->id)
+                return redirect()->route('admin.superadmin.drivers.create', $driver->id)
                     ->with('success', 'Contact verification completed! Continue with full registration.');
             } else {
                 $nextType = $verificationType === 'sms' ? 'email' : 'sms';
@@ -561,7 +561,7 @@ class DriverController extends Controller
         // Check if KYC is already completed
         if ($driver->kyc_status === 'completed') {
             return redirect()
-                ->route('admin.drivers.show', $driver->id)
+                ->route('admin.superadmin.drivers.show', $driver->id)
                 ->with('info', 'KYC verification has already been completed for this driver.');
         }
 
@@ -638,7 +638,7 @@ class DriverController extends Controller
             ]);
 
             return redirect()
-                ->route('admin.drivers.show', $driver->id)
+                ->route('admin.superadmin.drivers.show', $driver->id)
                 ->with('success', 'KYC verification completed successfully! The driver profile is now complete.');
 
         } catch (\Exception $e) {
@@ -814,7 +814,7 @@ class DriverController extends Controller
 
             DB::commit();
 
-            return redirect()->route('admin.drivers.show', $driver->id)
+            return redirect()->route('admin.superadmin.drivers.show', $driver->id)
                 ->with('success', 'Driver created successfully with complete KYC information! Driver ID: ' . $driver->driver_id);
 
         } catch (\Illuminate\Validation\ValidationException $e) {
@@ -1080,7 +1080,7 @@ class DriverController extends Controller
                 $successMessage .= ' (Welcome notification failed to send)';
             }
 
-            return redirect()->route('admin.drivers.index')
+            return redirect()->route('admin.superadmin.drivers.index')
                             ->with('success', $successMessage);
 
         } catch (\Exception $e) {
@@ -1120,10 +1120,8 @@ class DriverController extends Controller
         $driver->load([
             'guarantors',
             'verifiedBy:id,name,email',
-            'nationality:id,name,code',
             'performance:id,driver_id,total_jobs_completed,average_rating,total_earnings',
             'primaryBankingDetail:id,driver_id,bank_id,account_name,is_verified',
-            'primaryNextOfKin:id,driver_id,name,relationship,phone',
             'documents' => function($query) {
                 $query->select(['id', 'driver_id', 'document_type', 'document_path', 'verification_status', 'verified_at']);
             }
@@ -1195,7 +1193,7 @@ class DriverController extends Controller
 
             DB::commit();
 
-            return redirect()->route('admin.drivers.index')
+            return redirect()->route('admin.superadmin.drivers.index')
                             ->with('success', 'Driver updated successfully!');
 
         } catch (\Exception $e) {
@@ -1221,7 +1219,7 @@ class DriverController extends Controller
                 'admin_user' => auth('admin')->id()
             ]);
 
-            return redirect()->route('admin.drivers.index')
+            return redirect()->route('admin.superadmin.drivers.index')
                             ->with('success', 'Driver deleted successfully!');
 
         } catch (\Exception $e) {
@@ -2264,7 +2262,7 @@ class DriverController extends Controller
                 'comprehensive' => 'Complete KYC'
             ];
 
-            return redirect()->route('admin.drivers.index')
+            return redirect()->route('admin.superadmin.drivers.index')
                 ->with('success', $modeDisplayNames[$mode] . ' driver account created successfully! Driver ID: ' . $driver->driver_id);
 
         } catch (\Exception $e) {
@@ -2298,7 +2296,7 @@ class DriverController extends Controller
     {
         // Basic rules for all modes
         $rules = [
-            'driver_license_number' => 'required|string|min:3|max:50|unique:drivers,driver_license_number',
+            'driver_license_number' => 'required|string|min:3|max:50|unique:drivers,license_number',
             'first_name' => 'required|string|min:2|max:50',
             'surname' => 'required|string|min:2|max:50',
             'email' => 'required|email|max:100|unique:drivers,email',
@@ -2591,7 +2589,7 @@ class DriverController extends Controller
                 Log::warning('Failed to send KYC approval notification: ' . $e->getMessage());
             }
 
-            return redirect()->route('admin.drivers.kyc-review')
+            return redirect()->route('admin.superadmin.drivers.kyc-review')
                            ->with('success', 'KYC application approved successfully! Driver has been notified.');
 
         } catch (\Exception $e) {
@@ -2676,7 +2674,7 @@ class DriverController extends Controller
                 $message .= ' Driver can retry the KYC process.';
             }
 
-            return redirect()->route('admin.drivers.kyc-review')
+            return redirect()->route('admin.superadmin.drivers.kyc-review')
                            ->with('success', $message);
 
         } catch (\Exception $e) {

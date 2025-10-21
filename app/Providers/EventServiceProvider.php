@@ -8,6 +8,12 @@ use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvi
 use Illuminate\Support\Facades\Event;
 use App\Events\DriverKycCompleted;
 use App\Listeners\NotifyAdminsOfKycCompletion;
+use App\Events\RoleUpdated;
+use App\Events\PermissionChanged;
+use App\Events\UserRoleModified;
+use App\Listeners\RoleUpdatedListener;
+use App\Listeners\PermissionChangedListener;
+use App\Listeners\UserRoleModifiedListener;
 
 class EventServiceProvider extends ServiceProvider
 {
@@ -22,6 +28,15 @@ class EventServiceProvider extends ServiceProvider
         ],
         DriverKycCompleted::class => [
             NotifyAdminsOfKycCompletion::class,
+        ],
+        RoleUpdated::class => [
+            RoleUpdatedListener::class,
+        ],
+        PermissionChanged::class => [
+            PermissionChangedListener::class,
+        ],
+        UserRoleModified::class => [
+            UserRoleModifiedListener::class,
         ],
     ];
 

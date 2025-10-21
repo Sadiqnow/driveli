@@ -239,8 +239,12 @@
                             <i class="fas fa-user mr-2"></i> Profile
                         </a>
                         <div class="dropdown-divider"></div>
-                        <form action="{{ route('admin.logout') }}" method="POST" style="display: inline;">
+                        <form method="POST" action="{{ route('admin.logout') }}" class="d-inline">
                             @csrf
+                            <button type="submit" class="dropdown-item border-0 bg-transparent w-100 text-start">
+                                <i class="fas fa-sign-out-alt mr-2"></i> Logout
+                            </button>
+                        </form>
                             <button type="submit" class="dropdown-item" style="border: none; background: none; width: 100%; text-align: left;">
                                 <i class="fas fa-sign-out-alt mr-2"></i> Logout
                             </button>
@@ -282,8 +286,8 @@
                         <!-- Drivers Section - Simplified -->
                         <li class="nav-header" role="separator">DRIVERS</li>
                         <li class="nav-item">
-                            <a href="{{ route('admin.drivers.index') }}" 
-                               class="nav-link {{ request()->is('admin/drivers*') && !request()->is('admin/drivers/create') ? 'active' : '' }}"
+                            <a href="{{ route('admin.superadmin.drivers.index') }}"
+                               class="nav-link {{ request()->is('admin/superadmin/drivers*') && !request()->is('admin/superadmin/drivers/create') ? 'active' : '' }}"
                                aria-label="View and manage all drivers">
                                 <i class="nav-icon fas fa-users" aria-hidden="true"></i>
                                 <p>All Drivers
@@ -297,8 +301,8 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a href="{{ route('admin.drivers.create') }}" 
-                               class="nav-link {{ request()->is('admin/drivers/create') ? 'active' : '' }}"
+                            <a href="{{ route('admin.superadmin.drivers.create') }}"
+                               class="nav-link {{ request()->is('admin/superadmin/drivers/create') ? 'active' : '' }}"
                                aria-label="Add new driver">
                                 <i class="nav-icon fas fa-user-plus" aria-hidden="true"></i>
                                 <p>Add Driver</p>

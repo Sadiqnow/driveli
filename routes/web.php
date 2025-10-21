@@ -186,12 +186,13 @@ Route::prefix('admin')->name('admin.')->group(function () {
         });
 
         // Driver Management (DriverNormalized)
-        Route::prefix('drivers')->name('drivers.')->middleware(['auth:admin', 'role.permission:Admin,manage_drivers'])->group(function () {
+        Route::prefix('drivers')->name('drivers.')->middleware(['auth:admin'])->group(function () {
             Route::get('/', [DriverController::class, 'index'])->name('index');
             Route::get('/verification', [DriverController::class, 'verificationDashboard'])->name('verification');
             Route::get('/create', [DriverController::class, 'create'])->name('create');
             Route::post('/', [DriverController::class, 'store'])->name('store');
-            
+            Route::post('/store-unified', [DriverController::class, 'storeUnified'])->name('store-unified');
+
             // Comprehensive KYC driver creation (Full form)
             Route::get('/create-comprehensive', [DriverController::class, 'createComprehensive'])->name('create-comprehensive');
             Route::post('/create-comprehensive', [DriverController::class, 'storeComprehensive'])->name('store-comprehensive');
@@ -273,7 +274,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         });
 
         // Company Management
-        Route::prefix('companies')->name('companies.')->group(function () {
+        Route::prefix('companies')->name('companies.')->middleware(['auth:admin'])->group(function () {
             Route::get('/', [CompanyController::class, 'index'])->name('index');
             Route::get('/create', [CompanyController::class, 'create'])->name('create');
             Route::post('/', [CompanyController::class, 'store'])->name('store');
@@ -286,6 +287,17 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::put('/{company}', [CompanyController::class, 'update'])->name('update');
             Route::delete('/{company}', [CompanyController::class, 'destroy'])->name('destroy');
             Route::post('/{company}/toggle-status', [CompanyController::class, 'toggleStatus'])->name('toggle-status');
+        });
+
+        // Route Permission Management
+        Route::prefix('route-permissions')->name('route-permissions.')->middleware(['check.permission:manage_route_permissions'])->group(function () {
+            Route::get('/', [App\Http\Controllers\Admin\RoutePermissionController::class, 'index'])->name('index');
+            Route::post('/', [App\Http\Controllers\Admin\RoutePermissionController::class, 'store'])->name('store');
+            Route::put('/{id}', [App\Http\Controllers\Admin\RoutePermissionController::class, 'update'])->name('update');
+            Route::delete('/{id}', [App\Http\Controllers\Admin\RoutePermissionController::class, 'destroy'])->name('destroy');
+            Route::post('/bulk-update', [App\Http\Controllers\Admin\RoutePermissionController::class, 'bulkUpdate'])->name('bulk-update');
+            Route::post('/sync-routes', [App\Http\Controllers\Admin\RoutePermissionController::class, 'syncRoutes'])->name('sync-routes');
+            Route::get('/export', [App\Http\Controllers\Admin\RoutePermissionController::class, 'export'])->name('export');
         });
 
     });
@@ -589,6 +601,7 @@ Route::bind('driver', function ($value) {
 
 Route::prefix('admin/superadmin')->name('admin.superadmin.')->group(function () {
     Route::middleware(['auth:admin', 'role.permission:Super Admin,manage_superadmin'])->group(function () {
+        Route::post('/logout', [AdminAuthController::class, 'logout'])->name('logout');
         Route::get('/', [App\Http\Controllers\Admin\SuperAdminController::class, 'dashboard'])->name('dashboard');
         Route::get('/index', [App\Http\Controllers\Admin\SuperAdminController::class, 'index'])->name('index');
         Route::get('/users', [App\Http\Controllers\Admin\SuperAdminController::class, 'users'])->name('users');
@@ -654,6 +667,8 @@ Route::prefix('admin/superadmin')->name('admin.superadmin.')->group(function () 
 
             // Document management
             Route::get('/{driver}/documents', [App\Http\Controllers\SuperadminDriverController::class, 'viewDocuments'])->name('documents');
+            Route::get('/{driver}/documents-export', [App\Http\Controllers\SuperadminDriverController::class, 'exportDocuments'])->name('documents-export');
+            Route::get('/documents-history', [App\Http\Controllers\SuperadminDriverController::class, 'getDocumentHistory'])->name('documents-history');
             Route::post('/{driver}/documents/approve', [App\Http\Controllers\SuperadminDriverController::class, 'approveDocument'])->name('documents.approve');
             Route::post('/{driver}/documents/reject', [App\Http\Controllers\SuperadminDriverController::class, 'rejectDocument'])->name('documents.reject');
 
@@ -697,6 +712,7 @@ Route::prefix('admin/superadmin')->name('admin.superadmin.')->group(function () 
 
             // Analytics route
             Route::get('/analytics', [App\Http\Controllers\SuperadminDriverController::class, 'analytics'])->name('analytics');
+            Route::get('/analytics-export', [App\Http\Controllers\SuperadminDriverController::class, 'exportAnalytics'])->name('analytics-export');
 
             // Audit trail route
             Route::get('/audit', [App\Http\Controllers\SuperadminDriverController::class, 'audit'])->name('audit');

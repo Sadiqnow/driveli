@@ -214,9 +214,12 @@
                             <i class="fas fa-cog mr-2"></i> Settings
                         </a>
                         <div class="dropdown-divider"></div>
-                        <a href="{{ route('admin.logout') }}" class="dropdown-item">
-                            <i class="fas fa-sign-out-alt mr-2"></i> Logout
-                        </a>
+                        <form method="POST" action="{{ route('admin.logout') }}" class="d-inline">
+                            @csrf
+                            <button type="submit" class="dropdown-item border-0 bg-transparent w-100 text-start">
+                                <i class="fas fa-sign-out-alt mr-2"></i> Logout
+                            </button>
+                        </form>
                     </div>
                 </li>
             </ul>
@@ -247,237 +250,41 @@
                 <!-- Sidebar Menu -->
                 <nav class="mt-2">
                     <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
-                        <!-- Dashboard -->
+                        @php
+                            $filteredMenus = \App\Helpers\PermissionHelper::getFilteredMenus();
+                        @endphp
+
+                        @foreach($filteredMenus as $menuKey => $menu)
+                        <!-- {{ ucfirst(str_replace('_', ' ', $menuKey)) }} -->
+                        @if(isset($menu['submenu']))
+                        <li class="nav-item {{ request()->routeIs('admin.' . $menuKey . '*') ? 'menu-open' : '' }}">
+                            <a href="#" class="nav-link {{ request()->routeIs('admin.' . $menuKey . '*') ? 'active' : '' }}">
+                                <i class="nav-icon {{ $menu['icon'] ?? 'fas fa-circle' }}"></i>
+                                <p>
+                                    {{ $menu['label'] }}
+                                    <i class="right fas fa-angle-left"></i>
+                                </p>
+                            </a>
+                            <ul class="nav nav-treeview">
+                                @foreach($menu['submenu'] as $subKey => $subMenu)
+                                <li class="nav-item">
+                                    <a href="{{ route($subMenu['route']) }}" class="nav-link {{ request()->routeIs($subMenu['route']) ? 'active' : '' }}">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>{{ $subMenu['label'] }}</p>
+                                    </a>
+                                </li>
+                                @endforeach
+                            </ul>
+                        </li>
+                        @else
                         <li class="nav-item">
-                            <a href="{{ route('admin.dashboard') }}" class="nav-link {{ request()->routeIs('admin.dashboard*') ? 'active' : '' }}">
-                                <i class="nav-icon fas fa-tachometer-alt"></i>
-                                <p>Dashboard</p>
+                            <a href="{{ isset($menu['route']) ? route($menu['route']) : '#' }}" class="nav-link {{ request()->routeIs('admin.' . $menuKey . '*') ? 'active' : '' }}">
+                                <i class="nav-icon {{ $menu['icon'] ?? 'fas fa-circle' }}"></i>
+                                <p>{{ $menu['label'] }}</p>
                             </a>
                         </li>
-
-                        <!-- Users Management -->
-                        @can('manage_users')
-                        <li class="nav-item {{ request()->routeIs('admin.users*') ? 'menu-open' : '' }}">
-                            <a href="#" class="nav-link {{ request()->routeIs('admin.users*') ? 'active' : '' }}">
-                                <i class="nav-icon fas fa-users"></i>
-                                <p>
-                                    Users
-                                    <i class="right fas fa-angle-left"></i>
-                                </p>
-                            </a>
-                            <ul class="nav nav-treeview">
-                                <li class="nav-item">
-                                    <a href="{{ route('admin.users.index') }}" class="nav-link {{ request()->routeIs('admin.users.index') ? 'active' : '' }}">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>All Users</p>
-                                    </a>
-                                </li>
-                                @can('create_users')
-                                <li class="nav-item">
-                                    <a href="{{ route('admin.users.create') }}" class="nav-link {{ request()->routeIs('admin.users.create') ? 'active' : '' }}">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>Add User</p>
-                                    </a>
-                                </li>
-                                @endcan
-                            </ul>
-                        </li>
-                        @endcan
-
-                        <!-- Roles & Permissions Management -->
-                        @can('view_roles')
-                        <li class="nav-item {{ request()->routeIs('admin.roles*', 'admin.permissions*') ? 'menu-open' : '' }}">
-                            <a href="#" class="nav-link {{ request()->routeIs('admin.roles*', 'admin.permissions*') ? 'active' : '' }}">
-                                <i class="nav-icon fas fa-shield-alt"></i>
-                                <p>
-                                    Roles & Permissions
-                                    <i class="right fas fa-angle-left"></i>
-                                </p>
-                            </a>
-                            <ul class="nav nav-treeview">
-                                <li class="nav-item">
-                                    <a href="{{ route('admin.roles.index') }}" class="nav-link {{ request()->routeIs('admin.roles.index') ? 'active' : '' }}">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>Roles</p>
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a href="{{ route('admin.permissions.index') }}" class="nav-link {{ request()->routeIs('admin.permissions.index') ? 'active' : '' }}">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>Permissions</p>
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
-                        @endcan
-
-                        <!-- Roles & Permissions - TEMPORARILY DISABLED until role system is implemented -->
-                        {{-- @can('view_roles')
-                        <li class="nav-item {{ request()->routeIs('admin.roles*', 'admin.permissions*') ? 'menu-open' : '' }}">
-                            <a href="#" class="nav-link {{ request()->routeIs('admin.roles*', 'admin.permissions*') ? 'active' : '' }}">
-                                <i class="nav-icon fas fa-shield-alt"></i>
-                                <p>
-                                    Roles & Permissions
-                                    <i class="right fas fa-angle-left"></i>
-                                </p>
-                            </a>
-                            <ul class="nav nav-treeview">
-                                <li class="nav-item">
-                                    <a href="{{ route('admin.roles.index') }}" class="nav-link {{ request()->routeIs('admin.roles.index') ? 'active' : '' }}">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>Roles</p>
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a href="{{ route('admin.permissions.index') }}" class="nav-link {{ request()->routeIs('admin.permissions.index') ? 'active' : '' }}">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>Permissions</p>
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
-                        @endcan --}}
-
-                        <!-- Driver Management -->
-                        <li class="nav-item {{ request()->routeIs('admin.drivers*') ? 'menu-open' : '' }}">
-                            <a href="#" class="nav-link {{ request()->routeIs('admin.drivers*') ? 'active' : '' }}">
-                                <i class="nav-icon fas fa-car"></i>
-                                <p>
-                                    Drivers
-                                    <i class="right fas fa-angle-left"></i>
-                                </p>
-                            </a>
-                            <ul class="nav nav-treeview">
-                                <li class="nav-item">
-                                    <a href="{{ route('admin.drivers.index') }}" class="nav-link {{ request()->routeIs('admin.drivers.index') ? 'active' : '' }}">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>All Drivers</p>
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a href="{{ route('admin.drivers.create') }}" class="nav-link {{ request()->routeIs('admin.drivers.create') ? 'active' : '' }}">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>Add Driver</p>
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a href="{{ route('admin.verification.dashboard') }}" class="nav-link {{ request()->routeIs('admin.verification.dashboard') ? 'active' : '' }}">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>Verification</p>
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
-
-                        <!-- Company Management -->
-                        <li class="nav-item {{ request()->routeIs('admin.companies*', 'admin.requests*') ? 'menu-open' : '' }}">
-                            <a href="#" class="nav-link {{ request()->routeIs('admin.companies*', 'admin.requests*') ? 'active' : '' }}">
-                                <i class="nav-icon fas fa-building"></i>
-                                <p>
-                                    Companies
-                                    <i class="right fas fa-angle-left"></i>
-                                </p>
-                            </a>
-                            <ul class="nav nav-treeview">
-                                <li class="nav-item">
-                                    <a href="{{ route('admin.companies.index') }}" class="nav-link {{ request()->routeIs('admin.companies.index') ? 'active' : '' }}">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>All Companies</p>
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a href="{{ route('admin.requests.index') }}" class="nav-link {{ request()->routeIs('admin.requests.index') ? 'active' : '' }}">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>Requests</p>
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
-
-                        <!-- Matching System -->
-                        <li class="nav-item {{ request()->routeIs('admin.matching*') ? 'menu-open' : '' }}">
-                            <a href="#" class="nav-link {{ request()->routeIs('admin.matching*') ? 'active' : '' }}">
-                                <i class="nav-icon fas fa-handshake"></i>
-                                <p>
-                                    Matching
-                                    <i class="right fas fa-angle-left"></i>
-                                </p>
-                            </a>
-                            <ul class="nav nav-treeview">
-                                <li class="nav-item">
-                                    <a href="{{ route('admin.matching.dashboard') }}" class="nav-link {{ request()->routeIs('admin.matching.dashboard') ? 'active' : '' }}">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>Dashboard</p>
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a href="{{ route('admin.matching.index') }}" class="nav-link {{ request()->routeIs('admin.matching.index') ? 'active' : '' }}">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>Manual Matching</p>
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
-
-                        <!-- Reports -->
-                        <li class="nav-item {{ request()->routeIs('admin.reports*') ? 'menu-open' : '' }}">
-                            <a href="#" class="nav-link {{ request()->routeIs('admin.reports*') ? 'active' : '' }}">
-                                <i class="nav-icon fas fa-chart-bar"></i>
-                                <p>
-                                    Reports
-                                    <i class="right fas fa-angle-left"></i>
-                                </p>
-                            </a>
-                            <ul class="nav nav-treeview">
-                                <li class="nav-item">
-                                    <a href="{{ route('admin.reports.index') }}" class="nav-link {{ request()->routeIs('admin.reports.index') ? 'active' : '' }}">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>Overview</p>
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a href="{{ route('admin.reports.dashboard') }}" class="nav-link {{ request()->routeIs('admin.reports.dashboard') ? 'active' : '' }}">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>Analytics</p>
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
-
-                        <!-- Super Admin (Only for Super Admins) - TEMPORARILY DISABLED until superadmin routes are implemented -->
-                        {{-- @hasrole('super_admin')
-                        <li class="nav-item {{ request()->routeIs('admin.superadmin*') ? 'menu-open' : '' }}">
-                            <a href="#" class="nav-link {{ request()->routeIs('admin.superadmin*') ? 'active' : '' }}">
-                                <i class="nav-icon fas fa-crown"></i>
-                                <p>
-                                    Super Admin
-                                    <i class="right fas fa-angle-left"></i>
-                                </p>
-                            </a>
-                            <ul class="nav nav-treeview">
-                                <li class="nav-item">
-                                    <a href="{{ route('admin.superadmin.index') }}" class="nav-link {{ request()->routeIs('admin.superadmin.index') ? 'active' : '' }}">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>Dashboard</p>
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a href="{{ route('admin.superadmin.audit-logs') }}" class="nav-link {{ request()->routeIs('admin.superadmin.audit-logs') ? 'active' : '' }}">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>Audit Logs</p>
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
-                        @endhasrole --}}
-
-                        <!-- Settings -->
-                        <li class="nav-item">
-                            <a href="{{ route('admin.superadmin.settings') }}" class="nav-link {{ request()->routeIs('admin.superadmin.settings*') ? 'active' : '' }}">
-                                <i class="nav-icon fas fa-cog"></i>
-                                <p>Settings</p>
-                            </a>
-                        </li>
+                        @endif
+                        @endforeach
                     </ul>
                 </nav>
                 <!-- /.sidebar-menu -->

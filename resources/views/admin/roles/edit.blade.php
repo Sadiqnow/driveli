@@ -38,6 +38,28 @@
 
                             <div class="col-md-6">
                                 <div class="form-group">
+                                    <label for="parent_id">Parent Role</label>
+                                    <select name="parent_id" id="parent_id" class="form-control @error('parent_id') is-invalid @enderror">
+                                        <option value="">-- Select Parent Role (Optional) --</option>
+                                        @foreach(\App\Models\Role::active()->where('id', '!=', $role->id)->orderBy('level', 'desc')->get() as $parentRole)
+                                            @if($parentRole->name !== 'super_admin' || auth('admin')->user()->hasRole('super_admin'))
+                                            <option value="{{ $parentRole->id }}" {{ old('parent_id', $role->parent_id) == $parentRole->id ? 'selected' : '' }}>
+                                                {{ $parentRole->display_name }} (Level {{ $parentRole->level }})
+                                            </option>
+                                            @endif
+                                        @endforeach
+                                    </select>
+                                    <small class="form-text text-muted">Child roles inherit permissions from parent roles</small>
+                                    @error('parent_id')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
                                     <label for="level">Role Level <span class="text-danger">*</span></label>
                                     <input type="number" name="level" id="level" class="form-control @error('level') is-invalid @enderror"
                                            value="{{ old('level', $role->level) }}" min="1" max="99" required>
@@ -58,11 +80,7 @@
                         <div class="form-group">
                             <label>Permissions</label>
                             <div class="border p-3" style="max-height: 400px; overflow-y: auto;">
-                                @php
-                                    $groupedPermissions = $permissions->groupBy('category');
-                                @endphp
-
-                                @foreach($groupedPermissions as $category => $categoryPermissions)
+                                @foreach($permissions as $category => $categoryPermissions)
                                 <div class="mb-3">
                                     <h6 class="text-primary mb-2">
                                         <i class="fas fa-folder"></i> {{ $category }}
@@ -97,17 +115,29 @@
                         </div>
 
                         <!-- Role Statistics -->
-                        <div class="alert alert-info">
-                            <h6><i class="fas fa-info-circle"></i> Role Statistics</h6>
-                            <div class="row">
-                                <div class="col-md-4">
-                                    <strong>{{ $role->users_count }}</strong> users assigned
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="info-box bg-light">
+                                    <div class="info-box-content">
+                                        <span class="info-box-text">Users Assigned</span>
+                                        <span class="info-box-number">{{ $role->users_count }}</span>
+                                    </div>
                                 </div>
-                                <div class="col-md-4">
-                                    <strong>{{ $role->permissions_count }}</strong> permissions
+                            </div>
+                            <div class="col-md-4">
+                                <div class="info-box bg-light">
+                                    <div class="info-box-content">
+                                        <span class="info-box-text">Permissions</span>
+                                        <span class="info-box-number">{{ $role->permissions_count }}</span>
+                                    </div>
                                 </div>
-                                <div class="col-md-4">
-                                    <strong>Level {{ $role->level }}</strong> hierarchy
+                            </div>
+                            <div class="col-md-4">
+                                <div class="info-box bg-light">
+                                    <div class="info-box-content">
+                                        <span class="info-box-text">Hierarchy Level</span>
+                                        <span class="info-box-number">{{ $role->level }}</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>

@@ -1,56 +1,49 @@
-# SuperAdmin Role & Permission Management - Implementation Plan
+# Role-Based Dashboard Visibility and Menu Filtering System Implementation
 
-## Phase 1: Database Schema Updates
-- [ ] Create unified migration for permissions table with all required fields
-- [ ] Update roles table migration with proper constraints
-- [ ] Ensure foreign key constraints and cascading deletes
-- [ ] Add indexes for performance
+## Tasks to Complete
 
-## Phase 2: Model Updates
-- [ ] Update Permission model relationships and methods
-- [ ] Update Role model to use custom implementation consistently
-- [ ] Update AdminUser model role/permission methods
-- [ ] Standardize all relationships across models
+### 1. Create Centralized Menu Configuration
+- [x] Create `config/menus.php` with permission-based menu structure
+- [x] Define permissions for each dashboard section
 
-## Phase 3: Controller Development
-- [ ] Create SuperAdmin/RoleController for unified role management
-- [ ] Create SuperAdmin/PermissionController for permission management
-- [ ] Add API endpoints for assign/revoke/update operations
-- [ ] Implement backend verification (SuperAdmin only)
+### 2. Create Permission Helper
+- [x] Create `app/Helpers/PermissionHelper.php` for Blade templates
+- [x] Implement `hasPermission()` helper function with caching
 
-## Phase 4: Views and UI
-- [ ] Create SuperAdmin dashboard role management views
-- [ ] Build permission assignment interfaces
-- [ ] Add user filtering by roles (SuperAdmin, Admin, Moderator, Agent, Driver, Company, Matching Officer, Verification Manager)
-- [ ] Implement dynamic UI updates
+### 3. Update Admin Master Layout
+- [x] Modify `resources/views/layouts/admin_master.blade.php`
+- [x] Implement dynamic menu filtering based on user permissions
+- [x] Replace static menu items with dynamic ones using config
 
-## Phase 5: APIs and Middleware
-- [ ] Add API routes for role/permission operations
-- [ ] Update middleware for dynamic access control
-- [ ] Implement permission caching and cache invalidation
+### 4. Update Dashboard Widgets
+- [x] Modify `resources/views/admin/seconddashboard.blade.php`
+- [x] Add role-based widget visibility (SuperAdmin vs Admin vs others)
+- [x] Hide/show dashboard cards based on permissions
 
-## Phase 6: Seeding and Testing
-- [ ] Create RolePermissionSeeder with sample roles and permissions
-- [ ] Test role assignments and permission checks
-- [ ] Verify access control reflects dynamically
-- [ ] Test user filtering functionality
+### 5. Integrate Permission Caching
+- [x] Ensure all permission checks use RoleSyncService caching
+- [x] Verify performance optimization
 
-## Phase 7: Integration and Verification
-- [ ] Integrate with existing admin/superadmin systems
-- [ ] Test full CRUD operations
-- [ ] Verify backend verification logic
-- [ ] Performance testing and optimization
+### 6. Testing and Verification
+- [x] Test login as SuperAdmin - verify all menus/widgets visible
+- [x] Test login as Admin - verify limited access (dashboard, reports)
+- [x] Test login as Moderator/Agent/Driver - verify minimal access
+- [x] Verify permission caching works correctly
 
-## Files to Create/Modify:
-- database/migrations/*_unified_rbac_tables.php
-- app/Models/Role.php
-- app/Models/Permission.php
-- app/Models/AdminUser.php
-- app/Http/Controllers/SuperAdmin/RoleController.php
-- app/Http/Controllers/SuperAdmin/PermissionController.php
-- resources/views/superadmin/roles/*
-- resources/views/superadmin/permissions/*
-- routes/web.php
-- routes/api.php
-- app/Http/Middleware/RolePermissionMiddleware.php
-- database/seeders/RolePermissionSeeder.php
+### 7. Optional Enhancements
+- [ ] Add menu management UI for SuperAdmin
+- [ ] Add role-specific dashboard layouts
+- [ ] Implement component-level access control with @can directives
+
+## Current Status
+- Core implementation completed
+- Menu configuration created
+- Permission helper implemented
+- Layout updated with dynamic filtering
+- Dashboard widgets made role-based
+- Caching integrated
+
+## Notes
+- Using existing RoleSyncService for caching
+- Leveraging existing CheckPermission middleware
+- Building on current role/permission system

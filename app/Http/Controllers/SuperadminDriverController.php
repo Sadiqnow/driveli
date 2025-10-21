@@ -459,6 +459,47 @@ class SuperadminDriverController extends Controller
     }
 
     /**
+     * Approve driver directly
+     */
+    public function approve(Request $request, Driver $driver)
+    {
+        $request->validate([
+            'notes' => 'nullable|string|max=1000'
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $admin = Auth::guard('admin')->user();
+
+            $driver->update([
+                'verification_status' => 'verified',
+                'verified_at' => now(),
+                'verified_by' => $admin->id,
+                'verification_notes' => $request->notes,
+                'status' => 'active'
+            ]);
+
+            // Log activity
+            SuperadminActivityLogger::logVerificationAction($driver, 'approve', $admin, $request->notes);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Driver approved successfully.'
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to approve driver: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Flag driver with reason
      */
     public function flag(Request $request, Driver $driver)
@@ -704,11 +745,78 @@ class SuperadminDriverController extends Controller
     /**
      * Document management for Superadmin
      */
-    public function documents(Request $request, Driver $driver)
+    public function viewDocuments(Request $request, Driver $driver)
     {
         $documents = $driver->documents()->with('verifiedBy')->get();
 
         return view('admin.superadmin.drivers.documents', compact('driver', 'documents'));
+    }
+
+    /**
+     * Export driver documents
+     */
+    public function exportDocuments(Request $request, Driver $driver)
+    {
+        $documents = $driver->documents()->with('verifiedBy')->get();
+
+        // Generate CSV export
+        $filename = 'driver_' . $driver->driver_id . '_documents_' . now()->format('Y-m-d_H-i-s') . '.csv';
+
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ];
+
+        $callback = function() use ($documents, $driver) {
+            $file = fopen('php://output', 'w');
+
+            // CSV headers
+            fputcsv($file, [
+                'Driver ID',
+                'Driver Name',
+                'Document Type',
+                'Document Path',
+                'Verification Status',
+                'Verified By',
+                'Verified At',
+                'Uploaded At'
+            ]);
+
+            // CSV data
+            foreach ($documents as $document) {
+                fputcsv($file, [
+                    $driver->driver_id,
+                    $driver->full_name,
+                    $document->document_type,
+                    $document->document_path,
+                    $document->verification_status,
+                    $document->verifiedBy ? $document->verifiedBy->name : 'N/A',
+                    $document->verified_at ? $document->verified_at->format('Y-m-d H:i:s') : 'N/A',
+                    $document->created_at->format('Y-m-d H:i:s')
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    /**
+     * Get document history for admin dashboard
+     */
+    public function getDocumentHistory(Request $request)
+    {
+        // This would typically fetch from an audit log or document history table
+        // For now, return a sample structure
+        $history = [
+            // Sample data - in real implementation, this would come from database
+        ];
+
+        return response()->json([
+            'success' => true,
+            'history' => $history
+        ]);
     }
 
     /**

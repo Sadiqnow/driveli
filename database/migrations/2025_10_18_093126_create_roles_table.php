@@ -22,12 +22,17 @@ return new class extends Migration
                 $table->integer('level')->default(1);
                 $table->boolean('is_active')->default(true);
                 $table->json('meta')->nullable();
+                $table->unsignedBigInteger('parent_id')->nullable();
                 $table->timestamps();
                 $table->softDeletes();
 
                 $table->index('name');
                 $table->index(['name', 'is_active']);
                 $table->index('level');
+                $table->index('parent_id');
+
+                // Foreign key constraint with cascading delete set to null
+                $table->foreign('parent_id')->references('id')->on('roles')->onDelete('set null');
             });
         } else {
             // Update existing table if needed
@@ -46,6 +51,11 @@ return new class extends Migration
                 }
                 if (!Schema::hasColumn('roles', 'meta')) {
                     $table->json('meta')->nullable()->after('is_active');
+                }
+                if (!Schema::hasColumn('roles', 'parent_id')) {
+                    $table->unsignedBigInteger('parent_id')->nullable()->after('meta');
+                    $table->foreign('parent_id')->references('id')->on('roles')->onDelete('set null');
+                    $table->index('parent_id');
                 }
                 if (!Schema::hasColumn('roles', 'deleted_at')) {
                     $table->softDeletes();

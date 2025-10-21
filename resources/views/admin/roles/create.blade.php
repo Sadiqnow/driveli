@@ -48,6 +48,26 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
+                                    <label for="parent_id">Parent Role</label>
+                                    <select name="parent_id" id="parent_id" class="form-control @error('parent_id') is-invalid @enderror">
+                                        <option value="">-- Select Parent Role (Optional) --</option>
+                                        @foreach(\App\Models\Role::active()->orderBy('level', 'desc')->get() as $parentRole)
+                                            @if($parentRole->name !== 'super_admin' || auth('admin')->user()->hasRole('super_admin'))
+                                            <option value="{{ $parentRole->id }}" {{ old('parent_id') == $parentRole->id ? 'selected' : '' }}>
+                                                {{ $parentRole->display_name }} (Level {{ $parentRole->level }})
+                                            </option>
+                                            @endif
+                                        @endforeach
+                                    </select>
+                                    <small class="form-text text-muted">Child roles inherit permissions from parent roles</small>
+                                    @error('parent_id')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="form-group">
                                     <label for="level">Role Level <span class="text-danger">*</span></label>
                                     <input type="number" name="level" id="level" class="form-control @error('level') is-invalid @enderror"
                                            value="{{ old('level', 1) }}" min="1" max="99" required>
@@ -57,7 +77,9 @@
                                     @enderror
                                 </div>
                             </div>
+                        </div>
 
+                        <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="is_active">Status</label>

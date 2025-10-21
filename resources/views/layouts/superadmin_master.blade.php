@@ -277,9 +277,12 @@
                             <i class="fas fa-history mr-2"></i> Audit Logs
                         </a>
                         <div class="dropdown-divider"></div>
-                        <a href="{{ route('admin.logout') }}" class="dropdown-item">
-                            <i class="fas fa-sign-out-alt mr-2"></i> Logout
-                        </a>
+                        <form method="POST" action="{{ route('admin.superadmin.logout') }}" class="d-inline">
+                            @csrf
+                            <button type="submit" class="dropdown-item border-0 bg-transparent w-100 text-start">
+                                <i class="fas fa-sign-out-alt mr-2"></i> Logout
+                            </button>
+                        </form>
                     </div>
                 </li>
             </ul>

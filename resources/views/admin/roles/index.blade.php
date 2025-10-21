@@ -26,13 +26,16 @@
             <div class="col-12">
                 <div class="card">
                     <div class="card-header">
-                        <h3 class="card-title">System Roles</h3>
+                        <h3 class="card-title">System Roles Hierarchy</h3>
                         <div class="card-tools">
                             @if(auth('admin')->user()->hasPermission('create_roles'))
                             <a href="{{ route('admin.roles.create') }}" class="btn btn-primary btn-sm">
                                 <i class="fas fa-plus"></i> Create Role
                             </a>
                             @endif
+                            <button class="btn btn-info btn-sm" id="toggleHierarchyView">
+                                <i class="fas fa-sitemap"></i> Toggle Tree View
+                            </button>
                         </div>
                     </div>
                     
@@ -43,9 +46,11 @@
                                     <tr>
                                         <th>Name</th>
                                         <th>Display Name</th>
+                                        <th>Parent Role</th>
                                         <th>Level</th>
                                         <th>Users Count</th>
                                         <th>Permissions Count</th>
+                                        <th>Inherited Permissions</th>
                                         <th>Status</th>
                                         <th>Actions</th>
                                     </tr>
@@ -63,6 +68,13 @@
                                             @endif
                                         </td>
                                         <td>
+                                            @if($role->parent)
+                                                <span class="badge badge-light">{{ $role->parent->display_name }}</span>
+                                            @else
+                                                <span class="badge badge-primary">Root Level</span>
+                                            @endif
+                                        </td>
+                                        <td>
                                             <span class="badge badge-{{ $role->level >= 100 ? 'danger' : ($role->level >= 10 ? 'warning' : 'info') }}">
                                                 Level {{ $role->level }}
                                             </span>
@@ -74,11 +86,21 @@
                                             <span class="badge badge-info">{{ $role->permissions_count }}</span>
                                         </td>
                                         <td>
+                                            @php
+                                                $inheritedCount = $role->getAllPermissions()->count() - $role->permissions_count;
+                                            @endphp
+                                            @if($inheritedCount > 0)
+                                                <span class="badge badge-success" title="Inherited from parent roles">{{ $inheritedCount }} inherited</span>
+                                            @else
+                                                <span class="badge badge-secondary">None</span>
+                                            @endif
+                                        </td>
+                                        <td>
                                             @if($role->name !== 'super_admin')
                                             <div class="custom-control custom-switch">
-                                                <input type="checkbox" class="custom-control-input role-status-toggle" 
-                                                       id="status{{ $role->id }}" 
-                                                       data-role-id="{{ $role->id }}" 
+                                                <input type="checkbox" class="custom-control-input role-status-toggle"
+                                                       id="status{{ $role->id }}"
+                                                       data-role-id="{{ $role->id }}"
                                                        {{ $role->is_active ? 'checked' : '' }}>
                                                 <label class="custom-control-label" for="status{{ $role->id }}"></label>
                                             </div>
@@ -93,13 +115,13 @@
                                                     <i class="fas fa-eye"></i>
                                                 </a>
                                                 @endif
-                                                
+
                                                 @if(auth('admin')->user()->hasPermission('edit_roles') && $role->name !== 'super_admin')
                                                 <a href="{{ route('admin.roles.edit', $role) }}" class="btn btn-warning btn-sm" title="Edit">
                                                     <i class="fas fa-edit"></i>
                                                 </a>
                                                 @endif
-                                                
+
                                                 @if(auth('admin')->user()->hasPermission('delete_roles') && $role->name !== 'super_admin' && $role->users_count == 0)
                                                 <button class="btn btn-danger btn-sm delete-role" data-role-id="{{ $role->id }}" title="Delete">
                                                     <i class="fas fa-trash"></i>

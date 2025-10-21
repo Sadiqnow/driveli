@@ -8,9 +8,17 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
+use App\Services\RoleSyncService;
 
 class CheckPermission
 {
+    protected RoleSyncService $roleSyncService;
+
+    public function __construct(RoleSyncService $roleSyncService)
+    {
+        $this->roleSyncService = $roleSyncService;
+    }
+
     /**
      * Handle an incoming request.
      *
@@ -41,6 +49,7 @@ class CheckPermission
 
     /**
      * Check if user has specific permission via user_roles → role_permissions
+     * Also checks dynamic route permissions for real-time access control
      * Optimized for high-performance with caching
      */
     private function userHasPermission($user, string $permission): bool
@@ -59,30 +68,38 @@ class CheckPermission
         }
 
         // Check if permission exists in user's permissions
-        return in_array($permission, $userPermissions);
+        if (in_array($permission, $userPermissions)) {
+            return true;
+        }
+
+        // Check dynamic route permissions for real-time access control
+        return $this->checkDynamicRoutePermission($user, $permission);
     }
 
     /**
-     * Fetch user permissions from database via relationships
-     * Optimized query to prevent N+1 problems
+     * Fetch user permissions from database via relationships with inheritance
+     * Optimized query to prevent N+1 problems and includes hierarchical permission inheritance
      */
     private function fetchUserPermissions($user): array
     {
         try {
             // Use eager loading to prevent N+1 queries
-            $userWithPermissions = $user->load([
-                'roles.permissions' => function ($query) {
+            $userWithRoles = $user->load([
+                'roles' => function ($query) {
                     $query->where('is_active', true)
-                          ->select('permissions.id', 'permissions.name');
+                          ->with(['permissions' => function ($subQuery) {
+                              $subQuery->where('is_active', true)
+                                       ->select('permissions.id', 'permissions.name');
+                          }]);
                 }
             ]);
 
             $permissions = [];
 
-            foreach ($userWithPermissions->roles as $role) {
-                foreach ($role->permissions as $permission) {
-                    $permissions[] = $permission->name;
-                }
+            foreach ($userWithRoles->roles as $role) {
+                // Get permissions including inherited ones from ancestors
+                $rolePermissions = $role->getAllPermissionNames();
+                $permissions = array_merge($permissions, $rolePermissions);
             }
 
             // Remove duplicates and return
@@ -90,7 +107,7 @@ class CheckPermission
 
         } catch (\Exception $e) {
             // Log error but don't break the system
-            Log::error('Failed to fetch user permissions', [
+            Log::error('Failed to fetch user permissions with inheritance', [
                 'user_id' => $user->id,
                 'error' => $e->getMessage()
             ]);
@@ -149,6 +166,43 @@ class CheckPermission
     }
 
     /**
+     * Check dynamic route permissions for real-time access control
+     */
+    private function checkDynamicRoutePermission($user, string $permission): bool
+    {
+        try {
+            $routeName = request()->route()?->getName();
+
+            if (!$routeName) {
+                return false;
+            }
+
+            // Check if there's a dynamic route permission mapping
+            $routePermission = \App\Models\RoutePermission::where('route_name', $routeName)
+                ->where('is_active', true)
+                ->with('permission')
+                ->first();
+
+            if (!$routePermission) {
+                return false;
+            }
+
+            // Check if user has the required permission for this route
+            return $this->userHasPermission($user, $routePermission->permission->name);
+
+        } catch (\Exception $e) {
+            // Log error but don't break the system
+            Log::error('Failed to check dynamic route permission', [
+                'user_id' => $user->id,
+                'permission' => $permission,
+                'error' => $e->getMessage()
+            ]);
+
+            return false;
+        }
+    }
+
+    /**
      * Log access denied for security monitoring
      */
     private function logAccessDenied(Request $request, $user, string $permission): void
@@ -163,5 +217,24 @@ class CheckPermission
             'required_permission' => $permission,
             'timestamp' => now()->toISOString()
         ]);
+
+        // Log to audit_trails table for monitoring unauthorized attempts
+        try {
+            \App\Models\AuditTrail::create([
+                'user_id' => $user->id,
+                'action_type' => 'access_denied',
+                'role_id' => $user->roles()->first()?->id,
+                'target_user_id' => null,
+                'description' => "Access denied for permission: {$permission} on route: " . ($request->route()?->getName() ?? $request->url()),
+                'ip_address' => $request->ip()
+            ]);
+        } catch (\Exception $e) {
+            // Log error but don't break the middleware
+            Log::error('Failed to log access denied to audit_trails', [
+                'error' => $e->getMessage(),
+                'user_id' => $user->id,
+                'permission' => $permission
+            ]);
+        }
     }
 }

@@ -576,7 +576,11 @@ function bulkRejectDocuments() {
 }
 
 function exportDocumentReport() {
-    const url = '{{ route("admin.superadmin.drivers.documents-export") }}';
+    if (!selectedDriverId) {
+        alert('Please select a driver first');
+        return;
+    }
+    const url = '{{ route("admin.superadmin.drivers.documents-export", ":driver") }}'.replace(':driver', selectedDriverId);
     window.open(url, '_blank');
 }
 
