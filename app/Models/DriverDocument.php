@@ -37,7 +37,12 @@ class DriverDocument extends Model
 
     public function driver()
     {
-        return $this->belongsTo(Driver::class, 'driver_id', 'id');
+        return $this->belongsTo(Drivers::class, 'driver_id', 'id');
+    }
+
+    public function verifiedBy()
+    {
+        return $this->belongsTo(AdminUser::class, 'verified_by');
     }
 
     public function getDocumentUrlAttribute()

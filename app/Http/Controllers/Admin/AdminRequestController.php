@@ -140,7 +140,8 @@ class AdminRequestController extends Controller
     {
         $request->validate([
             'driver_id' => 'required|exists:drivers,id',
-            'commission_rate' => 'required|numeric|min:0|max:100',
+            'commission_rate' => 'required|numeric|min:0|max=100',
+            'process_async' => 'boolean'
         ]);
 
         $driver = Driver::findOrFail($request->driver_id);
@@ -149,17 +150,30 @@ class AdminRequestController extends Controller
             return back()->with('error', 'Selected driver is not available for jobs!');
         }
 
-        $match = DriverMatch::create([
+        $matchData = [
             'match_id' => $this->generateMatchId(),
             'company_request_id' => $companyRequest->id,
             'driver_id' => $driver->id,
-            'status' => 'pending',
             'commission_rate' => $request->commission_rate,
-            'matched_at' => now(),
-            'matched_by_admin' => true,
-        ]);
+            'matched_by_admin' => auth('admin')->id(),
+            'auto_matched' => false,
+            'priority' => 'high'
+        ];
 
-        return back()->with('success', 'Match created successfully!');
+        if ($request->process_async) {
+            // Process asynchronously
+            \App\Jobs\ProcessDriverMatch::dispatch($matchData);
+            return back()->with('success', 'Match queued for processing!');
+        } else {
+            // Process synchronously
+            try {
+                $job = new \App\Jobs\ProcessDriverMatch($matchData);
+                $job->handle();
+                return back()->with('success', 'Match created successfully!');
+            } catch (\Exception $e) {
+                return back()->with('error', 'Match creation failed: ' . $e->getMessage());
+            }
+        }
     }
 
     public function bulkAction(Request $request)

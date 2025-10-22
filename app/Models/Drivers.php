@@ -346,6 +346,21 @@ class Drivers extends Authenticatable
         return $this->hasMany(DriverDocument::class, 'driver_id', 'id');
     }
 
+    public function verificationLogs()
+    {
+        return $this->hasMany(DriverVerificationLog::class, 'driver_id', 'id');
+    }
+
+    public function facialVerifications()
+    {
+        return $this->hasMany(DriverFacialVerification::class, 'driver_id', 'id');
+    }
+
+    public function moderatorActions()
+    {
+        return $this->hasMany(ModeratorAction::class, 'driver_id', 'id');
+    }
+
     public function ninDocument()
     {
         return $this->hasOne(DriverDocument::class, 'driver_id', 'id')

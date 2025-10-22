@@ -190,6 +190,16 @@ Route::middleware(['auth:sanctum', 'ability:admin'])->group(function () {
 });
 
 // ===================================================================================================
+// DRIVER VERIFICATION API ROUTES
+// ===================================================================================================
+Route::middleware(['auth:sanctum', 'ability:admin'])->group(function () {
+    Route::prefix('driver-verification')->name('api.driver-verification.')->group(function () {
+        Route::post('/verify', [App\Http\Controllers\DriverVerificationController::class, 'verify'])->name('verify');
+        // TODO: Add more verification routes as needed
+    });
+});
+
+// ===================================================================================================
 // FRONTEND EXPECTED ROUTES (matching JavaScript calls)
 // ===================================================================================================
 // Add routes that match what the frontend JavaScript is calling

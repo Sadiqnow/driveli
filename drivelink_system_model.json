@@ -1,0 +1,391 @@
+{
+  "system_name": "Drivelink Enterprise System",
+  "version": "1.0.0",
+  "description": "Comprehensive enterprise platform for connecting companies with verified drivers through intelligent matching algorithms",
+  "modules": [
+    {
+      "name": "Company Registration & Request",
+      "description": "Complete company onboarding, verification, and request management system",
+      "entities": [
+        {
+          "name": "companies",
+          "description": "Company profiles with verification and statistics",
+          "fields": [
+            "id", "name", "company_id", "registration_number", "tax_id", "email", "phone", "website",
+            "address", "state", "lga", "postal_code", "industry", "company_size", "description",
+            "contact_person_name", "contact_person_title", "contact_person_phone", "contact_person_email",
+            "default_commission_rate", "payment_terms", "preferred_regions", "vehicle_types_needed",
+            "status", "verification_status", "verified_at", "verified_by", "logo", "registration_certificate",
+            "tax_certificate", "additional_documents", "total_requests", "fulfilled_requests",
+            "total_amount_paid", "average_rating", "email_verified_at", "password", "timestamps"
+          ],
+          "relationships": {
+            "belongs_to": ["admin_users (verified_by)"],
+            "has_many": ["company_requests", "company_verifications", "company_request_templates", "driver_matches"]
+          }
+        },
+        {
+          "name": "company_requests",
+          "description": "Driver assignment requests from companies",
+          "fields": [
+            "id", "company_id", "driver_id", "request_id", "position_title", "request_type", "description",
+            "location", "requirements", "salary_range", "status", "priority", "created_by", "approved_by",
+            "approved_at", "expires_at", "queue_position", "assigned_to", "acceptance_notes", "estimated_completion",
+            "accepted_at", "rejected_at", "cancelled_at", "cancelled_by", "cancellation_reason", "processing_notes",
+            "started_at", "completion_notes", "completed_at", "rating", "pause_reason", "paused_at", "timestamps"
+          ],
+          "relationships": {
+            "belongs_to": ["companies", "drivers_normalized", "admin_users (multiple roles)"],
+            "has_many": ["driver_matches"]
+          }
+        },
+        {
+          "name": "company_verifications",
+          "description": "Company verification process tracking",
+          "fields": [
+            "id", "company_id", "verification_type", "status", "submitted_documents", "verified_at",
+            "verified_by", "rejection_reason", "notes", "timestamps"
+          ],
+          "relationships": {
+            "belongs_to": ["companies", "admin_users"]
+          }
+        },
+        {
+          "name": "company_request_templates",
+          "description": "Reusable request templates for companies",
+          "fields": [
+            "id", "company_id", "name", "description", "is_active", "created_by", "timestamps"
+          ],
+          "relationships": {
+            "belongs_to": ["companies", "admin_users"],
+            "has_many": ["company_request_fields"]
+          }
+        },
+        {
+          "name": "company_request_fields",
+          "description": "Custom fields for request templates",
+          "fields": [
+            "id", "template_id", "field_name", "field_type", "label", "is_required", "field_options",
+            "display_order", "validation_rules", "timestamps"
+          ],
+          "relationships": {
+            "belongs_to": ["company_request_templates"]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Driver Verification & KYC",
+      "description": "Comprehensive driver onboarding, KYC verification, and document management",
+      "entities": [
+        {
+          "name": "drivers_normalized",
+          "description": "Normalized driver profiles with complete information",
+          "fields": [
+            "id", "driver_id", "first_name", "middle_name", "surname", "email", "phone", "phone_2",
+            "password", "remember_token", "email_verified_at", "phone_verified_at", "phone_verification_status",
+            "email_verification_status", "date_of_birth", "gender", "religion", "blood_group", "height_meters",
+            "disability_status", "nationality_id", "current_employer", "years_of_experience", "employment_start_date",
+            "is_working", "previous_company", "reason_stopped_working", "license_number", "license_class",
+            "license_issue_date", "license_expiry_date", "has_vehicle", "vehicle_type", "vehicle_year",
+            "bank_id", "account_number", "account_name", "bvn_number", "preferred_work_location",
+            "available_for_night_shifts", "available_for_weekend_work", "emergency_contact_name",
+            "emergency_contact_phone", "emergency_contact_relationship", "status", "verification_status",
+            "is_active", "is_available", "registered_at", "last_active_at", "verified_at", "verified_by",
+            "verification_notes", "kyc_status", "kyc_step", "kyc_step_data", "kyc_step_1_completed_at",
+            "kyc_step_2_completed_at", "kyc_step_3_completed_at", "kyc_completed_at", "kyc_submitted_at",
+            "kyc_reviewed_at", "kyc_reviewed_by", "kyc_retry_count", "kyc_rejection_reason", "kyc_submission_ip",
+            "kyc_user_agent", "kyc_last_activity_at", "ocr_verification_status", "ocr_verification_notes",
+            "nin_verification_data", "nin_verified_at", "nin_ocr_match_score", "frsc_verification_data",
+            "frsc_verified_at", "frsc_ocr_match_score", "profile_picture", "passport_photograph", "nin_number",
+            "profile_completion_percentage", "registration_source", "registration_ip", "created_by_admin_id",
+            "timestamps", "soft_deletes"
+          ],
+          "relationships": {
+            "belongs_to": ["admin_users (multiple roles)", "nationalities", "banks"],
+            "has_many": ["guarantors", "driver_documents", "driver_banking_details", "company_requests", "driver_matches"],
+            "has_one": ["driver_next_of_kin", "driver_performance"]
+          }
+        },
+        {
+          "name": "guarantors",
+          "description": "Driver guarantor information",
+          "fields": ["id", "driver_id", "first_name", "last_name", "relationship", "phone", "address", "timestamps"],
+          "relationships": {
+            "belongs_to": ["drivers_normalized"]
+          }
+        },
+        {
+          "name": "driver_documents",
+          "description": "Driver document uploads and verification",
+          "fields": [
+            "id", "driver_id", "document_type", "document_path", "verification_status", "verified_at",
+            "verified_by", "rejection_reason", "ocr_data", "timestamps"
+          ],
+          "relationships": {
+            "belongs_to": ["drivers_normalized", "admin_users"]
+          }
+        },
+        {
+          "name": "driver_banking_details",
+          "description": "Driver banking information",
+          "fields": ["id", "driver_id", "bank_id", "account_number", "account_name", "is_primary", "timestamps"],
+          "relationships": {
+            "belongs_to": ["drivers_normalized"]
+          }
+        },
+        {
+          "name": "driver_next_of_kin",
+          "description": "Driver next of kin information",
+          "fields": [
+            "id", "driver_id", "first_name", "middle_name", "surname", "relationship", "phone", "email",
+            "address", "timestamps"
+          ],
+          "relationships": {
+            "belongs_to": ["drivers_normalized"]
+          }
+        },
+        {
+          "name": "driver_performance",
+          "description": "Driver performance metrics",
+          "fields": [
+            "id", "driver_id", "rating", "total_trips", "completed_trips", "cancelled_trips",
+            "average_response_time", "customer_satisfaction", "timestamps"
+          ],
+          "relationships": {
+            "belongs_to": ["drivers_normalized"]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Template System (Email/SMS)",
+      "description": "Dynamic template system for notifications and communications",
+      "entities": [
+        {
+          "name": "email_templates",
+          "description": "Email notification templates",
+          "fields": [
+            "id", "name", "subject", "body", "variables", "is_active", "created_by", "updated_by", "timestamps"
+          ],
+          "relationships": {
+            "belongs_to": ["admin_users"]
+          }
+        },
+        {
+          "name": "sms_templates",
+          "description": "SMS notification templates",
+          "fields": [
+            "id", "name", "body", "variables", "is_active", "created_by", "updated_by", "timestamps"
+          ],
+          "relationships": {
+            "belongs_to": ["admin_users"]
+          }
+        },
+        {
+          "name": "notification_logs",
+          "description": "Log of all sent notifications",
+          "fields": [
+            "id", "type", "recipient", "template_id", "template_name", "variables", "status", "sent_at",
+            "delivered_at", "error_message", "created_by", "timestamps"
+          ],
+          "relationships": {
+            "belongs_to": ["admin_users"]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Matching Algorithm (Multi-Criteria Weighted)",
+      "description": "Intelligent driver-company matching system",
+      "entities": [
+        {
+          "name": "driver_matches",
+          "description": "Driver-company match records",
+          "fields": [
+            "id", "match_id", "company_request_id", "driver_id", "status", "commission_rate", "commission_amount",
+            "matched_at", "accepted_at", "declined_at", "completed_at", "cancelled_at", "matched_by_admin",
+            "auto_matched", "driver_rating", "company_rating", "driver_feedback", "company_feedback", "notes",
+            "cancellation_reason", "timestamps"
+          ],
+          "relationships": {
+            "belongs_to": ["company_requests", "drivers_normalized", "admin_users"],
+            "has_many": ["commissions"]
+          }
+        },
+        {
+          "name": "commissions",
+          "description": "Commission payment tracking",
+          "fields": ["id", "driver_match_id", "amount", "status", "paid_at", "timestamps"],
+          "relationships": {
+            "belongs_to": ["driver_matches"]
+          }
+        },
+        {
+          "name": "matching_criteria",
+          "description": "Configurable matching algorithm criteria",
+          "fields": [
+            "id", "name", "description", "criteria_type", "weight", "is_active", "configuration", "created_by",
+            "timestamps"
+          ],
+          "relationships": {
+            "belongs_to": ["admin_users"]
+          }
+        },
+        {
+          "name": "matching_logs",
+          "description": "Algorithm execution and decision logs",
+          "fields": [
+            "id", "company_request_id", "driver_id", "algorithm_version", "criteria_scores", "final_score",
+            "matched", "reason", "execution_time", "created_at"
+          ],
+          "relationships": {
+            "belongs_to": ["company_requests", "drivers_normalized"]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Superadmin Oversight",
+      "description": "System administration, audit trails, and oversight",
+      "entities": [
+        {
+          "name": "admin_users",
+          "description": "Administrative user accounts",
+          "fields": [
+            "id", "name", "email", "password", "phone", "role", "status", "permissions", "avatar",
+            "last_login_at", "last_login_ip", "email_verified_at", "timestamps", "soft_deletes"
+          ],
+          "relationships": {
+            "belongs_to_many": ["roles"],
+            "has_many": ["superadmin_activity_logs", "audit_logs", "verified_companies", "verified_drivers",
+                        "created_company_requests", "approved_company_requests", "assigned_company_requests",
+                        "cancelled_company_requests", "matched_drivers", "created_templates"]
+          }
+        },
+        {
+          "name": "roles",
+          "description": "RBAC roles with hierarchical structure",
+          "fields": [
+            "id", "name", "display_name", "description", "level", "is_active", "meta", "parent_id", "timestamps",
+            "soft_deletes"
+          ],
+          "relationships": {
+            "belongs_to": ["roles (parent)"],
+            "has_many": ["roles (children)", "user_roles"],
+            "belongs_to_many": ["permissions", "admin_users"]
+          }
+        },
+        {
+          "name": "permissions",
+          "description": "System permissions",
+          "fields": ["id", "name", "group_name", "timestamps"],
+          "relationships": {
+            "belongs_to_many": ["roles"]
+          }
+        },
+        {
+          "name": "user_roles",
+          "description": "User-role assignments",
+          "fields": ["id", "user_id", "role_id", "timestamps"],
+          "relationships": {
+            "belongs_to": ["admin_users", "roles"]
+          }
+        },
+        {
+          "name": "superadmin_activity_logs",
+          "description": "Superadmin action logs",
+          "fields": [
+            "id", "superadmin_id", "action", "resource_type", "resource_id", "old_values", "new_values",
+            "ip_address", "user_agent", "notes", "timestamps"
+          ],
+          "relationships": {
+            "belongs_to": ["admin_users"]
+          }
+        },
+        {
+          "name": "audit_logs",
+          "description": "General system audit logs",
+          "fields": [
+            "id", "user_id", "action", "resource_type", "resource_id", "old_values", "new_values", "ip_address",
+            "user_agent", "created_at"
+          ],
+          "relationships": {
+            "belongs_to": ["admin_users"]
+          }
+        },
+        {
+          "name": "permission_logs",
+          "description": "Permission change logs",
+          "fields": [
+            "id", "admin_user_id", "action", "permission_name", "role_name", "old_value", "new_value",
+            "ip_address", "user_agent", "created_at"
+          ],
+          "relationships": {
+            "belongs_to": ["admin_users"]
+          }
+        }
+      ]
+    }
+  ],
+  "role_hierarchy": {
+    "super_admin": {
+      "level": 1,
+      "permissions": ["all"],
+      "description": "Full system access"
+    },
+    "admin": {
+      "level": 2,
+      "permissions": ["manage_admins", "manage_roles", "manage_permissions", "view_audit_logs", "manage_companies", "verify_companies", "view_company_requests", "manage_company_requests", "manage_drivers", "verify_drivers", "view_driver_profiles", "manage_driver_kyc", "create_matches", "manage_matches", "view_matches", "manage_commissions", "manage_templates", "create_templates", "view_templates", "view_dashboard", "export_data", "view_reports"],
+      "description": "Administrative access"
+    },
+    "moderator": {
+      "level": 3,
+      "permissions": ["view_company_requests", "view_driver_profiles", "view_matches", "view_templates", "view_dashboard"],
+      "description": "Content moderation"
+    },
+    "agent": {
+      "level": 4,
+      "permissions": ["view_company_requests", "view_driver_profiles", "view_matches", "view_dashboard"],
+      "description": "Customer support"
+    },
+    "driver": {
+      "level": 5,
+      "permissions": ["view_dashboard"],
+      "description": "Driver access"
+    }
+  },
+  "inter_table_relationships": {
+    "companies_to_drivers": {
+      "through": ["company_requests", "driver_matches"],
+      "description": "Companies connect to drivers through requests and matches"
+    },
+    "admin_oversight": {
+      "tables": ["companies", "drivers_normalized", "company_requests", "driver_matches"],
+      "description": "Admins oversee and verify all major entities"
+    },
+    "audit_trail": {
+      "covers": ["admin_users", "companies", "drivers_normalized", "company_requests", "driver_matches"],
+      "description": "All critical actions are logged for audit purposes"
+    },
+    "rbac_system": {
+      "tables": ["admin_users", "roles", "permissions", "user_roles"],
+      "description": "Role-based access control across the entire system"
+    }
+  },
+  "dependencies": {
+    "core_dependencies": ["admin_users", "roles", "permissions", "user_roles"],
+    "company_module": ["companies", "company_requests", "company_verifications", "company_request_templates", "company_request_fields"],
+    "driver_module": ["drivers_normalized", "guarantors", "driver_documents", "driver_banking_details", "driver_next_of_kin", "driver_performance"],
+    "matching_module": ["driver_matches", "commissions", "matching_criteria", "matching_logs"],
+    "template_module": ["email_templates", "sms_templates", "notification_logs"],
+    "audit_module": ["superadmin_activity_logs", "audit_logs", "permission_logs"]
+  },
+  "data_flow": {
+    "company_onboarding": ["companies", "company_verifications", "company_request_templates"],
+    "driver_onboarding": ["drivers_normalized", "driver_documents", "guarantors", "driver_banking_details", "driver_next_of_kin"],
+    "matching_process": ["company_requests", "driver_matches", "matching_logs", "commissions"],
+    "verification_flow": ["drivers_normalized", "driver_documents", "superadmin_activity_logs", "audit_logs"],
+    "admin_oversight": ["admin_users", "superadmin_activity_logs", "audit_logs", "permission_logs"]
+  }
+}

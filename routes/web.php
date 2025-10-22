@@ -160,6 +160,17 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::delete('/templates/{template}', [AdminNotificationController::class, 'deleteTemplate'])->name('templates.delete');
             Route::get('/history', [AdminNotificationController::class, 'history'])->name('history');
             Route::get('/delivery-stats', [AdminNotificationController::class, 'deliveryStats'])->name('delivery-stats');
+            // New notification template management routes
+            Route::get('/template-manager', [App\Http\Controllers\Admin\NotificationTemplateController::class, 'index'])->name('template-manager');
+            Route::get('/template-manager/create', [App\Http\Controllers\Admin\NotificationTemplateController::class, 'create'])->name('template-manager.create');
+            Route::post('/template-manager', [App\Http\Controllers\Admin\NotificationTemplateController::class, 'store'])->name('template-manager.store');
+            Route::get('/template-manager/{type}/{id}/edit', [App\Http\Controllers\Admin\NotificationTemplateController::class, 'edit'])->name('template-manager.edit');
+            Route::put('/template-manager/{type}/{id}', [App\Http\Controllers\Admin\NotificationTemplateController::class, 'update'])->name('template-manager.update');
+            Route::delete('/template-manager/{type}/{id}', [App\Http\Controllers\Admin\NotificationTemplateController::class, 'destroy'])->name('template-manager.destroy');
+            Route::post('/template-manager/preview', [App\Http\Controllers\Admin\NotificationTemplateController::class, 'preview'])->name('template-manager.preview');
+            Route::post('/template-manager/test', [App\Http\Controllers\Admin\NotificationTemplateController::class, 'sendTest'])->name('template-manager.test');
+            Route::get('/template-manager/stats', [App\Http\Controllers\Admin\NotificationTemplateController::class, 'stats'])->name('template-manager.stats');
+            Route::get('/template-manager/logs', [App\Http\Controllers\Admin\NotificationTemplateController::class, 'logs'])->name('template-manager.logs');
         });
 
         // Reports & Analytics
@@ -287,6 +298,18 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::put('/{company}', [CompanyController::class, 'update'])->name('update');
             Route::delete('/{company}', [CompanyController::class, 'destroy'])->name('destroy');
             Route::post('/{company}/toggle-status', [CompanyController::class, 'toggleStatus'])->name('toggle-status');
+        });
+
+        // Company Verification Management
+        Route::prefix('verification/company')->name('verification.company.')->middleware(['role.permission:Admin,manage_company_verifications'])->group(function () {
+            Route::get('/', [App\Http\Controllers\Admin\CompanyVerificationController::class, 'index'])->name('queue');
+            Route::get('/{id}', [App\Http\Controllers\Admin\CompanyVerificationController::class, 'show'])->name('detail');
+            Route::post('/{id}/approve', [App\Http\Controllers\Admin\CompanyVerificationController::class, 'approve'])->name('approve');
+            Route::post('/{id}/reject', [App\Http\Controllers\Admin\CompanyVerificationController::class, 'reject'])->name('reject');
+            Route::post('/{id}/under-review', [App\Http\Controllers\Admin\CompanyVerificationController::class, 'underReview'])->name('under-review');
+            Route::post('/bulk-approve', [App\Http\Controllers\Admin\CompanyVerificationController::class, 'bulkApprove'])->name('bulk-approve');
+            Route::get('/stats', [App\Http\Controllers\Admin\CompanyVerificationController::class, 'stats'])->name('stats');
+            Route::get('/download-report', [App\Http\Controllers\Admin\CompanyVerificationController::class, 'downloadReport'])->name('download-report');
         });
 
         // Route Permission Management

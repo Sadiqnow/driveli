@@ -94,7 +94,7 @@ class EncryptionServiceTest extends TestCase
     public function test_can_mask_sensitive_data()
     {
         $testCases = [
-            ['phone', '08012345678', '****5678'],
+            ['phone', '08012345678', '*******5678'],
             ['nin_number', '12345678901', '123******01'],
             ['bvn', '12345678901', '12*******01'],
             ['account_number', '1234567890', '******7890'],

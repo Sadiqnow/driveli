@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Driver Request Template</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h1 class="text-2xl font-bold mb-6">Create Driver Request Template</h1>
+
+            <form id="templateForm" class="space-y-6">
+                <!-- Basic Information -->
+                <div>
+                    <h2 class="text-lg font-semibold mb-4">Basic Information</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Template Name</label>
+                            <input type="text" id="templateName" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Description</label>
+                            <textarea id="templateDescription" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Fields Configuration -->
+                <div>
+                    <h2 class="text-lg font-semibold mb-4">Fields Configuration</h2>
+                    <div id="fieldsContainer" class="space-y-4">
+                        <!-- Dynamic fields will be added here -->
+                    </div>
+                    <button type="button" id="addFieldBtn" class="mt-4 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md">Add Field</button>
+                </div>
+
+                <!-- Actions -->
+                <div class="flex justify-end space-x-4">
+                    <button type="button" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md">Cancel</button>
+                    <button type="submit" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md">Save Template</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Field Template (hidden) -->
+    <template id="fieldTemplate">
+        <div class="field-item bg-gray-50 p-4 rounded-md border">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Field Type</label>
+                    <select class="field-type mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        <option value="text">Text</option>
+                        <option value="number">Number</option>
+                        <option value="select">Select</option>
+                        <option value="datetime">DateTime</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Field Label</label>
+                    <input type="text" class="field-label mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Field Name</label>
+                    <input type="text" class="field-name mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Operator</label>
+                    <select class="field-operator mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        <option value="equals">Equals</option>
+                        <option value="greater_than">Greater Than</option>
+                        <option value="less_than">Less Than</option>
+                        <option value="contains">Contains</option>
+                        <option value="not_equals">Not Equals</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Priority</label>
+                    <select class="field-priority mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        <option value="high">High</option>
+                        <option value="medium">Medium</option>
+                        <option value="low">Low</option>
+                    </select>
+                </div>
+                <div class="flex items-center">
+                    <input type="checkbox" class="field-required mt-1 rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                    <label class="ml-2 text-sm font-medium text-gray-700">Required</label>
+                </div>
+            </div>
+            <div class="field-options mb-4" style="display: none;">
+                <label class="block text-sm font-medium text-gray-700">Options (comma-separated)</label>
+                <input type="text" class="field-options-input mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" placeholder="option1,option2,option3">
+            </div>
+            <div class="field-validation mb-4">
+                <label class="block text-sm font-medium text-gray-700">Validation Rules</label>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <input type="text" class="validation-min mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" placeholder="Min value (for numbers)">
+                    <input type="text" class="validation-max mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" placeholder="Max value (for numbers)">
+                </div>
+            </div>
+            <button type="button" class="remove-field bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-md text-sm">Remove Field</button>
+        </div>
+    </template>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const addFieldBtn = document.getElementById('addFieldBtn');
+            const fieldsContainer = document.getElementById('fieldsContainer');
+            const fieldTemplate = document.getElementById('fieldTemplate');
+            const templateForm = document.getElementById('templateForm');
+
+            addFieldBtn.addEventListener('click', addField);
+
+            function addField() {
+                const fieldClone = fieldTemplate.content.cloneNode(true);
+                const fieldItem = fieldClone.querySelector('.field-item');
+                const removeBtn = fieldClone.querySelector('.remove-field');
+                const fieldTypeSelect = fieldClone.querySelector('.field-type');
+                const optionsDiv = fieldClone.querySelector('.field-options');
+
+                removeBtn.addEventListener('click', () => fieldItem.remove());
+                fieldTypeSelect.addEventListener('change', function() {
+                    optionsDiv.style.display = this.value === 'select' ? 'block' : 'none';
+                });
+
+                fieldsContainer.appendChild(fieldClone);
+            }
+
+            templateForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                if (validateForm()) {
+                    const payload = generatePayload();
+                    console.log('Template Payload:', JSON.stringify(payload, null, 2));
+                    alert('Template saved successfully!');
+                }
+            });
+
+            function validateForm() {
+                const templateName = document.getElementById('templateName').value.trim();
+                if (!templateName) {
+                    alert('Template name is required');
+                    return false;
+                }
+
+                const fieldLabels = document.querySelectorAll('.field-label');
+                for (let label of fieldLabels) {
+                    if (!label.value.trim()) {
+                        alert('All field labels are required');
+                        return false;
+                    }
+                }
+
+                const fieldNames = document.querySelectorAll('.field-name');
+                for (let name of fieldNames) {
+                    if (!name.value.trim()) {
+                        alert('All field names are required');
+                        return false;
+                    }
+                }
+
+                // Additional validations for numbers
+                const minInputs = document.querySelectorAll('.validation-min');
+                const maxInputs = document.querySelectorAll('.validation-max');
+                for (let i = 0; i < minInputs.length; i++) {
+                    const min = parseFloat(minInputs[i].value);
+                    const max = parseFloat(maxInputs[i].value);
+                    if (minInputs[i].value && isNaN(min)) {
+                        alert('Min value must be a number');
+                        return false;
+                    }
+                    if (maxInputs[i].value && isNaN(max)) {
+                        alert('Max value must be a number');
+                        return false;
+                    }
+                    if (min && max && min >= max) {
+                        alert('Min value must be less than max value');
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+
+            function generatePayload() {
+                const fields = [];
+                const fieldItems = document.querySelectorAll('.field-item');
+                fieldItems.forEach((item, index) => {
+                    const field = {
+                        field_name: item.querySelector('.field-name').value,
+                        field_type: item.querySelector('.field-type').value,
+                        label: item.querySelector('.field-label').value,
+                        is_required: item.querySelector('.field-required').checked,
+                        operator: item.querySelector('.field-operator').value,
+                        priority: item.querySelector('.field-priority').value,
+                        display_order: index + 1,
+                        validation_rules: {}
+                    };
+
+                    if (field.field_type === 'select') {
+                        const options = item.querySelector('.field-options-input').value.split(',').map(opt => opt.trim()).filter(opt => opt);
+                        field.field_options = options;
+                    }
+
+                    const minVal = item.querySelector('.validation-min').value;
+                    const maxVal = item.querySelector('.validation-max').value;
+                    if (minVal) field.validation_rules.min = parseFloat(minVal);
+                    if (maxVal) field.validation_rules.max = parseFloat(maxVal);
+
+                    fields.push(field);
+                });
+
+                return {
+                    name: document.getElementById('templateName').value,
+                    description: document.getElementById('templateDescription').value,
+                    is_active: true,
+                    fields: fields
+                };
+            }
+        });
+    </script>
+</body>
+</html>

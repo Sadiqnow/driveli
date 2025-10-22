@@ -22,7 +22,7 @@ class EncryptionService
     /**
      * Encrypt sensitive field data
      */
-    public function encryptField(string $value, string $fieldName): ?string
+    public function encryptField(string|null $value, string $fieldName): ?string
     {
         if (empty($value) || !$this->isSensitiveField($fieldName)) {
             return $value;
