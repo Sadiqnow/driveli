@@ -13,6 +13,17 @@ class Role extends Model
 {
     use HasFactory, SoftDeletes;
 
+    // Role Levels
+    const LEVEL_SUPER_ADMIN = 1;
+    const LEVEL_ADMIN = 2;
+    const LEVEL_MODERATOR = 3;
+    const LEVEL_AGENT = 4;
+    const LEVEL_DRIVER = 5;
+    const LEVEL_COMPANY = 6;
+    const LEVEL_MATCHING_OFFICER = 7;
+    const LEVEL_VERIFICATION_MANAGER = 8;
+    const LEVEL_USER = 9;
+
     protected $fillable = [
         'name',
         'display_name',
