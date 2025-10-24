@@ -3,24 +3,34 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Driver;
 use App\Services\VerificationStatusService;
 use App\Services\DriverVerificationWorkflow;
+use App\Services\VerificationActionService;
+use App\Services\VerificationDataService;
+use App\Services\VerificationReportService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 class VerificationController extends Controller
 {
     protected $verificationStatusService;
     protected $verificationWorkflow;
+    protected $actionService;
+    protected $dataService;
+    protected $reportService;
 
     public function __construct(
         VerificationStatusService $verificationStatusService,
-        DriverVerificationWorkflow $verificationWorkflow
+        DriverVerificationWorkflow $verificationWorkflow,
+        VerificationActionService $actionService,
+        VerificationDataService $dataService,
+        VerificationReportService $reportService
     ) {
         $this->verificationStatusService = $verificationStatusService;
         $this->verificationWorkflow = $verificationWorkflow;
+        $this->actionService = $actionService;
+        $this->dataService = $dataService;
+        $this->reportService = $reportService;
     }
 
     public function dashboard(Request $request)
@@ -39,43 +49,12 @@ class VerificationController extends Controller
         // Get verification statistics
         $statistics = $this->verificationStatusService->getVerificationStatistics($dateRange);
 
-        // Get pending manual reviews
-        $pendingReviews = Driver::where('verification_status', 'requires_manual_review')
-            ->with(['driverMatches', 'driverPerformances'])
-            ->orderBy('created_at', 'desc')
-            ->take(10)
-            ->get();
+        // Get dashboard data using service
+        $dashboardData = $this->dataService->getDashboardData($dateRange);
 
-        // Get recent verification activities - fallback if table doesn't exist
-        try {
-            $recentActivities = DB::table('driver_verifications')
-                ->join('drivers', 'driver_verifications.driver_id', '=', 'drivers.id')
-                ->select([
-                    'driver_verifications.*',
-                    'drivers.first_name',
-                    'drivers.last_name',
-                    'drivers.email'
-                ])
-                ->orderBy('driver_verifications.created_at', 'desc')
-                ->take(20)
-                ->get();
-        } catch (\Exception $e) {
-            // Fallback to empty collection if table doesn't exist
-            $recentActivities = collect();
-        }
-
-        // Get failed verifications
-        $failedVerifications = Driver::where('verification_status', 'failed')
-            ->orderBy('updated_at', 'desc')
-            ->take(10)
-            ->get();
-
-        return view('admin.verification.dashboard', compact(
-            'statistics',
-            'pendingReviews',
-            'recentActivities',
-            'failedVerifications',
-            'dateRange'
+        return view('admin.verification.dashboard', array_merge(
+            compact('statistics', 'dateRange'),
+            $dashboardData
         ));
     }
 
@@ -97,50 +76,12 @@ class VerificationController extends Controller
             'override_score' => 'nullable|numeric|min:0|max:100'
         ]);
 
-        try {
-            DB::beginTransaction();
+        $result = $this->actionService->approveVerification($driverId, $request->only(['notes', 'override_score']));
 
-            $driver = Driver::findOrFail($driverId);
-
-            // Override score if provided
-            $finalScore = $request->input('override_score', $driver->overall_verification_score);
-            
-            // Update verification status
-            $verificationData = [
-                'manual_review' => [
-                    'status' => 'verified',
-                    'score' => $finalScore,
-                    'verified_at' => now(),
-                    'verified_by' => auth()->user()->name ?? 'Admin',
-                    'notes' => $request->input('notes')
-                ]
-            ];
-
-            $result = $this->verificationStatusService->updateDriverVerificationStatus($driverId, $verificationData);
-
-            // Log the manual approval
-            DB::table('driver_verifications')->insert([
-                'driver_id' => $driverId,
-                'verification_type' => 'manual_approval',
-                'status' => 'completed',
-                'verification_score' => $finalScore,
-                'verification_data' => json_encode($verificationData),
-                'notes' => $request->input('notes'),
-                'verified_by' => auth()->user()->name ?? 'Admin',
-                'verified_at' => now(),
-                'attempt_count' => 1,
-                'last_attempt_at' => now(),
-                'created_at' => now(),
-                'updated_at' => now()
-            ]);
-
-            DB::commit();
-
-            return redirect()->back()->with('success', 'Driver verification approved successfully');
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return redirect()->back()->with('error', 'Failed to approve verification: ' . $e->getMessage());
+        if ($result['success']) {
+            return redirect()->back()->with('success', $result['message']);
+        } else {
+            return redirect()->back()->with('error', $result['message']);
         }
     }
 
@@ -150,58 +91,23 @@ class VerificationController extends Controller
             'rejection_reason' => 'required|string|max:1000'
         ]);
 
-        try {
-            DB::beginTransaction();
+        $result = $this->actionService->rejectVerification($driverId, $request->only('rejection_reason'));
 
-            $driver = Driver::findOrFail($driverId);
-
-            // Update verification status to failed
-            $verificationData = [
-                'manual_review' => [
-                    'status' => 'failed',
-                    'score' => 0,
-                    'verified_at' => now(),
-                    'verified_by' => auth()->user()->name ?? 'Admin',
-                    'rejection_reason' => $request->input('rejection_reason')
-                ]
-            ];
-
-            $result = $this->verificationStatusService->updateDriverVerificationStatus($driverId, $verificationData);
-
-            // Log the manual rejection
-            DB::table('driver_verifications')->insert([
-                'driver_id' => $driverId,
-                'verification_type' => 'manual_rejection',
-                'status' => 'completed',
-                'verification_score' => 0,
-                'verification_data' => json_encode($verificationData),
-                'notes' => $request->input('rejection_reason'),
-                'verified_by' => auth()->user()->name ?? 'Admin',
-                'verified_at' => now(),
-                'attempt_count' => 1,
-                'last_attempt_at' => now(),
-                'created_at' => now(),
-                'updated_at' => now()
-            ]);
-
-            DB::commit();
-
-            return redirect()->back()->with('success', 'Driver verification rejected');
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return redirect()->back()->with('error', 'Failed to reject verification: ' . $e->getMessage());
+        if ($result['success']) {
+            return redirect()->back()->with('success', $result['message']);
+        } else {
+            return redirect()->back()->with('error', $result['message']);
         }
     }
 
     public function retryVerification($driverId)
     {
-        $result = $this->verificationStatusService->retryFailedVerification($driverId);
+        $result = $this->actionService->retryVerification($driverId);
 
         if ($result['success']) {
-            return redirect()->back()->with('success', 'Verification retry initiated');
+            return redirect()->back()->with('success', $result['message']);
         } else {
-            return redirect()->back()->with('error', $result['error']);
+            return redirect()->back()->with('error', $result['message']);
         }
     }
 
@@ -213,36 +119,12 @@ class VerificationController extends Controller
             'notes' => 'nullable|string|max:1000'
         ]);
 
-        $successCount = 0;
-        $failureCount = 0;
+        $result = $this->actionService->bulkApproveVerifications(
+            $request->input('driver_ids'),
+            $request->input('notes')
+        );
 
-        foreach ($request->input('driver_ids') as $driverId) {
-            try {
-                $verificationData = [
-                    'manual_review' => [
-                        'status' => 'verified',
-                        'score' => 85, // Default bulk approval score
-                        'verified_at' => now(),
-                        'verified_by' => auth()->user()->name ?? 'Admin',
-                        'notes' => $request->input('notes') ?? 'Bulk approved'
-                    ]
-                ];
-
-                $result = $this->verificationStatusService->updateDriverVerificationStatus($driverId, $verificationData);
-                
-                if ($result['success']) {
-                    $successCount++;
-                } else {
-                    $failureCount++;
-                }
-
-            } catch (\Exception $e) {
-                $failureCount++;
-            }
-        }
-
-        $message = "Bulk approval completed: {$successCount} approved, {$failureCount} failed";
-        return redirect()->back()->with('success', $message);
+        return redirect()->back()->with('success', $result['message']);
     }
 
     public function verificationReport(Request $request)
@@ -255,50 +137,23 @@ class VerificationController extends Controller
         // Get comprehensive verification statistics
         $statistics = $this->verificationStatusService->getVerificationStatistics($dateRange);
 
-        // Get detailed verification breakdown by component
-        $componentStats = DB::table('driver_verifications')
-            ->whereBetween('created_at', [
-                Carbon::parse($dateRange['start']),
-                Carbon::parse($dateRange['end'])
-            ])
-            ->select([
-                'verification_type',
-                'status',
-                DB::raw('COUNT(*) as count'),
-                DB::raw('AVG(verification_score) as avg_score')
-            ])
-            ->groupBy('verification_type', 'status')
-            ->get();
+        // Get report data using service
+        $reportData = $this->dataService->getReportData($dateRange);
 
-        // Get API performance metrics
-        $apiStats = DB::table('api_verification_logs')
-            ->whereBetween('created_at', [
-                Carbon::parse($dateRange['start']),
-                Carbon::parse($dateRange['end'])
-            ])
-            ->select([
-                'api_provider',
-                'verification_type',
-                DB::raw('COUNT(*) as total_requests'),
-                DB::raw('SUM(is_successful) as successful_requests'),
-                DB::raw('AVG(response_time_ms) as avg_response_time')
-            ])
-            ->groupBy('api_provider', 'verification_type')
-            ->get();
-
-        return view('admin.verification.report', compact(
-            'statistics',
-            'componentStats',
-            'apiStats',
-            'dateRange'
+        return view('admin.verification.report', array_merge(
+            compact('statistics', 'dateRange'),
+            $reportData
         ));
     }
 
     public function downloadReport(Request $request)
     {
-        // Implementation for downloading verification reports as CSV/PDF
-        // This would generate and download a detailed verification report
-        return response()->json(['message' => 'Report download feature to be implemented']);
+        $dateRange = [
+            'start' => $request->input('start_date', Carbon::now()->subDays(30)->toDateString()),
+            'end' => $request->input('end_date', Carbon::now()->toDateString())
+        ];
+
+        return $this->reportService->downloadCsvReport($dateRange);
     }
 
     public function getVerificationStats(Request $request)

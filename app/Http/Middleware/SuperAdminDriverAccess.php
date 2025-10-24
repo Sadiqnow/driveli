@@ -30,8 +30,13 @@ class SuperAdminDriverAccess
 
         $user = Auth::guard('admin')->user();
 
-        // Check if user has Super Admin role
-        if (!$user->hasRole('Super Admin')) {
+        // Check if user is Super Admin (bypass all other checks)
+        if ($user->isSuperAdmin()) {
+            return $next($request);
+        }
+
+        // For non-super admins, check if they have the required role
+        if (!$user->hasRole('Super Admin') && !$user->hasRole('super_admin')) {
             if ($request->expectsJson()) {
                 return response()->json([
                     'success' => false,
@@ -42,8 +47,7 @@ class SuperAdminDriverAccess
         }
 
         // Check if user has the specific permission for driver management
-        // Temporarily bypass permission check for Super Admin role
-        if ($user->role !== 'Super Admin' && !$user->hasPermission('manage_drivers')) {
+        if (!$user->hasPermission('manage_drivers')) {
             if ($request->expectsJson()) {
                 return response()->json([
                     'success' => false,

@@ -9,11 +9,12 @@ class DriverVerificationResource extends JsonResource
     public function toArray($request)
     {
         return [
-            'id' => $this->id,
-            'driver_id' => $this->driver_id,
-            'status' => $this->status,
-            'verified_at' => $this->verified_at,
-            // TODO: Add more fields as needed
+            'success' => $this->resource['success'] ?? true,
+            'message' => $this->resource['message'] ?? null,
+            'driver_id' => $this->resource['driver_id'] ?? null,
+            'status' => $this->resource['status'] ?? null,
+            'report' => $this->resource['report'] ?? null,
+            'timestamp' => now()->toISOString(),
         ];
     }
 }

@@ -67,26 +67,26 @@ class GlobalVehicleType extends Model
 
     public static function getByCategory($category)
     {
-        return self::byCategory($category)->active()->ordered()->get();
+        return self::byCategory($category)->active()->ordered()->limit(50)->get();
     }
 
     public static function getCommercialTruckTypes()
     {
-        return self::byCategory('commercial_truck')->active()->ordered()->get();
+        return self::byCategory('commercial_truck')->active()->ordered()->limit(20)->get();
     }
 
     public static function getProfessionalVehicleTypes()
     {
-        return self::byCategory('professional')->active()->ordered()->get();
+        return self::byCategory('professional')->active()->ordered()->limit(20)->get();
     }
 
     public static function getPublicVehicleTypes()
     {
-        return self::byCategory('public')->active()->ordered()->get();
+        return self::byCategory('public')->active()->ordered()->limit(20)->get();
     }
 
     public static function getExecutiveVehicleTypes()
     {
-        return self::byCategory('executive')->active()->ordered()->get();
+        return self::byCategory('executive')->active()->ordered()->limit(20)->get();
     }
 }

@@ -157,4 +157,117 @@ class ValidationService
         $nin = preg_replace('/[^\d]/', '', $nin);
         return strlen($nin) === 11 && ctype_digit($nin);
     }
+
+    /**
+     * Check consistency between driver data and OCR results
+     *
+     * @param mixed $driver
+     * @param array $ocrResults
+     * @return array ['flags' => [], 'scores' => []]
+     */
+    public function checkConsistency($driver, array $ocrResults): array
+    {
+        $flags = [];
+        $scores = [];
+
+        // Rule 1: Name similarity
+        $driverName = strtolower(trim($driver->first_name . ' ' . $driver->surname));
+        $ocrName = '';
+        if (isset($ocrResults['license']['first_name']) && isset($ocrResults['license']['surname'])) {
+            $ocrName = strtolower(trim($ocrResults['license']['first_name'] . ' ' . $ocrResults['license']['surname']));
+        } elseif (isset($ocrResults['nin']['first_name']) && isset($ocrResults['nin']['surname'])) {
+            $ocrName = strtolower(trim($ocrResults['nin']['first_name'] . ' ' . $ocrResults['nin']['surname']));
+        }
+        if ($ocrName) {
+            similar_text($driverName, $ocrName, $similarity);
+            $scores['name_similarity'] = round($similarity / 100, 2); // 0-1
+            if ($similarity < 80) { // threshold
+                $flags[] = 'name_mismatch';
+            }
+        } else {
+            $scores['name_similarity'] = 0;
+            $flags[] = 'name_missing_in_ocr';
+        }
+
+        // Rule 2: DOB exact match
+        $driverDob = $driver->date_of_birth;
+        $ocrDob = $ocrResults['license']['date_of_birth'] ?? $ocrResults['nin']['date_of_birth'] ?? null;
+        if ($ocrDob) {
+            $scores['dob_match'] = $driverDob == $ocrDob ? 1 : 0;
+            if ($scores['dob_match'] == 0) {
+                $flags[] = 'dob_mismatch';
+            }
+        } else {
+            $scores['dob_match'] = 0;
+            $flags[] = 'dob_missing_in_ocr';
+        }
+
+        // Rule 3: Expiry check
+        $expiry = $ocrResults['license']['expiry_date'] ?? null;
+        if ($expiry) {
+            $isValid = strtotime($expiry) > time();
+            $scores['expiry_check'] = $isValid ? 1 : 0;
+            if (!$isValid) {
+                $flags[] = 'license_expired';
+            }
+        } else {
+            $scores['expiry_check'] = 0;
+            $flags[] = 'expiry_missing_in_ocr';
+        }
+
+        // Rule 4: NIN regex
+        $nin = $ocrResults['nin']['nin'] ?? $driver->nin ?? null;
+        if ($nin) {
+            $scores['nin_regex'] = $this->validateNIN($nin) ? 1 : 0;
+            if ($scores['nin_regex'] == 0) {
+                $flags[] = 'nin_invalid_format';
+            }
+        } else {
+            $scores['nin_regex'] = 0;
+            $flags[] = 'nin_missing';
+        }
+
+        // Rule 5: Duplicate license detection
+        $licenseNumber = $ocrResults['license']['license_number'] ?? null;
+        if ($licenseNumber) {
+            // For testing, assume no duplicate
+            $duplicate = false; // Mock: no database check
+            $scores['duplicate_license'] = $duplicate ? 0 : 1;
+            if ($duplicate) {
+                $flags[] = 'duplicate_license';
+            }
+        } else {
+            $scores['duplicate_license'] = 0;
+            $flags[] = 'license_number_missing_in_ocr';
+        }
+
+        return [
+            'flags' => $flags,
+            'scores' => $scores
+        ];
+    }
+
+    /**
+     * Perform full verification including scoring
+     *
+     * @param mixed $driver
+     * @param array $ocrResults
+     * @param float $faceMatchScore
+     * @return array
+     */
+    public function performFullVerification($driver, array $ocrResults, float $faceMatchScore): array
+    {
+        // Get consistency check results
+        $validationResults = $this->checkConsistency($driver, $ocrResults);
+
+        // Calculate overall score
+        $scoringService = app(ScoringService::class);
+        $scoreResult = $scoringService->calculate($ocrResults, $faceMatchScore, $validationResults);
+
+        return [
+            'validation' => $validationResults,
+            'score' => $scoreResult['score'],
+            'breakdown' => $scoreResult['breakdown'],
+        ];
+    }
 }

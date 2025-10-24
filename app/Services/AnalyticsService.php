@@ -235,6 +235,7 @@ class AnalyticsService
         ->groupBy('year', 'month')
         ->orderBy('year', 'desc')
         ->orderBy('month', 'desc')
+        ->limit(12)
         ->get();
 
         $revenueByDriver = Commission::join('drivers', 'commissions.driver_id', '=', 'drivers.id')
@@ -252,6 +253,7 @@ class AnalyticsService
         ')
         ->groupBy('commission_rate')
         ->orderBy('commission_rate')
+        ->limit(20)
         ->get();
 
         return [

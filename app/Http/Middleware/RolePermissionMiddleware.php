@@ -128,7 +128,7 @@ class RolePermissionMiddleware
         // Check via roles relationship if available
         try {
             if (method_exists($user, 'roles')) {
-                $superAdminRole = $user->roles()->where('name', 'super_admin')->first();
+                $superAdminRole = $user->roles()->where('name', 'super_admin')->orWhere('name', 'Super Admin')->first();
                 if ($superAdminRole) {
                     return true;
                 }

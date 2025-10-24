@@ -71,6 +71,15 @@ return [
             'after_commit' => false,
         ],
 
+        'redis_verification' => [
+            'driver' => 'redis',
+            'connection' => 'default',
+            'queue' => 'verification',
+            'retry_after' => 300, // 5 minutes for verification jobs
+            'block_for' => null,
+            'after_commit' => false,
+        ],
+
     ],
 
     /*

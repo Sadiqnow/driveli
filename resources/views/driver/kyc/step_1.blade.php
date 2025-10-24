@@ -185,45 +185,45 @@
 
                         <!-- State -->
                         <div class="mb-3">
-                            <label for="state_id" class="form-label">State of Origin <span class="text-danger">*</span></label>
-                            <select class="form-control @error('state_id') is-invalid @enderror"
-                                    id="state_id"
-                                    name="state_id"
+                            <label for="state_of_origin" class="form-label">State of Origin <span class="text-danger">*</span></label>
+                            <select class="form-control @error('state_of_origin') is-invalid @enderror"
+                                    id="state_of_origin"
+                                    name="state_of_origin"
                                     required>
                                 <option value="">Select State</option>
                                 @foreach($states as $state)
                                     <option value="{{ $state->id }}"
-                                            {{ old('state_id', $driver->state_id) == $state->id ? 'selected' : '' }}>
+                                            {{ old('state_of_origin', $driver->state_of_origin) == $state->id ? 'selected' : '' }}>
                                         {{ $state->name }}
                                     </option>
                                 @endforeach
                             </select>
-                            @error('state_id')
+                            @error('state_of_origin')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
 
                         <!-- Local Government Area -->
                         <div class="mb-3">
-                            <label for="lga_id" class="form-label">Local Government Area <span class="text-danger">*</span></label>
-                            <select class="form-control @error('lga_id') is-invalid @enderror"
-                                    id="lga_id"
-                                    name="lga_id"
+                            <label for="lga_of_origin" class="form-label">Local Government Area <span class="text-danger">*</span></label>
+                            <select class="form-control @error('lga_of_origin') is-invalid @enderror"
+                                    id="lga_of_origin"
+                                    name="lga_of_origin"
                                     aria-describedby="lga_help"
                                     aria-live="polite"
                                     aria-label="Local Government Area of Origin"
                                     required>
                                 <option value="">Select Local Government Area</option>
                                 <!-- LGAs will be populated via JavaScript -->
-                                @if(old('lga_id', $driver->lga_id) && $driver->lga)
-                                    <option value="{{ $driver->lga->id }}" selected>{{ $driver->lga->name }}</option>
+                                @if(old('lga_of_origin', $driver->lga_of_origin) && $driver->originLga)
+                                    <option value="{{ $driver->originLga->id }}" selected>{{ $driver->originLga->name }}</option>
                                 @endif
                             </select>
                             <div id="lga_help" class="form-text text-muted">
                                 <i class="fas fa-info-circle me-1" aria-hidden="true"></i>
                                 This field will populate after selecting your state of origin
                             </div>
-                            @error('lga_id')
+                            @error('lga_of_origin')
                                 <div class="invalid-feedback" role="alert">{{ $message }}</div>
                             @enderror
                         </div>
@@ -311,11 +311,11 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const stateSelect = document.getElementById('state_id');
-    const lgaSelect = document.getElementById('lga_id');
+    const stateSelect = document.getElementById('state_of_origin');
+    const lgaSelect = document.getElementById('lga_of_origin');
 
     // Store the original LGA value for edit mode
-    const originalLgaId = '{{ old("lga_id", $driver->lga_id) }}';
+    const originalLgaId = '{{ old("lga_of_origin", $driver->lga_of_origin) }}';
     
     // Create screen reader announcement area
     function createAnnouncementArea() {
@@ -356,7 +356,7 @@ document.addEventListener('DOMContentLoaded', function() {
         lgaSelect.setAttribute('aria-busy', 'true');
 
         if (stateId) {
-            fetch(`/api/lgas/${stateId}`)
+            fetch(`/driver/kyc/lgas/${stateId}`)
                 .then(response => {
                     if (!response.ok) {
                         throw new Error('Network response was not ok');

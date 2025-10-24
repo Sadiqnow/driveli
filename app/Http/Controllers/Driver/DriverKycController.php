@@ -138,21 +138,14 @@ class DriverKycController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'first_name' => 'required|string|max:50|regex:/^[a-zA-Z\s]+$/',
+            // Basic info fields (read-only in form, but validate if sent)
             'middle_name' => 'nullable|string|max:50|regex:/^[a-zA-Z\s]+$/',
-            'surname' => 'required|string|max:50|regex:/^[a-zA-Z\s]+$/',
-            'date_of_birth' => 'required|date|before:-18 years',
-            'gender' => 'required|in:male,female,other',
-            'marital_status' => 'required|in:single,married,divorced,widowed',
+            'gender' => 'required|in:Male,Female,Other,male,female,other',
+            'marital_status' => 'required|in:Single,Married,Divorced,Widowed,single,married,divorced,widowed',
             'nationality_id' => 'required|exists:nationalities,id',
             'state_of_origin' => 'required|exists:states,id',
             'lga_of_origin' => 'required|exists:local_governments,id',
-            'religion' => 'nullable|string|max:50',
-            'blood_group' => 'nullable|in:A+,A-,B+,B-,AB+,AB-,O+,O-',
-            'height_meters' => 'nullable|numeric|between:1.0,2.5',
-            'nin_number' => 'required|string|size:11|unique:drivers,nin_number,' . $driver->id,
-            'license_number' => 'required|string|max:50|unique:drivers,license_number,' . $driver->id,
-            'phone_2' => 'nullable|string|max:15',
+            'residential_address' => 'required|string|max:500',
             'emergency_contact_name' => 'required|string|max:100',
             'emergency_contact_phone' => 'required|string|max:15',
             'emergency_contact_relationship' => 'required|string|max:50',
@@ -168,27 +161,19 @@ class DriverKycController extends Controller
         try {
             DB::beginTransaction();
 
-            // Update driver information
+            // Update driver information - only the fields that can be edited in Step 1
             $driver->update([
-                'first_name' => $request->first_name,
                 'middle_name' => $request->middle_name,
-                'surname' => $request->surname,
-                'date_of_birth' => $request->date_of_birth,
                 'gender' => $request->gender,
                 'marital_status' => $request->marital_status,
                 'nationality_id' => $request->nationality_id,
                 'state_of_origin' => $request->state_of_origin,
                 'lga_of_origin' => $request->lga_of_origin,
-                'religion' => $request->religion,
-                'blood_group' => $request->blood_group,
-                'height_meters' => $request->height_meters,
-                'nin_number' => $request->nin_number,
-                'license_number' => $request->license_number,
-                'phone_2' => $request->phone_2,
+                'residential_address' => $request->residential_address,
                 'emergency_contact_name' => $request->emergency_contact_name,
                 'emergency_contact_phone' => $request->emergency_contact_phone,
                 'emergency_contact_relationship' => $request->emergency_contact_relationship,
-                
+
                 // Update KYC tracking
                 'kyc_step' => 1,
                 'kyc_status' => 'in_progress',

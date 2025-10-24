@@ -8,15 +8,13 @@ class VerifyDriverRequest extends FormRequest
 {
     public function authorize()
     {
-        return true; // TODO: Implement authorization logic
+        return true; // Admin authorization handled by middleware
     }
 
     public function rules()
     {
         return [
-            // TODO: Define validation rules for driver verification
-            'driver_id' => 'required|integer',
-            'documents' => 'required|array',
+            'driver_id' => 'sometimes|integer|exists:drivers,id',
         ];
     }
 }

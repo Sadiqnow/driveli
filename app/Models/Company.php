@@ -95,6 +95,15 @@ class Company extends Authenticatable
     }
 
     // Helper methods
+    public static function generateCompanyId(): string
+    {
+        do {
+            $companyId = 'CMP' . strtoupper(substr(md5(uniqid(mt_rand(), true)), 0, 8));
+        } while (self::where('company_id', $companyId)->exists());
+
+        return $companyId;
+    }
+
     public function isVerified(): bool
     {
         return $this->verification_status === 'Verified';

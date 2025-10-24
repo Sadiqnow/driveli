@@ -194,8 +194,9 @@ Route::middleware(['auth:sanctum', 'ability:admin'])->group(function () {
 // ===================================================================================================
 Route::middleware(['auth:sanctum', 'ability:admin'])->group(function () {
     Route::prefix('driver-verification')->name('api.driver-verification.')->group(function () {
-        Route::post('/verify', [App\Http\Controllers\DriverVerificationController::class, 'verify'])->name('verify');
-        // TODO: Add more verification routes as needed
+        Route::post('/{driverId}/start', [App\Http\Controllers\DriverVerificationController::class, 'start'])->name('start');
+        Route::post('/{driverId}/reverify', [App\Http\Controllers\DriverVerificationController::class, 'reverify'])->name('reverify');
+        Route::get('/{driverId}/report', [App\Http\Controllers\DriverVerificationController::class, 'report'])->name('report');
     });
 });
 

@@ -14,9 +14,11 @@ return new class extends Migration
     public function up()
     {
         Schema::table('roles', function (Blueprint $table) {
-            $table->unsignedBigInteger('parent_id')->nullable()->after('meta');
-            $table->foreign('parent_id')->references('id')->on('roles')->onDelete('set null');
-            $table->index('parent_id');
+            if (!Schema::hasColumn('roles', 'parent_id')) {
+                $table->unsignedBigInteger('parent_id')->nullable()->after('meta');
+                $table->foreign('parent_id')->references('id')->on('roles')->onDelete('set null');
+                $table->index('parent_id');
+            }
         });
     }
 
@@ -28,9 +30,11 @@ return new class extends Migration
     public function down()
     {
         Schema::table('roles', function (Blueprint $table) {
-            $table->dropForeign(['parent_id']);
-            $table->dropIndex(['parent_id']);
-            $table->dropColumn('parent_id');
+            if (Schema::hasColumn('roles', 'parent_id')) {
+                $table->dropForeign(['parent_id']);
+                $table->dropIndex(['parent_id']);
+                $table->dropColumn('parent_id');
+            }
         });
     }
 };

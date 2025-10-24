@@ -146,7 +146,7 @@ class ActivityLogger
     /**
      * Get activities by date range
      */
-    public static function getActivitiesByDateRange($startDate, $endDate, $userType = null)
+    public static function getActivitiesByDateRange($startDate, $endDate, $userType = null, $limit = 100)
     {
         $query = UserActivity::dateRange($startDate, $endDate);
 
@@ -154,7 +154,7 @@ class ActivityLogger
             $query->userType($userType);
         }
 
-        return $query->orderBy('created_at', 'desc')->get();
+        return $query->orderBy('created_at', 'desc')->limit($limit)->get();
     }
 
     /**

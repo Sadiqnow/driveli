@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             \Database\Seeders\LookupTablesSeeder::class,
             \Database\Seeders\NigerianStatesAndLGASeeder::class,
+            RoleSeeder::class,
             AdminUserSeeder::class,
             CompanySeeder::class,
             DriverSeeder::class,

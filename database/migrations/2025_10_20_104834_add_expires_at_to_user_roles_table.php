@@ -13,9 +13,11 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::table('user_roles', function (Blueprint $table) {
-            $table->timestamp('expires_at')->nullable()->after('is_active');
-        });
+        if (Schema::hasTable('user_roles') && !Schema::hasColumn('user_roles', 'expires_at')) {
+            Schema::table('user_roles', function (Blueprint $table) {
+                $table->timestamp('expires_at')->nullable()->after('is_active');
+            });
+        }
     }
 
     /**

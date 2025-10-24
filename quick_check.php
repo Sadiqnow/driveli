@@ -1,23 +1,33 @@
 <?php
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
 
-echo "Starting debug...\n";
-flush();
+require_once 'vendor/autoload.php';
 
-try {
-    $pdo = new PDO("mysql:host=localhost;dbname=drivelink", 'root', '');
-    echo "Connected to database\n";
-    
-    $stmt = $pdo->query("DESCRIBE drivers");
-    $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    
-    echo "Found " . count($result) . " columns:\n";
-    foreach ($result as $column) {
-        echo "- " . $column['Field'] . "\n";
-    }
-    
-} catch (Exception $e) {
-    echo "Error: " . $e->getMessage() . "\n";
+$app = require_once 'bootstrap/app.php';
+$app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
+
+use App\Models\Drivers;
+
+echo "Checking drivers table...\n";
+
+$driver = Drivers::first();
+if ($driver) {
+    echo "Driver found: ID {$driver->id}\n";
+    echo "Status: {$driver->verification_status}\n";
+    echo "Score: {$driver->overall_verification_score}\n";
+    echo "Has verification_completed_at: " . ($driver->verification_completed_at ? 'Yes' : 'No') . "\n";
+} else {
+    echo "No drivers found\n";
 }
-?>
+
+echo "\nChecking driver_verification_logs table...\n";
+
+$logs = DB::table('driver_verification_logs')->count();
+echo "Total logs: {$logs}\n";
+
+$latestLog = DB::table('driver_verification_logs')->latest()->first();
+if ($latestLog) {
+    echo "Latest log ID: {$latestLog->id}\n";
+    echo "Action: {$latestLog->action}\n";
+    echo "Status: {$latestLog->status}\n";
+    echo "Confidence score: {$latestLog->confidence_score}\n";
+}

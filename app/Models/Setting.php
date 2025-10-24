@@ -103,6 +103,7 @@ class Setting extends Model
     public static function getAllGroups()
     {
         return static::select('group', 'key', 'value', 'type', 'description', 'is_public')
+                    ->limit(200)
                     ->get()
                     ->groupBy('group')
                     ->map(function ($settings) {

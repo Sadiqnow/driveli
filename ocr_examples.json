@@ -1,0 +1,132 @@
+{
+  "raw_to_normalized_examples": {
+    "nin_document": {
+      "raw_ocr_result": {
+        "success": true,
+        "text": "NATIONAL IDENTITY MANAGEMENT COMMISSION\nNIN: 12345678901\nFirst Name: JOHN\nSurname: DOE\nDate of Birth: 15/06/1985\nPhone: +2348012345678\nAddress: 123 Main Street, Lagos\nGender: Male\nMarital Status: Single",
+        "confidence": 0.92,
+        "provider": "tesseract",
+        "timestamp": "2025-01-15T10:30:00Z"
+      },
+      "normalized_output": {
+        "nin": "12345678901",
+        "first_name": "JOHN",
+        "surname": "DOE",
+        "date_of_birth": "15/06/1985",
+        "phone": "+2348012345678",
+        "address": "123 Main Street, Lagos",
+        "raw_text": "NATIONAL IDENTITY MANAGEMENT COMMISSION\nNIN: 12345678901\nFirst Name: JOHN\nSurname: DOE\nDate of Birth: 15/06/1985\nPhone: +2348012345678\nAddress: 123 Main Street, Lagos\nGender: Male\nMarital Status: Single",
+        "parsed_at": "2025-01-15T10:30:00Z"
+      }
+    },
+    "drivers_license": {
+      "raw_ocr_result": {
+        "success": true,
+        "text": "FEDERAL ROAD SAFETY COMMISSION\nLicense No: FRSC123456\nFirst Name: JOHN\nSurname: DOE\nDOB: 15/06/1985\nIssue Date: 01/01/2020\nExpiry Date: 31/12/2025\nClass: A\nBlood Group: O+\nAddress: 123 Main Street, Lagos",
+        "confidence": 0.88,
+        "provider": "google_vision",
+        "timestamp": "2025-01-15T10:35:00Z"
+      },
+      "normalized_output": {
+        "license_number": "FRSC123456",
+        "first_name": "JOHN",
+        "surname": "DOE",
+        "date_of_birth": "15/06/1985",
+        "issue_date": "01/01/2020",
+        "expiry_date": "31/12/2025",
+        "class": "A",
+        "raw_text": "FEDERAL ROAD SAFETY COMMISSION\nLicense No: FRSC123456\nFirst Name: JOHN\nSurname: DOE\nDOB: 15/06/1985\nIssue Date: 01/01/2020\nExpiry Date: 31/12/2025\nClass: A\nBlood Group: O+\nAddress: 123 Main Street, Lagos",
+        "parsed_at": "2025-01-15T10:35:00Z"
+      }
+    },
+    "utility_bill": {
+      "raw_ocr_result": {
+        "success": true,
+        "text": "ELECTRICITY BILL\nAccount No: EKO123456789\nCustomer Name: JOHN DOE\nAddress: 123 Main Street, Lagos\nBill Date: 01/01/2025\nDue Date: 15/01/2025\nAmount: ₦25,000.00\nMeter No: 123456789\nConsumption: 500 kWh",
+        "confidence": 0.95,
+        "provider": "aws_textract",
+        "timestamp": "2025-01-15T10:40:00Z"
+      },
+      "normalized_output": {
+        "account_number": "EKO123456789",
+        "customer_name": "JOHN DOE",
+        "address": "123 Main Street, Lagos",
+        "bill_date": "01/01/2025",
+        "due_date": "15/01/2025",
+        "amount": "₦25,000.00",
+        "utility_type": "Electricity",
+        "raw_text": "ELECTRICITY BILL\nAccount No: EKO123456789\nCustomer Name: JOHN DOE\nAddress: 123 Main Street, Lagos\nBill Date: 01/01/2025\nDue Date: 15/01/2025\nAmount: ₦25,000.00\nMeter No: 123456789\nConsumption: 500 kWh",
+        "parsed_at": "2025-01-15T10:40:00Z"
+      }
+    },
+    "profile_photo": {
+      "raw_ocr_result": {
+        "success": true,
+        "text": "Photo captured on 2025-01-15\nWatermark: DriveLink Verification\nMetadata: Resolution 1024x768",
+        "confidence": 0.60,
+        "provider": "tesseract",
+        "timestamp": "2025-01-15T10:45:00Z"
+      },
+      "normalized_output": {
+        "detected_text": "Photo captured on 2025-01-15\nWatermark: DriveLink Verification\nMetadata: Resolution 1024x768",
+        "has_watermark": true,
+        "has_metadata": true,
+        "raw_text": "Photo captured on 2025-01-15\nWatermark: DriveLink Verification\nMetadata: Resolution 1024x768",
+        "parsed_at": "2025-01-15T10:45:00Z"
+      }
+    }
+  },
+  "validation_checklist": {
+    "processDocuments_method": [
+      "Accepts Driver model instance",
+      "Scans all driver_documents for the driver",
+      "Updates ocr_data field with normalized JSON",
+      "Updates ocr_match_score field with confidence value",
+      "Returns processing results with success/error status"
+    ],
+    "database_updates": [
+      "driver_documents.ocr_data stores normalized field map",
+      "driver_documents.ocr_match_score stores confidence (0.00-1.00)",
+      "Data persists correctly in database",
+      "Multiple document types supported"
+    ],
+    "provider_abstraction": [
+      "OCRProviderInterface defines standard methods",
+      "TesseractProvider implements interface",
+      "Easy to add new providers (Google Vision, AWS Textract)",
+      "Automatic fallback to available providers",
+      "Configuration-driven provider selection"
+    ]
+  },
+  "usage_example": {
+    "code_sample": "<?php\nuse App\\Services\\OCRService;\nuse App\\Models\\Drivers;\n\n$driver = Drivers::find(1);\n$ocrService = new OCRService();\n$result = $ocrService->processDocuments($driver);\n\nif ($result['success']) {\n    foreach ($result['processed_documents'] as $doc) {\n        echo \"Document {$doc['document_type']}: Confidence {$doc['ocr_confidence']}\\n\";\n        print_r($doc['ocr_data']);\n    }\n} else {\n    echo 'OCR processing failed: ' . ($result['error'] ?? 'Unknown error');\n}\n?>",
+    "expected_output": {
+      "success": true,
+      "processed_documents": [
+        {
+          "document_id": 1,
+          "document_type": "nin",
+          "ocr_data": {
+            "nin": "12345678901",
+            "first_name": "JOHN",
+            "surname": "DOE",
+            "date_of_birth": "15/06/1985"
+          },
+          "ocr_confidence": 0.92
+        },
+        {
+          "document_id": 2,
+          "document_type": "license",
+          "ocr_data": {
+            "license_number": "FRSC123456",
+            "first_name": "JOHN",
+            "surname": "DOE",
+            "expiry_date": "31/12/2025"
+          },
+          "ocr_confidence": 0.88
+        }
+      ],
+      "errors": []
+    }
+  }
+}

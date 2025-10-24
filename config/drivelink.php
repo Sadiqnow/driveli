@@ -109,6 +109,7 @@ return [
             'retry_attempts' => 3,
         ],
         'ocr' => [
+            'preferred_provider' => env('OCR_PREFERRED_PROVIDER', 'tesseract'),
             'google_vision' => [
                 'project_id' => env('GOOGLE_CLOUD_PROJECT_ID'),
                 'key_file' => env('GOOGLE_CLOUD_KEY_FILE'),
@@ -118,6 +119,10 @@ return [
                 'secret_key' => env('AWS_SECRET_ACCESS_KEY'),
                 'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
                 'role_arn' => env('AWS_TEXTRACT_ROLE_ARN'),
+            ],
+            'tesseract' => [
+                'path' => env('TESSERACT_PATH', 'C:\Program Files\Tesseract-OCR\tesseract.exe'),
+                'language' => env('TESSERACT_LANG', 'eng'),
             ],
         ],
         'sms' => [

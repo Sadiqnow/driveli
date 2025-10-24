@@ -46,12 +46,12 @@ class GlobalLanguage extends Model
 
     public static function getMajorLanguages()
     {
-        return self::majorLanguages()->active()->orderBy('name')->get();
+        return self::majorLanguages()->active()->orderBy('name')->limit(50)->get();
     }
 
     public static function getAllLanguages()
     {
-        return self::active()->orderBy('is_major_language', 'desc')->orderBy('name')->get();
+        return self::active()->orderBy('is_major_language', 'desc')->orderBy('name')->limit(100)->get();
     }
 
     public static function getLanguageByCode($code)

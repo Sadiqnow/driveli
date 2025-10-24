@@ -17,6 +17,12 @@ use App\Services\DriverService;
 use App\Services\OCRVerificationService;
 use App\Services\NotificationService;
 use App\Services\SecureFileUploadService;
+use App\Services\DriverCreationService;
+use App\Services\DriverVerificationService;
+use App\Services\DriverAnalyticsService;
+use App\Services\DriverKycService;
+use App\Services\DriverFileService;
+use App\Services\DriverDataService;
 use App\Helpers\DrivelinkHelper;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -24,11 +30,30 @@ use Illuminate\Support\Facades\Log;
 class DriverController extends Controller
 {
     // Use dependency injection for services
-     private DriverService $driverService;
+    private DriverService $driverService;
+    private DriverCreationService $creationService;
+    private DriverVerificationService $verificationService;
+    private DriverAnalyticsService $analyticsService;
+    private DriverKycService $kycService;
+    private DriverFileService $fileService;
+    private DriverDataService $dataService;
 
-      public function __construct(DriverService $driverService)
-    {
+    public function __construct(
+        DriverService $driverService,
+        DriverCreationService $creationService,
+        DriverVerificationService $verificationService,
+        DriverAnalyticsService $analyticsService,
+        DriverKycService $kycService,
+        DriverFileService $fileService,
+        DriverDataService $dataService
+    ) {
         $this->driverService = $driverService;
+        $this->creationService = $creationService;
+        $this->verificationService = $verificationService;
+        $this->analyticsService = $analyticsService;
+        $this->kycService = $kycService;
+        $this->fileService = $fileService;
+        $this->dataService = $dataService;
         // If you have auth/middleware, keep them:
         // $this->middleware('auth:admin');
     }
@@ -40,47 +65,14 @@ class DriverController extends Controller
             abort(403, 'Access denied. Insufficient permissions.');
         }
 
-        $query = Driver::query()->forAdminList();
-
-        // Search functionality
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('first_name', 'LIKE', "%{$search}%")
-                  ->orWhere('surname', 'LIKE', "%{$search}%")
-                  ->orWhere('phone', 'LIKE', "%{$search}%")
-                  ->orWhere('email', 'LIKE', "%{$search}%")
-                  ->orWhere('driver_id', 'LIKE', "%{$search}%");
-            });
-        }
-
-        // Status filter
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
-
-        // Verification status filter
-        if ($request->filled('verification_status')) {
-            $query->where('verification_status', $request->verification_status);
-        }
-
-        // Experience level filter - skip if column doesn't exist
-        if ($request->filled('experience_level')) {
-            try {
-                $query->where('experience_level', $request->experience_level);
-            } catch (\Exception $e) {
-                // Column doesn't exist yet, skip this filter
-            }
-        }
+        // Use data service for dashboard data
+        $data = $this->dataService->getDashboardData($request->all());
 
         // Handle JSON requests for OCR dashboard
         if ($request->get('format') === 'json') {
             if ($request->get('include_ocr') === 'true') {
                 // For OCR verification dashboard - get all drivers with OCR data
-                $drivers = $query->orderBy('created_at', 'desc')->get();
-
-                // Add computed properties for OCR dashboard
-                $drivers = $drivers->map(function ($driver) {
+                $drivers = $data['drivers']->map(function ($driver) {
                     return [
                         'id' => $driver->id,
                         'driver_id' => $driver->driver_id,
@@ -118,8 +110,7 @@ class DriverController extends Controller
                 ]);
             } else {
                 // Regular JSON response for driver list
-                $drivers = $query->orderBy('created_at', 'desc')->get();
-                $drivers = $drivers->map(function ($driver) {
+                $drivers = $data['drivers']->map(function ($driver) {
                     return [
                         'id' => $driver->id,
                         'driver_id' => $driver->driver_id,
@@ -139,61 +130,23 @@ class DriverController extends Controller
             ]);
         }
 
-        // Regular view response with configurable page size
-        $perPage = $request->get('per_page', 20);
-        $perPage = in_array($perPage, [10, 20, 50, 100]) ? $perPage : 20; // Validate page size
-        $drivers = $query->orderBy('created_at', 'desc')->paginate($perPage);
-
-        // Use service layer for optimized dashboard stats
-        $stats = $this->driverService->getDashboardStats();
-
         return view('admin.drivers.index', array_merge(
-            compact('drivers'),
-            $stats
+            ['drivers' => $data['drivers']],
+            $data['stats']
         ));
     }
 
     public function verification(Request $request)
     {
-        $query = Driver::forAdminList();
+        $data = $this->dataService->getVerificationData($request->all());
 
-        // Default to pending verification if no status specified
-        $verificationType = $request->get('type', 'pending');
-
-        switch ($verificationType) {
-            case 'pending':
-                $query->where('verification_status', 'pending');
-                break;
-            case 'verified':
-                $query->where('verification_status', 'verified');
-                break;
-            case 'rejected':
-                $query->where('verification_status', 'rejected');
-                break;
-            default:
-                $query->whereIn('verification_status', ['pending', 'verified', 'rejected']);
-        }
-
-        // Search functionality
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('first_name', 'LIKE', "%{$search}%")
-                  ->orWhere('surname', 'LIKE', "%{$search}%")
-                  ->orWhere('phone', 'LIKE', "%{$search}%")
-                  ->orWhere('email', 'LIKE', "%{$search}%")
-                  ->orWhere('driver_id', 'LIKE', "%{$search}%");
-            });
-        }
-
-        $drivers = $query->orderBy('created_at', 'desc')->paginate(20);
-
-        // Get verification counts
-        $pendingCount = Driver::where('verification_status', 'pending')->count();
-        $verifiedCount = Driver::where('verification_status', 'verified')->count();
-        $rejectedCount = Driver::where('verification_status', 'rejected')->count();
-
-        return view('admin.drivers.verification', compact('drivers', 'verificationType', 'pendingCount', 'verifiedCount', 'rejectedCount'));
+        return view('admin.drivers.verification', [
+            'drivers' => $data['drivers'],
+            'verificationType' => $data['verification_type'],
+            'pendingCount' => $data['counts']['pending'],
+            'verifiedCount' => $data['counts']['verified'],
+            'rejectedCount' => $data['counts']['rejected']
+        ]);
     }
 
     /**
@@ -293,6 +246,7 @@ class DriverController extends Controller
             return redirect()->route('admin.login')
                 ->with('error', 'Please log in to continue.');
         }
+
         // Validate essential fields only
         try {
             $request->validate([
@@ -334,78 +288,17 @@ class DriverController extends Controller
             }
         }
 
-        try {
-            DB::beginTransaction();
+        // Use creation service
+        $result = $this->creationService->createSimpleDriver($request);
 
-            // Generate unique driver ID
-            $driverId = $this->generateDriverId();
-
-            // Prepare driver data with only fields that exist
-            $driverData = [
-                'driver_id' => $driverId,
-                'first_name' => $request->first_name,
-                'surname' => $request->surname,
-                'email' => $request->email,
-                'phone' => $request->phone,
-                'password' => Hash::make($request->password),
-                'status' => $request->status ?? 'active',
-                'verification_status' => 'pending',
-            ];
-
-            // Add optional fields only if they exist in the table
-            $optionalFields = [
-                'license_number' => $request->driver_license_number,
-                'kyc_status' => 'pending',
-                'kyc_step' => 'not_started',
-                'kyc_step_data' => '{}', // Empty JSON object
-                'date_of_birth' => '1990-01-01', // Placeholder
-                'gender' => 'Other', // Placeholder
-                'created_by' => auth('admin')->id()
-            ];
-
-            foreach ($optionalFields as $field => $value) {
-                if (Schema::hasColumn('drivers', $field)) {
-                    $driverData[$field] = $value;
-                }
-            }
-
-            // Create driver with available data
-            $driver = Driver::create($driverData);
-
-            DB::commit();
-
-            // Log successful creation
-            Log::info('Simple driver account created', [
-                'driver_id' => $driver->driver_id,
-                'admin_id' => auth('admin')->id()
-            ]);
-
+        if ($result['success']) {
             return redirect()
-                ->route('admin.superadmin.drivers.verify-otp', $driver->id)
+                ->route('admin.superadmin.drivers.verify-otp', $result['driver']->id)
                 ->with('success', 'Driver account created successfully! Please verify the contact information to continue.');
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-
-            Log::error('Failed to create simple driver account', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-                'request_data' => $request->except(['password', 'password_confirmation']),
-                'admin_id' => auth('admin')->id()
-            ]);
-
-            // Show detailed error in debug mode
-            if (config('app.debug')) {
-                return back()
-                    ->withInput($request->except(['password', 'password_confirmation']))
-                    ->withErrors([
-                        'general' => 'Debug - Error: ' . $e->getMessage() . ' (Line: ' . $e->getLine() . ')'
-                    ]);
-            }
-
+        } else {
             return back()
                 ->withInput($request->except(['password', 'password_confirmation']))
-                ->withErrors(['general' => 'Failed to create driver account. Please try again.']);
+                ->withErrors(['general' => $result['message']]);
         }
     }
 

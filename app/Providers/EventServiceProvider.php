@@ -29,6 +29,9 @@ class EventServiceProvider extends ServiceProvider
         DriverKycCompleted::class => [
             NotifyAdminsOfKycCompletion::class,
         ],
+        DriverVerified::class => [
+            NotifyCompanyOnVerification::class,
+        ],
         RoleUpdated::class => [
             RoleUpdatedListener::class,
         ],

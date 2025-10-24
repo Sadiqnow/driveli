@@ -89,7 +89,7 @@ class Role extends Model
 
     public function getChildRoles()
     {
-        return $this->children()->with('children')->get();
+        return $this->children()->with('children')->limit(50)->get();
     }
 
     // Scopes

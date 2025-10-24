@@ -44,7 +44,7 @@ class AdminUser extends Authenticatable
     // Relationships
     public function roles(): BelongsToMany
     {
-        return $this->belongsToMany(Role::class, 'user_roles');
+        return $this->belongsToMany(Role::class, 'user_roles', 'user_id', 'role_id');
     }
 
     public function superadminActivityLogs(): HasMany
@@ -106,8 +106,11 @@ class AdminUser extends Authenticatable
     public function hasPermission(string $permissionName): bool
     {
         // Check direct permissions in JSON field
-        if ($this->permissions && in_array($permissionName, $this->permissions)) {
-            return true;
+        if ($this->permissions) {
+            $permissions = is_array($this->permissions) ? $this->permissions : json_decode($this->permissions, true);
+            if (is_array($permissions) && in_array($permissionName, $permissions)) {
+                return true;
+            }
         }
 
         // Check permissions through roles
@@ -134,6 +137,31 @@ class AdminUser extends Authenticatable
     public function getHighestRoleLevel(): int
     {
         return $this->roles()->min('level') ?? 999;
+    }
+
+    public function hasAnyRole(array $roles): bool
+    {
+        foreach ($roles as $role) {
+            if ($this->hasRole($role)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public function hasAnyPermission(array $permissions): bool
+    {
+        foreach ($permissions as $permission) {
+            if ($this->hasPermission($permission)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public function getRoleNames(): \Illuminate\Support\Collection
+    {
+        return $this->roles->pluck('name');
     }
 
     // Scopes
