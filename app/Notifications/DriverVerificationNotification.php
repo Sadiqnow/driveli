@@ -7,6 +7,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use Illuminate\Notifications\Messages\BroadcastMessage;
+use Illuminate\Support\Facades\Log;
 
 class DriverVerificationNotification extends Notification implements ShouldQueue
 {
@@ -50,20 +51,108 @@ class DriverVerificationNotification extends Notification implements ShouldQueue
 
     public function toSms($notifiable)
     {
-        // SMS stub - queue for SMS service integration
         $driver = $this->verificationData['driver'] ?? null;
         $message = 'Driver verification completed: ' . ($driver ? $driver->first_name . ' ' . $driver->surname : 'Unknown Driver') .
                    '. Score: ' . ($this->verificationData['score'] ?? 'N/A') . '%. Check dashboard for details.';
 
-        // TODO: Integrate with SMS service (e.g., Twilio, AWS SNS)
-        // For now, log the SMS content
-        \Log::info('SMS Notification Stub', [
-            'recipient' => $notifiable->phone ?? 'No phone number',
-            'message' => $message,
-            'driver_id' => $driver ? $driver->id : null
-        ]);
+        // Integrate with SMS service
+        try {
+            $this->sendSms($notifiable, $message);
+        } catch (\Exception $e) {
+            \Log::error('SMS sending failed: ' . $e->getMessage(), [
+                'recipient' => $notifiable->phone ?? 'No phone number',
+                'driver_id' => $driver ? $driver->id : null
+            ]);
+        }
 
         return $message;
+    }
+
+    /**
+     * Send SMS using configured service
+     */
+    private function sendSms($notifiable, $message)
+    {
+        $phone = $notifiable->phone ?? null;
+        if (!$phone) {
+            \Log::warning('No phone number available for SMS notification');
+            return;
+        }
+
+        $smsService = config('services.sms.provider', 'twilio');
+
+        switch ($smsService) {
+            case 'twilio':
+                $this->sendTwilioSms($phone, $message);
+                break;
+            case 'aws':
+                $this->sendAwsSms($phone, $message);
+                break;
+            default:
+                \Log::warning('Unknown SMS provider: ' . $smsService);
+        }
+    }
+
+    /**
+     * Send SMS via Twilio
+     */
+    private function sendTwilioSms($phone, $message)
+    {
+        try {
+            $twilioSid = config('services.twilio.sid');
+            $twilioToken = config('services.twilio.token');
+            $twilioFrom = config('services.twilio.from');
+
+            if (!$twilioSid || !$twilioToken || !$twilioFrom) {
+                throw new \Exception('Twilio credentials not configured');
+            }
+
+            $client = new \Twilio\Rest\Client($twilioSid, $twilioToken);
+            $client->messages->create($phone, [
+                'from' => $twilioFrom,
+                'body' => $message
+            ]);
+
+            \Log::info('SMS sent via Twilio', ['phone' => $phone]);
+
+        } catch (\Exception $e) {
+            \Log::error('Twilio SMS failed: ' . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    /**
+     * Send SMS via AWS SNS
+     */
+    private function sendAwsSms($phone, $message)
+    {
+        try {
+            $sns = new \Aws\Sns\SnsClient([
+                'version' => 'latest',
+                'region' => config('services.aws.region', 'us-east-1'),
+                'credentials' => [
+                    'key' => config('services.aws.key'),
+                    'secret' => config('services.aws.secret'),
+                ],
+            ]);
+
+            $sns->publish([
+                'Message' => $message,
+                'PhoneNumber' => $phone,
+                'MessageAttributes' => [
+                    'AWS.SNS.SMS.SMSType' => [
+                        'DataType' => 'String',
+                        'StringValue' => 'Transactional'
+                    ]
+                ]
+            ]);
+
+            \Log::info('SMS sent via AWS SNS', ['phone' => $phone]);
+
+        } catch (\Exception $e) {
+            \Log::error('AWS SNS SMS failed: ' . $e->getMessage());
+            throw $e;
+        }
     }
 
     public function toBroadcast($notifiable)

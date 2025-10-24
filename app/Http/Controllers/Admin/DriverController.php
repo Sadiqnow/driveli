@@ -1482,9 +1482,130 @@ class DriverController extends Controller
     public function export(Request $request)
     {
         $format = $request->get('format', 'csv');
-        // TODO: Implement export functionality
 
-        return back()->with('info', 'Export functionality coming soon!');
+        // Validate format
+        if (!in_array($format, ['csv', 'excel', 'pdf'])) {
+            return back()->with('error', 'Invalid export format. Supported formats: csv, excel, pdf');
+        }
+
+        try {
+            $query = Driver::with(['verifiedBy', 'nationality']);
+
+            // Apply filters if provided
+            if ($request->filled('status')) {
+                $query->where('status', $request->status);
+            }
+
+            if ($request->filled('verification_status')) {
+                $query->where('verification_status', $request->verification_status);
+            }
+
+            if ($request->filled('date_from')) {
+                $query->whereDate('created_at', '>=', $request->date_from);
+            }
+
+            if ($request->filled('date_to')) {
+                $query->whereDate('created_at', '<=', $request->date_to);
+            }
+
+            $drivers = $query->orderBy('created_at', 'desc')->get();
+
+            if ($drivers->isEmpty()) {
+                return back()->with('warning', 'No data found for export with the specified filters.');
+            }
+
+            $filename = 'drivers_' . now()->format('Y-m-d_H-i-s');
+
+            switch ($format) {
+                case 'csv':
+                    return $this->exportDriversToCsv($drivers, $filename);
+                case 'excel':
+                    return $this->exportDriversToExcel($drivers, $filename);
+                case 'pdf':
+                    return $this->exportDriversToPdf($drivers, $filename);
+                default:
+                    return back()->with('error', 'Unsupported export format.');
+            }
+
+        } catch (\Exception $e) {
+            \Log::error('Driver export failed: ' . $e->getMessage());
+            return back()->with('error', 'Export failed. Please try again.');
+        }
+    }
+
+    /**
+     * Export drivers data to CSV format
+     */
+    private function exportDriversToCsv($drivers, $filename)
+    {
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '.csv"',
+        ];
+
+        $callback = function() use ($drivers) {
+            $file = fopen('php://output', 'w');
+
+            // Write CSV headers
+            fputcsv($file, [
+                'Driver ID',
+                'Full Name',
+                'Email',
+                'Phone',
+                'Status',
+                'Verification Status',
+                'KYC Status',
+                'Nationality',
+                'Date of Birth',
+                'Gender',
+                'License Number',
+                'Registered Date',
+                'Verified Date',
+                'Verified By'
+            ]);
+
+            // Write data rows
+            foreach ($drivers as $driver) {
+                fputcsv($file, [
+                    $driver->driver_id,
+                    $driver->full_name,
+                    $driver->email,
+                    $driver->phone,
+                    ucfirst($driver->status),
+                    ucfirst($driver->verification_status),
+                    ucfirst($driver->kyc_status ?? 'N/A'),
+                    $driver->nationality->name ?? 'N/A',
+                    $driver->date_of_birth ? $driver->date_of_birth->format('Y-m-d') : 'N/A',
+                    ucfirst($driver->gender ?? 'N/A'),
+                    $driver->license_number ?? 'N/A',
+                    $driver->created_at->format('Y-m-d H:i:s'),
+                    $driver->verified_at ? $driver->verified_at->format('Y-m-d H:i:s') : 'N/A',
+                    $driver->verifiedBy->name ?? 'N/A'
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    /**
+     * Export drivers data to Excel format (using CSV for now)
+     */
+    private function exportDriversToExcel($drivers, $filename)
+    {
+        // For now, return CSV as Excel-compatible format
+        return $this->exportDriversToCsv($drivers, $filename . '_excel');
+    }
+
+    /**
+     * Export drivers data to PDF format
+     */
+    private function exportDriversToPdf($drivers, $filename)
+    {
+        // TODO: Implement PDF export with libraries like dompdf or tcpdf
+        return back()->with('info', 'PDF export functionality will be available soon. Please use CSV export for now.');
     }
 
     /**
@@ -1778,9 +1899,278 @@ class DriverController extends Controller
 
     public function import(Request $request)
     {
-        // TODO: Implement import functionality
+        $request->validate([
+            'import_file' => 'required|file|mimes:csv,xlsx,xls|max:10240', // 10MB max
+            'import_type' => 'required|in:drivers,bulk_update,status_update'
+        ]);
 
-        return back()->with('info', 'Import functionality coming soon!');
+        try {
+            $file = $request->file('import_file');
+            $importType = $request->import_type;
+
+            // Store uploaded file temporarily
+            $filePath = $file->store('temp-imports');
+            $fullPath = storage_path('app/' . $filePath);
+
+            // Process based on type
+            switch ($importType) {
+                case 'drivers':
+                    $result = $this->importDrivers($fullPath);
+                    break;
+                case 'bulk_update':
+                    $result = $this->importBulkUpdates($fullPath);
+                    break;
+                case 'status_update':
+                    $result = $this->importStatusUpdates($fullPath);
+                    break;
+                default:
+                    throw new \Exception('Invalid import type');
+            }
+
+            // Clean up temp file
+            if (file_exists($fullPath)) {
+                unlink($fullPath);
+            }
+
+            return back()->with('success', $result['message']);
+
+        } catch (\Exception $e) {
+            \Log::error('Import failed: ' . $e->getMessage());
+            return back()->with('error', 'Import failed: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Import drivers from CSV/Excel file
+     */
+    private function importDrivers($filePath)
+    {
+        $data = $this->parseImportFile($filePath);
+        $imported = 0;
+        $errors = [];
+
+        foreach ($data as $rowIndex => $row) {
+            try {
+                // Skip header row
+                if ($rowIndex === 0) continue;
+
+                // Validate required fields
+                if (empty($row['first_name']) || empty($row['surname']) || empty($row['email']) || empty($row['phone'])) {
+                    $errors[] = "Row " . ($rowIndex + 1) . ": Missing required fields";
+                    continue;
+                }
+
+                // Check for duplicates
+                if (Driver::where('email', $row['email'])->exists()) {
+                    $errors[] = "Row " . ($rowIndex + 1) . ": Email already exists - " . $row['email'];
+                    continue;
+                }
+
+                if (Driver::where('phone', $row['phone'])->exists()) {
+                    $errors[] = "Row " . ($rowIndex + 1) . ": Phone already exists - " . $row['phone'];
+                    continue;
+                }
+
+                // Create driver
+                Driver::create([
+                    'driver_id' => 'DRV-' . strtoupper(Str::random(8)),
+                    'first_name' => $row['first_name'],
+                    'surname' => $row['surname'],
+                    'middle_name' => $row['middle_name'] ?? null,
+                    'email' => $row['email'],
+                    'phone' => $row['phone'],
+                    'phone_2' => $row['phone_2'] ?? null,
+                    'date_of_birth' => isset($row['date_of_birth']) ? date('Y-m-d', strtotime($row['date_of_birth'])) : null,
+                    'gender' => $row['gender'] ?? null,
+                    'address' => $row['address'] ?? null,
+                    'license_number' => $row['license_number'] ?? null,
+                    'status' => $row['status'] ?? 'active',
+                    'verification_status' => $row['verification_status'] ?? 'pending',
+                    'created_by_admin_id' => auth('admin')->id(),
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+
+                $imported++;
+
+            } catch (\Exception $e) {
+                $errors[] = "Row " . ($rowIndex + 1) . ": " . $e->getMessage();
+            }
+        }
+
+        $message = "Import completed. {$imported} drivers imported successfully.";
+        if (!empty($errors)) {
+            $message .= " Errors: " . implode('; ', array_slice($errors, 0, 5));
+            if (count($errors) > 5) {
+                $message .= " (and " . (count($errors) - 5) . " more errors)";
+            }
+        }
+
+        return ['message' => $message];
+    }
+
+    /**
+     * Import bulk updates from CSV/Excel file
+     */
+    private function importBulkUpdates($filePath)
+    {
+        $data = $this->parseImportFile($filePath);
+        $updated = 0;
+        $errors = [];
+
+        foreach ($data as $rowIndex => $row) {
+            try {
+                // Skip header row
+                if ($rowIndex === 0) continue;
+
+                if (empty($row['driver_id']) && empty($row['email'])) {
+                    $errors[] = "Row " . ($rowIndex + 1) . ": driver_id or email required";
+                    continue;
+                }
+
+                // Find driver
+                $driver = null;
+                if (!empty($row['driver_id'])) {
+                    $driver = Driver::where('driver_id', $row['driver_id'])->first();
+                } elseif (!empty($row['email'])) {
+                    $driver = Driver::where('email', $row['email'])->first();
+                }
+
+                if (!$driver) {
+                    $errors[] = "Row " . ($rowIndex + 1) . ": Driver not found";
+                    continue;
+                }
+
+                // Prepare update data
+                $updateData = array_filter([
+                    'first_name' => $row['first_name'] ?? null,
+                    'surname' => $row['surname'] ?? null,
+                    'middle_name' => $row['middle_name'] ?? null,
+                    'phone' => $row['phone'] ?? null,
+                    'phone_2' => $row['phone_2'] ?? null,
+                    'address' => $row['address'] ?? null,
+                    'license_number' => $row['license_number'] ?? null,
+                    'status' => $row['status'] ?? null,
+                    'verification_status' => $row['verification_status'] ?? null,
+                ]);
+
+                if (!empty($updateData)) {
+                    $driver->update($updateData);
+                    $updated++;
+                }
+
+            } catch (\Exception $e) {
+                $errors[] = "Row " . ($rowIndex + 1) . ": " . $e->getMessage();
+            }
+        }
+
+        $message = "Bulk update completed. {$updated} drivers updated successfully.";
+        if (!empty($errors)) {
+            $message .= " Errors: " . implode('; ', array_slice($errors, 0, 3));
+        }
+
+        return ['message' => $message];
+    }
+
+    /**
+     * Import status updates from CSV/Excel file
+     */
+    private function importStatusUpdates($filePath)
+    {
+        $data = $this->parseImportFile($filePath);
+        $updated = 0;
+        $errors = [];
+
+        foreach ($data as $rowIndex => $row) {
+            try {
+                // Skip header row
+                if ($rowIndex === 0) continue;
+
+                if (empty($row['driver_id']) && empty($row['email'])) {
+                    $errors[] = "Row " . ($rowIndex + 1) . ": driver_id or email required";
+                    continue;
+                }
+
+                if (empty($row['status'])) {
+                    $errors[] = "Row " . ($rowIndex + 1) . ": status required";
+                    continue;
+                }
+
+                // Find driver
+                $driver = null;
+                if (!empty($row['driver_id'])) {
+                    $driver = Driver::where('driver_id', $row['driver_id'])->first();
+                } elseif (!empty($row['email'])) {
+                    $driver = Driver::where('email', $row['email'])->first();
+                }
+
+                if (!$driver) {
+                    $errors[] = "Row " . ($rowIndex + 1) . ": Driver not found";
+                    continue;
+                }
+
+                // Update status
+                $driver->update([
+                    'status' => $row['status'],
+                    'verification_status' => $row['verification_status'] ?? $driver->verification_status,
+                    'updated_at' => now()
+                ]);
+
+                $updated++;
+
+            } catch (\Exception $e) {
+                $errors[] = "Row " . ($rowIndex + 1) . ": " . $e->getMessage();
+            }
+        }
+
+        $message = "Status update completed. {$updated} drivers updated successfully.";
+        if (!empty($errors)) {
+            $message .= " Errors: " . implode('; ', array_slice($errors, 0, 3));
+        }
+
+        return ['message' => $message];
+    }
+
+    /**
+     * Parse CSV or Excel file and return data array
+     */
+    private function parseImportFile($filePath)
+    {
+        $extension = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
+
+        if ($extension === 'csv') {
+            return $this->parseCsvFile($filePath);
+        } elseif (in_array($extension, ['xlsx', 'xls'])) {
+            return $this->parseExcelFile($filePath);
+        } else {
+            throw new \Exception('Unsupported file format');
+        }
+    }
+
+    /**
+     * Parse CSV file
+     */
+    private function parseCsvFile($filePath)
+    {
+        $data = [];
+        $handle = fopen($filePath, 'r');
+
+        while (($row = fgetcsv($handle)) !== false) {
+            $data[] = $row;
+        }
+
+        fclose($handle);
+        return $data;
+    }
+
+    /**
+     * Parse Excel file (basic implementation using CSV parsing for now)
+     */
+    private function parseExcelFile($filePath)
+    {
+        // TODO: Implement proper Excel parsing with phpspreadsheet
+        // For now, treat as CSV
+        return $this->parseCsvFile($filePath);
     }
 
     public function bulkOperations()

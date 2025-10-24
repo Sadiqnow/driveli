@@ -366,6 +366,130 @@ class NotificationService
     }
 
     /**
+     * Send KYC notification to driver
+     */
+    public function sendKycNotification(Driver $driver, string $action, string $notes, bool $canRetry = false): array
+    {
+        try {
+            $message = $this->getKycMessage($action, $driver->full_name, $notes, $canRetry);
+
+            // Log the notification
+            Log::info('KYC notification sent', [
+                'driver_id' => $driver->id,
+                'driver_name' => $driver->full_name,
+                'action' => $action,
+                'message' => $message,
+                'notes' => $notes,
+                'can_retry' => $canRetry,
+            ]);
+
+            // Send email notification
+            $this->sendEmailNotification($driver, 'kyc_status_update', [
+                'action' => $action,
+                'message' => $message,
+                'notes' => $notes,
+                'can_retry' => $canRetry,
+                'driver_name' => $driver->full_name
+            ]);
+
+            // Send SMS if phone is verified
+            if ($driver->phone_verified_at) {
+                $this->sendSMSNotification($driver, 'kyc_status_update', [
+                    'action' => $action,
+                    'driver_name' => $driver->full_name,
+                    'can_retry' => $canRetry
+                ]);
+            }
+
+            return ['success' => true, 'message' => 'KYC notification sent'];
+        } catch (Exception $e) {
+            Log::error('Failed to send KYC notification', [
+                'driver_id' => $driver->id,
+                'action' => $action,
+                'error' => $e->getMessage(),
+            ]);
+
+            return ['success' => false, 'message' => 'Failed to send KYC notification'];
+        }
+    }
+
+    /**
+     * Send KYC info request notification
+     */
+    public function sendKycInfoRequestNotification(Driver $driver, string $infoRequest): array
+    {
+        try {
+            $message = "Dear {$driver->full_name}, we need additional information for your KYC verification: {$infoRequest}. Please update your profile with the requested details.";
+
+            // Log the notification
+            Log::info('KYC info request notification sent', [
+                'driver_id' => $driver->id,
+                'driver_name' => $driver->full_name,
+                'info_request' => $infoRequest,
+                'message' => $message,
+            ]);
+
+            // Send email notification
+            $this->sendEmailNotification($driver, 'kyc_info_request', [
+                'info_request' => $infoRequest,
+                'message' => $message,
+                'driver_name' => $driver->full_name
+            ]);
+
+            // Send SMS if phone is verified
+            if ($driver->phone_verified_at) {
+                $this->sendSMSNotification($driver, 'kyc_info_request', [
+                    'info_request' => $infoRequest,
+                    'driver_name' => $driver->full_name
+                ]);
+            }
+
+            return ['success' => true, 'message' => 'KYC info request notification sent'];
+        } catch (Exception $e) {
+            Log::error('Failed to send KYC info request notification', [
+                'driver_id' => $driver->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return ['success' => false, 'message' => 'Failed to send KYC info request notification'];
+        }
+    }
+
+    /**
+     * Get KYC message based on action
+     */
+    private function getKycMessage(string $action, string $driverName, string $notes = null, bool $canRetry = false): string
+    {
+        $baseMessage = "Dear {$driverName}, ";
+
+        switch ($action) {
+            case 'approved':
+                $message = $baseMessage . "Congratulations! Your KYC verification has been approved. Your driver account is now fully verified and active.";
+                if ($notes) {
+                    $message .= " Notes: {$notes}";
+                }
+                break;
+            case 'rejected':
+                $message = $baseMessage . "We regret to inform you that your KYC verification has been rejected.";
+                if ($notes) {
+                    $message .= " Reason: {$notes}";
+                }
+                if ($canRetry) {
+                    $message .= " You may retry the KYC process with corrected information.";
+                }
+                $message .= " Please contact support for assistance.";
+                break;
+            case 'info_request':
+                $message = $baseMessage . "Additional information is required for your KYC verification: {$notes}. Please update your profile with the requested details.";
+                break;
+            default:
+                $message = $baseMessage . "Your KYC verification status has been updated to: {$action}.";
+        }
+
+        return $message;
+    }
+
+    /**
      * Queue notification for later sending (for performance)
      */
     public function queueNotification(string $type, $recipient, array $data, string $channel = 'email', int $delay = 0): bool

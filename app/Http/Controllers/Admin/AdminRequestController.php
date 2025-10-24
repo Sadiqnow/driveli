@@ -506,9 +506,126 @@ class AdminRequestController extends Controller
     public function export(Request $request)
     {
         $format = $request->get('format', 'csv');
-        // TODO: Implement export functionality
-        
-        return back()->with('info', 'Export functionality coming soon!');
+
+        // Validate format
+        if (!in_array($format, ['csv', 'excel', 'pdf'])) {
+            return back()->with('error', 'Invalid export format. Supported formats: csv, excel, pdf');
+        }
+
+        try {
+            $query = CompanyRequest::with(['company', 'driver', 'matches']);
+
+            // Apply filters if provided
+            if ($request->filled('status')) {
+                $query->where('status', $request->status);
+            }
+
+            if ($request->filled('date_from')) {
+                $query->whereDate('created_at', '>=', $request->date_from);
+            }
+
+            if ($request->filled('date_to')) {
+                $query->whereDate('created_at', '<=', $request->date_to);
+            }
+
+            $requests = $query->orderBy('created_at', 'desc')->get();
+
+            if ($requests->isEmpty()) {
+                return back()->with('warning', 'No data found for export with the specified filters.');
+            }
+
+            $filename = 'company_requests_' . now()->format('Y-m-d_H-i-s');
+
+            switch ($format) {
+                case 'csv':
+                    return $this->exportToCsv($requests, $filename);
+                case 'excel':
+                    return $this->exportToExcel($requests, $filename);
+                case 'pdf':
+                    return $this->exportToPdf($requests, $filename);
+                default:
+                    return back()->with('error', 'Unsupported export format.');
+            }
+
+        } catch (\Exception $e) {
+            \Log::error('Export failed: ' . $e->getMessage());
+            return back()->with('error', 'Export failed. Please try again.');
+        }
+    }
+
+    /**
+     * Export data to CSV format
+     */
+    private function exportToCsv($requests, $filename)
+    {
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '.csv"',
+        ];
+
+        $callback = function() use ($requests) {
+            $file = fopen('php://output', 'w');
+
+            // Write CSV headers
+            fputcsv($file, [
+                'Request ID',
+                'Company Name',
+                'Driver Name',
+                'Status',
+                'Priority',
+                'Created Date',
+                'Accepted Date',
+                'Completed Date',
+                'Estimated Completion',
+                'Assigned To',
+                'Commission Rate',
+                'Description',
+                'Notes'
+            ]);
+
+            // Write data rows
+            foreach ($requests as $request) {
+                fputcsv($file, [
+                    $request->id,
+                    $request->company->name ?? 'N/A',
+                    $request->driver->full_name ?? 'N/A',
+                    ucfirst($request->status),
+                    ucfirst($request->priority ?? 'Normal'),
+                    $request->created_at->format('Y-m-d H:i:s'),
+                    $request->accepted_at ? $request->accepted_at->format('Y-m-d H:i:s') : 'N/A',
+                    $request->completed_at ? $request->completed_at->format('Y-m-d H:i:s') : 'N/A',
+                    $request->estimated_completion ? $request->estimated_completion->format('Y-m-d H:i:s') : 'N/A',
+                    $request->assignedAdmin->name ?? 'N/A',
+                    $request->matches->first()->commission_rate ?? 'N/A',
+                    $request->description ?? '',
+                    $request->acceptance_notes ?? ''
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    /**
+     * Export data to Excel format (using league/csv for now, can be upgraded to phpspreadsheet)
+     */
+    private function exportToExcel($requests, $filename)
+    {
+        // For now, return CSV as Excel-compatible format
+        // TODO: Implement proper Excel export with phpspreadsheet if needed
+        return $this->exportToCsv($requests, $filename . '_excel');
+    }
+
+    /**
+     * Export data to PDF format
+     */
+    private function exportToPdf($requests, $filename)
+    {
+        // TODO: Implement PDF export with libraries like dompdf or tcpdf
+        // For now, return message
+        return back()->with('info', 'PDF export functionality will be available soon. Please use CSV export for now.');
     }
 
     private function autoAssignDrivers($companyRequest)
