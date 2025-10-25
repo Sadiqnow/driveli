@@ -155,5 +155,9 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     @stack('scripts')
+
+    <!-- Toast Container for Notifications -->
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;">
+    </div>
 </body>
 </html>
