@@ -7,12 +7,15 @@ use App\Models\CompanyProfile;
 use App\Models\CompanyMember;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class CompanyService
 {
     public function register(array $data): Company
     {
+        Log::info('Company registration initiated', ['email' => $data['email'], 'name' => $data['name']]);
+
         $company = Company::create([
             'name' => $data['name'],
             'company_id' => $this->generateCompanyId(),
@@ -45,27 +48,37 @@ class CompanyService
         // Send verification email
         $this->sendVerificationEmail($company);
 
+        Log::info('Company registered successfully', ['company_id' => $company->company_id]);
+
         return $company;
     }
 
     public function verify(Company $company): bool
     {
+        Log::info('Company verification initiated', ['company_id' => $company->company_id]);
+
         $company->update([
             'verification_status' => 'Verified',
             'verified_at' => now(),
         ]);
+
+        Log::info('Company verified successfully', ['company_id' => $company->company_id]);
 
         return true;
     }
 
     public function reject(Company $company, string $reason): bool
     {
+        Log::info('Company rejection initiated', ['company_id' => $company->company_id, 'reason' => $reason]);
+
         $company->update([
             'verification_status' => 'Rejected',
         ]);
 
         // Send rejection email
         $this->sendRejectionEmail($company, $reason);
+
+        Log::info('Company rejected successfully', ['company_id' => $company->company_id]);
 
         return true;
     }

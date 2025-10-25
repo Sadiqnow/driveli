@@ -6,6 +6,7 @@ use App\Models\Fleet;
 use App\Models\Vehicle;
 use App\Models\Company;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
 
 class FleetService
 {
@@ -25,7 +26,9 @@ class FleetService
 
     public function addVehicle(Fleet $fleet, array $data): Vehicle
     {
-        return $fleet->vehicles()->create([
+        Log::info('Adding vehicle to fleet', ['fleet_id' => $fleet->id, 'registration_number' => $data['registration_number']]);
+
+        $vehicle = $fleet->vehicles()->create([
             'registration_number' => $data['registration_number'],
             'make' => $data['make'],
             'model' => $data['model'],
@@ -47,6 +50,10 @@ class FleetService
             'notes' => $data['notes'] ?? null,
             'features' => $data['features'] ?? [],
         ]);
+
+        Log::info('Vehicle added successfully', ['vehicle_id' => $vehicle->id]);
+
+        return $vehicle;
     }
 
     public function getFleetStats(Fleet $fleet): array
@@ -70,10 +77,38 @@ class FleetService
 
     public function updateVehicleStatus(Vehicle $vehicle, string $status, string $notes = null): bool
     {
-        return $vehicle->update([
+        Log::info('Updating vehicle status', ['vehicle_id' => $vehicle->id, 'old_status' => $vehicle->status, 'new_status' => $status]);
+
+        $result = $vehicle->update([
             'status' => $status,
             'notes' => $notes,
         ]);
+
+        Log::info('Vehicle status updated', ['vehicle_id' => $vehicle->id, 'status' => $status]);
+
+        return $result;
+    }
+
+    public function updateVehicle(Vehicle $vehicle, array $data): bool
+    {
+        Log::info('Updating vehicle details', ['vehicle_id' => $vehicle->id]);
+
+        $result = $vehicle->update($data);
+
+        Log::info('Vehicle updated successfully', ['vehicle_id' => $vehicle->id]);
+
+        return $result;
+    }
+
+    public function deleteVehicle(Vehicle $vehicle): bool
+    {
+        Log::info('Deleting vehicle', ['vehicle_id' => $vehicle->id]);
+
+        $result = $vehicle->delete();
+
+        Log::info('Vehicle deleted successfully', ['vehicle_id' => $vehicle->id]);
+
+        return $result;
     }
 
     public function getVehiclesDueForMaintenance(Fleet $fleet): Collection

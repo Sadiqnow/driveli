@@ -7,11 +7,14 @@ use App\Models\Driver;
 use App\Models\CompanyMatch;
 use App\Jobs\MatchDriversJob;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
 
 class MatchingService
 {
     public function matchDriversForRequest(CompanyRequest $request): Collection
     {
+        Log::info('Starting driver matching for request', ['request_id' => $request->id]);
+
         // Get available drivers based on criteria
         $drivers = $this->findMatchingDrivers($request);
 
@@ -33,6 +36,8 @@ class MatchingService
                 $matches->push($match);
             }
         }
+
+        Log::info('Driver matching completed', ['request_id' => $request->id, 'matches_found' => $matches->count()]);
 
         return $matches;
     }

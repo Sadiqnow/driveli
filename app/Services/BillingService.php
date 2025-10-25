@@ -6,16 +6,19 @@ use App\Models\Company;
 use App\Models\CompanyMatch;
 use App\Models\CompanyInvoice;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
 
 class BillingService
 {
     public function createInvoice(Company $company, CompanyMatch $match, array $data = []): CompanyInvoice
     {
+        Log::info('Creating invoice for company match', ['company_id' => $company->id, 'match_id' => $match->id]);
+
         $amount = $data['amount'] ?? $match->agreed_rate;
         $taxRate = 0.075; // 7.5% VAT
         $taxAmount = $amount * $taxRate;
 
-        return $company->invoices()->create([
+        $invoice = $company->invoices()->create([
             'invoice_number' => $this->generateInvoiceNumber(),
             'company_match_id' => $match->id,
             'amount' => $amount,
@@ -29,6 +32,10 @@ class BillingService
             'line_items' => $data['line_items'] ?? $this->generateLineItems($match),
             'notes' => $data['notes'] ?? null,
         ]);
+
+        Log::info('Invoice created successfully', ['invoice_id' => $invoice->id, 'invoice_number' => $invoice->invoice_number]);
+
+        return $invoice;
     }
 
     public function sendInvoice(CompanyInvoice $invoice): bool
@@ -95,6 +102,8 @@ class BillingService
 
     public function processPaymentWebhook(array $webhookData): bool
     {
+        Log::info('Processing payment webhook', ['transaction_reference' => $webhookData['transaction_reference'] ?? 'unknown']);
+
         // Handle payment gateway webhook
         $transactionRef = $webhookData['transaction_reference'];
         $invoice = CompanyInvoice::where('transaction_reference', $transactionRef)->first();
@@ -104,9 +113,11 @@ class BillingService
                 'payment_method' => $webhookData['payment_method'] ?? 'online',
                 'transaction_reference' => $transactionRef,
             ]);
+            Log::info('Payment processed successfully', ['invoice_id' => $invoice->id]);
             return true;
         }
 
+        Log::warning('Payment webhook processing failed', ['transaction_reference' => $transactionRef, 'status' => $webhookData['status'] ?? 'unknown']);
         return false;
     }
 }

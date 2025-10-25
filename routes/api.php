@@ -298,8 +298,8 @@ Route::prefix('company')->name('api.company.')->group(function () {
 // WEBHOOK ROUTES
 // ===================================================================================================
 Route::prefix('webhooks')->name('webhooks.')->group(function () {
-    Route::post('/payment/paystack', [App\Http\Controllers\Webhooks\PaymentWebhookController::class, 'handlePaystackWebhook'])->name('payment.paystack');
-    Route::post('/payment/flutterwave', [App\Http\Controllers\Webhooks\PaymentWebhookController::class, 'handleFlutterwaveWebhook'])->name('payment.flutterwave');
+    Route::post('/payment/paystack', [App\Http\Controllers\API\WebhookController::class, 'paystack'])->name('payment.paystack');
+    Route::post('/payment/flutterwave', [App\Http\Controllers\API\WebhookController::class, 'flutterwave'])->name('payment.flutterwave');
 });
 
 // ===================================================================================================

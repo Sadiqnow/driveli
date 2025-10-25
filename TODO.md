@@ -1,47 +1,23 @@
-# TODO: Company Portal API Layer Implementation
+# Phase 3: Services & Business Logic - TODO
 
-## FormRequest Classes
-- [ ] Create StoreCompanyRequest.php
-- [ ] Create UpdateCompanyRequest.php
-- [ ] Create StoreCompanyRequestRequest.php (for CompanyRequestController)
-- [ ] Create UpdateCompanyRequestRequest.php
-- [ ] Create StoreFleetRequest.php
-- [ ] Create UpdateFleetRequest.php
-- [ ] Create StoreVehicleRequest.php
-- [ ] Create UpdateVehicleRequest.php
-- [ ] Create StoreInvoiceRequest.php
-- [ ] Create UpdateInvoiceRequest.php
+## Services Enhancements
+- [x] Add logging for system activities in CompanyService.php
+- [x] Add logging for system activities in FleetService.php
+- [x] Complete FleetService.php with updateVehicle and deleteVehicle methods
+- [x] Add logging for system activities in MatchingService.php
+- [x] Add logging for system activities in BillingService.php
 
-## API Resource Classes
-- [ ] Create CompanyResource.php
-- [ ] Create CompanyRequestResource.php
-- [ ] Create CompanyMatchResource.php
-- [ ] Create FleetResource.php
-- [ ] Create VehicleResource.php
-- [ ] Create InvoiceResource.php
+## Webhooks
+- [x] Implement webhook handlers in WebhookController.php for Paystack payment provider
+- [x] Implement webhook handlers in WebhookController.php for Flutterwave payment provider
 
-## Helper Method
-- [ ] Add respondJson method to DrivelinkHelper.php
+## Notifications
+- [ ] Ensure notifications integrate email/SMS via Laravel Notifications (add SMS channel if needed)
 
-## Update Controllers
-- [ ] Update CompanyController to use FormRequests and Resources
-- [ ] Update CompanyRequestController to use FormRequests and Resources
-- [ ] Update CompanyMatchController to use FormRequests and Resources
-- [ ] Update FleetController to use FormRequests and Resources
-- [ ] Update VehicleController to use FormRequests and Resources
-- [ ] Update InvoiceController to use FormRequests and Resources
-- [ ] Update WebhookController to use FormRequests and Resources
-
-## Tests
-- [ ] Create/Update CompanyApiTest.php
-- [ ] Create/Update CompanyRequestApiTest.php
-- [ ] Create/Update FleetApiTest.php
-- [ ] Create/Update VehicleApiTest.php
-- [ ] Create/Update InvoiceApiTest.php
-- [ ] Create/Update WebhookApiTest.php
-
-## Postman Export
-- [ ] Generate Postman JSON collection
+## Testing & Verification
+- [ ] Test webhook endpoints
+- [ ] Verify logging is working
+- [ ] Ensure notifications are sent via email and SMS
 
 ## Commit
-- [ ] Commit changes with message "feature/company-portal-api-layer"
+- [ ] Commit changes with message: feature/company-portal-services-logic
