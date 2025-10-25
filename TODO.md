@@ -60,7 +60,7 @@
 
 ## Phase 7: Deployment
 - [x] Add CI/CD pipeline (Composer, PHPStan, PHPUnit, npm build)
-- [ ] Deploy to staging branch
+- [x] Deploy to staging branch
 - [x] Run php artisan migrate --seed
 - [ ] Ensure queue workers active for MatchDriversJob
 
