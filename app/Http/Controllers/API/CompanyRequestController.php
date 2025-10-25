@@ -2,12 +2,16 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Helpers\DrivelinkHelper;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreCompanyRequestRequest;
+use App\Http\Requests\UpdateCompanyRequestRequest;
+use App\Http\Resources\CompanyRequestResource;
+use App\Http\Resources\CompanyMatchResource;
 use App\Models\CompanyRequest;
 use App\Models\CompanyMatch;
 use App\Services\MatchingService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 
 class CompanyRequestController extends Controller
 {
@@ -43,43 +47,11 @@ class CompanyRequestController extends Controller
 
         $requests = $query->orderBy('created_at', 'desc')->paginate(15);
 
-        return response()->json([
-            'status' => 'success',
-            'data' => $requests,
-        ]);
+        return DrivelinkHelper::respondJson('success', 'Transport requests retrieved successfully', CompanyRequestResource::collection($requests));
     }
 
-    public function store(Request $request)
+    public function store(StoreCompanyRequestRequest $request)
     {
-        $validator = Validator::make($request->all(), [
-            'pickup_location' => 'required|string|max:255',
-            'pickup_state_id' => 'required|exists:states,id',
-            'pickup_lga_id' => 'required|exists:lgas,id',
-            'dropoff_location' => 'nullable|string|max:255',
-            'dropoff_state_id' => 'nullable|exists:states,id',
-            'dropoff_lga_id' => 'nullable|exists:lgas,id',
-            'vehicle_type' => 'required|string|max:100',
-            'cargo_type' => 'nullable|string|max:100',
-            'cargo_description' => 'nullable|string|max:500',
-            'weight_kg' => 'nullable|numeric|min:0',
-            'value_naira' => 'nullable|numeric|min:0',
-            'pickup_date' => 'required|date|after:now',
-            'delivery_deadline' => 'nullable|date|after:pickup_date',
-            'special_requirements' => 'nullable|string|max:1000',
-            'budget_min' => 'nullable|numeric|min:0',
-            'budget_max' => 'nullable|numeric|min:0|gte:budget_min',
-            'experience_required' => 'nullable|integer|min:0|max:50',
-            'urgency' => 'required|in:low,medium,high,critical',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Validation failed',
-                'errors' => $validator->errors(),
-            ], 422);
-        }
-
         $company = $request->user();
 
         $companyRequest = CompanyRequest::create([
@@ -109,11 +81,7 @@ class CompanyRequestController extends Controller
         // Dispatch matching job
         $this->matchingService->dispatchMatchingJob($companyRequest);
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Transport request created successfully. Driver matching in progress.',
-            'data' => $companyRequest->load('matches.driver'),
-        ], 201);
+        return DrivelinkHelper::respondJson('success', 'Transport request created successfully. Driver matching in progress.', new CompanyRequestResource($companyRequest->load('matches.driver')), 201);
     }
 
     public function show(CompanyRequest $companyRequest)
@@ -127,60 +95,16 @@ class CompanyRequestController extends Controller
             'company'
         ]);
 
-        return response()->json([
-            'status' => 'success',
-            'data' => $companyRequest,
-        ]);
+        return DrivelinkHelper::respondJson('success', 'Transport request retrieved successfully', new CompanyRequestResource($companyRequest));
     }
 
-    public function update(Request $request, CompanyRequest $companyRequest)
+    public function update(UpdateCompanyRequestRequest $request, CompanyRequest $companyRequest)
     {
         $this->authorize('update', $companyRequest);
 
-        $validator = Validator::make($request->all(), [
-            'pickup_location' => 'sometimes|string|max:255',
-            'pickup_state_id' => 'sometimes|exists:states,id',
-            'pickup_lga_id' => 'sometimes|exists:lgas,id',
-            'dropoff_location' => 'nullable|string|max:255',
-            'dropoff_state_id' => 'nullable|exists:states,id',
-            'dropoff_lga_id' => 'nullable|exists:lgas,id',
-            'vehicle_type' => 'sometimes|string|max:100',
-            'cargo_type' => 'nullable|string|max:100',
-            'cargo_description' => 'nullable|string|max:500',
-            'weight_kg' => 'nullable|numeric|min:0',
-            'value_naira' => 'nullable|numeric|min:0',
-            'pickup_date' => 'sometimes|date|after:now',
-            'delivery_deadline' => 'nullable|date|after:pickup_date',
-            'special_requirements' => 'nullable|string|max:1000',
-            'budget_min' => 'nullable|numeric|min:0',
-            'budget_max' => 'nullable|numeric|min:0|gte:budget_min',
-            'experience_required' => 'nullable|integer|min:0|max:50',
-            'urgency' => 'sometimes|in:low,medium,high,critical',
-            'status' => 'sometimes|in:pending,active,completed,cancelled',
-        ]);
+        $companyRequest->update($request->validated());
 
-        if ($validator->fails()) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Validation failed',
-                'errors' => $validator->errors(),
-            ], 422);
-        }
-
-        $companyRequest->update($request->only([
-            'pickup_location', 'pickup_state_id', 'pickup_lga_id',
-            'dropoff_location', 'dropoff_state_id', 'dropoff_lga_id',
-            'vehicle_type', 'cargo_type', 'cargo_description',
-            'weight_kg', 'value_naira', 'pickup_date', 'delivery_deadline',
-            'special_requirements', 'budget_min', 'budget_max',
-            'experience_required', 'urgency', 'status'
-        ]));
-
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Request updated successfully',
-            'data' => $companyRequest,
-        ]);
+        return DrivelinkHelper::respondJson('success', 'Request updated successfully', new CompanyRequestResource($companyRequest));
     }
 
     public function destroy(CompanyRequest $companyRequest)
@@ -189,10 +113,7 @@ class CompanyRequestController extends Controller
 
         $companyRequest->delete();
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Request deleted successfully',
-        ]);
+        return DrivelinkHelper::respondJson('success', 'Request deleted successfully');
     }
 
     public function matches(CompanyRequest $companyRequest)
@@ -204,10 +125,7 @@ class CompanyRequestController extends Controller
             ->orderBy('match_score', 'desc')
             ->get();
 
-        return response()->json([
-            'status' => 'success',
-            'data' => $matches,
-        ]);
+        return DrivelinkHelper::respondJson('success', 'Matches retrieved successfully', CompanyMatchResource::collection($matches));
     }
 
     public function acceptMatch(Request $request, CompanyMatch $companyMatch)
@@ -231,11 +149,7 @@ class CompanyRequestController extends Controller
         // Create invoice
         // TODO: Implement invoice creation
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Match accepted successfully',
-            'data' => $companyMatch->load('driver'),
-        ]);
+        return DrivelinkHelper::respondJson('success', 'Match accepted successfully', new CompanyMatchResource($companyMatch->load('driver')));
     }
 
     public function rejectMatch(Request $request, CompanyMatch $companyMatch)
@@ -248,10 +162,7 @@ class CompanyRequestController extends Controller
 
         $companyMatch->reject($request->reason);
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Match rejected',
-        ]);
+        return DrivelinkHelper::respondJson('success', 'Match rejected');
     }
 
     private function generateRequestId(): string

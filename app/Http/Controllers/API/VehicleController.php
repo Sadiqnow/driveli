@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Helpers\DrivelinkHelper;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\UpdateVehicleRequest;
+use App\Http\Resources\VehicleResource;
 use App\Models\Vehicle;
 use App\Models\Fleet;
 use Illuminate\Http\Request;
@@ -29,10 +32,7 @@ class VehicleController extends Controller
 
         $vehicles = $query->orderBy('created_at', 'desc')->paginate(15);
 
-        return response()->json([
-            'status' => 'success',
-            'data' => $vehicles,
-        ]);
+        return DrivelinkHelper::respondJson('success', 'Vehicles retrieved successfully', VehicleResource::collection($vehicles));
     }
 
     public function show(Vehicle $vehicle)
@@ -41,52 +41,16 @@ class VehicleController extends Controller
 
         $vehicle->load('fleet');
 
-        return response()->json([
-            'status' => 'success',
-            'data' => $vehicle,
-        ]);
+        return DrivelinkHelper::respondJson('success', 'Vehicle retrieved successfully', new VehicleResource($vehicle));
     }
 
-    public function update(Request $request, Vehicle $vehicle)
+    public function update(UpdateVehicleRequest $request, Vehicle $vehicle)
     {
         $this->authorize('update', $vehicle->fleet);
 
-        $request->validate([
-            'registration_number' => 'sometimes|string|max:20|unique:vehicles,registration_number,' . $vehicle->id,
-            'make' => 'sometimes|string|max:100',
-            'model' => 'sometimes|string|max:100',
-            'year' => 'sometimes|integer|min:1900|max:' . (date('Y') + 1),
-            'color' => 'nullable|string|max:50',
-            'vin' => 'nullable|string|max:50',
-            'engine_number' => 'nullable|string|max:50',
-            'chassis_number' => 'nullable|string|max:50',
-            'vehicle_type' => 'sometimes|string|max:50',
-            'seating_capacity' => 'sometimes|integer|min:1|max:100',
-            'purchase_price' => 'nullable|numeric|min:0',
-            'purchase_date' => 'nullable|date',
-            'current_value' => 'nullable|numeric|min:0',
-            'insurance_expiry' => 'nullable|date',
-            'insurance_provider' => 'nullable|string|max:100',
-            'road_worthiness_expiry' => 'nullable|date',
-            'mileage' => 'nullable|integer|min:0',
-            'status' => 'sometimes|in:active,maintenance,sold',
-            'notes' => 'nullable|string|max:1000',
-            'features' => 'nullable|array',
-        ]);
+        $vehicle->update($request->validated());
 
-        $vehicle->update($request->only([
-            'registration_number', 'make', 'model', 'year', 'color', 'vin',
-            'engine_number', 'chassis_number', 'vehicle_type', 'seating_capacity',
-            'purchase_price', 'purchase_date', 'current_value', 'insurance_expiry',
-            'insurance_provider', 'road_worthiness_expiry', 'mileage', 'status',
-            'notes', 'features'
-        ]));
-
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Vehicle updated successfully',
-            'data' => $vehicle,
-        ]);
+        return DrivelinkHelper::respondJson('success', 'Vehicle updated successfully', new VehicleResource($vehicle));
     }
 
     public function destroy(Vehicle $vehicle)
@@ -95,10 +59,7 @@ class VehicleController extends Controller
 
         $vehicle->delete();
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Vehicle deleted successfully',
-        ]);
+        return DrivelinkHelper::respondJson('success', 'Vehicle deleted successfully');
     }
 
     public function maintenanceHistory(Vehicle $vehicle)
@@ -108,10 +69,7 @@ class VehicleController extends Controller
         // TODO: Implement maintenance history
         $maintenance = []; // Fetch maintenance records
 
-        return response()->json([
-            'status' => 'success',
-            'data' => $maintenance,
-        ]);
+        return DrivelinkHelper::respondJson('success', 'Maintenance history retrieved successfully', $maintenance);
     }
 
     public function assignToFleet(Request $request, Vehicle $vehicle)
@@ -128,10 +86,6 @@ class VehicleController extends Controller
 
         $vehicle->update(['fleet_id' => $request->fleet_id]);
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Vehicle assigned to fleet successfully',
-            'data' => $vehicle->load('fleet'),
-        ]);
+        return DrivelinkHelper::respondJson('success', 'Vehicle assigned to fleet successfully', new VehicleResource($vehicle->load('fleet')));
     }
 }

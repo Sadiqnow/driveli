@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Helpers\DrivelinkHelper;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\UpdateInvoiceRequest;
+use App\Http\Resources\InvoiceResource;
 use App\Models\CompanyInvoice;
 use App\Services\BillingService;
 use Illuminate\Http\Request;
@@ -38,10 +41,7 @@ class InvoiceController extends Controller
 
         $invoices = $query->orderBy('created_at', 'desc')->paginate(15);
 
-        return response()->json([
-            'status' => 'success',
-            'data' => $invoices,
-        ]);
+        return DrivelinkHelper::respondJson('success', 'Invoices retrieved successfully', InvoiceResource::collection($invoices));
     }
 
     public function show(CompanyInvoice $invoice)
@@ -50,10 +50,7 @@ class InvoiceController extends Controller
 
         $invoice->load(['companyMatch.companyRequest', 'companyMatch.driver', 'company']);
 
-        return response()->json([
-            'status' => 'success',
-            'data' => $invoice,
-        ]);
+        return DrivelinkHelper::respondJson('success', 'Invoice retrieved successfully', new InvoiceResource($invoice));
     }
 
     public function pay(Request $request, CompanyInvoice $invoice)
@@ -61,10 +58,7 @@ class InvoiceController extends Controller
         $this->authorize('update', $invoice);
 
         if ($invoice->status !== 'pending') {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Invoice is not payable',
-            ], 400);
+            return DrivelinkHelper::respondJson('error', 'Invoice is not payable', null, 400);
         }
 
         $request->validate([
@@ -76,16 +70,9 @@ class InvoiceController extends Controller
         try {
             $result = $this->billingService->processPayment($invoice, $request->all());
 
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Payment processed successfully',
-                'data' => $result,
-            ]);
+            return DrivelinkHelper::respondJson('success', 'Payment processed successfully', $result);
         } catch (\Exception $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Payment failed: ' . $e->getMessage(),
-            ], 500);
+            return DrivelinkHelper::respondJson('error', 'Payment failed: ' . $e->getMessage(), null, 500);
         }
     }
 
@@ -109,10 +96,7 @@ class InvoiceController extends Controller
             ->orderBy('due_date', 'asc')
             ->get();
 
-        return response()->json([
-            'status' => 'success',
-            'data' => $invoices,
-        ]);
+        return DrivelinkHelper::respondJson('success', 'Overdue invoices retrieved successfully', InvoiceResource::collection($invoices));
     }
 
     public function summary(Request $request)
@@ -121,34 +105,19 @@ class InvoiceController extends Controller
 
         $summary = $this->billingService->getCompanyBillingSummary($company);
 
-        return response()->json([
-            'status' => 'success',
-            'data' => $summary,
-        ]);
+        return DrivelinkHelper::respondJson('success', 'Billing summary retrieved successfully', $summary);
     }
 
-    public function markAsPaid(Request $request, CompanyInvoice $invoice)
+    public function markAsPaid(UpdateInvoiceRequest $request, CompanyInvoice $invoice)
     {
         $this->authorize('update', $invoice);
 
-        $request->validate([
-            'payment_date' => 'required|date',
-            'payment_reference' => 'nullable|string|max:100',
-            'notes' => 'nullable|string|max:500',
-        ]);
-
-        $invoice->update([
+        $invoice->update(array_merge($request->validated(), [
             'status' => 'paid',
             'paid_at' => $request->payment_date,
-            'payment_reference' => $request->payment_reference,
-            'notes' => $request->notes,
-        ]);
+        ]));
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Invoice marked as paid',
-            'data' => $invoice,
-        ]);
+        return DrivelinkHelper::respondJson('success', 'Invoice marked as paid', new InvoiceResource($invoice));
     }
 
     public function dispute(Request $request, CompanyInvoice $invoice)
@@ -169,10 +138,6 @@ class InvoiceController extends Controller
 
         // TODO: Notify admin about dispute
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Invoice dispute submitted',
-            'data' => $invoice,
-        ]);
+        return DrivelinkHelper::respondJson('success', 'Invoice dispute submitted', new InvoiceResource($invoice));
     }
 }

@@ -1,70 +1,47 @@
-# Company Portal Module Implementation TODO
+# TODO: Company Portal API Layer Implementation
 
-## Phase 1: Database Layer
-- [x] Create migration for company_profiles table
-- [x] Create migration for company_members table
-- [x] Create migration for fleets table
-- [x] Create migration for vehicles table
-- [x] Create migration for company_matches table
-- [x] Create migration for company_invoices table
-- [x] Create seeders for demo data
-- [x] Run php artisan migrate
+## FormRequest Classes
+- [ ] Create StoreCompanyRequest.php
+- [ ] Create UpdateCompanyRequest.php
+- [ ] Create StoreCompanyRequestRequest.php (for CompanyRequestController)
+- [ ] Create UpdateCompanyRequestRequest.php
+- [ ] Create StoreFleetRequest.php
+- [ ] Create UpdateFleetRequest.php
+- [ ] Create StoreVehicleRequest.php
+- [ ] Create UpdateVehicleRequest.php
+- [ ] Create StoreInvoiceRequest.php
+- [ ] Create UpdateInvoiceRequest.php
 
-## Phase 2: Backend Logic
-- [x] Create Company model with relationships
-- [x] Create CompanyProfile model
-- [x] Create CompanyMember model
-- [x] Create Fleet model
-- [x] Create Vehicle model
-- [x] Create CompanyRequest model (exists, update if needed)
-- [x] Create CompanyMatch model
-- [x] Create CompanyInvoice model
-- [x] Implement CompanyService
-- [x] Implement MatchingService
-- [x] Implement FleetService
-- [x] Implement BillingService
+## API Resource Classes
+- [ ] Create CompanyResource.php
+- [ ] Create CompanyRequestResource.php
+- [ ] Create CompanyMatchResource.php
+- [ ] Create FleetResource.php
+- [ ] Create VehicleResource.php
+- [ ] Create InvoiceResource.php
 
-## Phase 3: API Layer
-- [x] Create CompanyController
-- [x] Create CompanyRequestController
-- [x] Create CompanyMatchController
-- [x] Create FleetController
-- [x] Create VehicleController
-- [x] Create InvoiceController
-- [x] Add routes to routes/api.php
-- [x] Create policies for access control
-- [x] Integrate Laravel Sanctum for company auth
+## Helper Method
+- [ ] Add respondJson method to DrivelinkHelper.php
 
-## Phase 4: UI/UX Frontend
-- [x] Create company signup/login Blade pages
-- [x] Create company dashboard with KPIs and charts
-- [x] Create post request wizard (multi-step)
-- [x] Create matches list & actions page
-- [x] Create fleet & vehicle management pages
-- [x] Create billing/invoices page
-- [x] Create settings/profile page
-- [x] Apply Bootstrap 5 and responsive design
-- [x] Use Laravel components (x-card, x-table, etc.)
+## Update Controllers
+- [ ] Update CompanyController to use FormRequests and Resources
+- [ ] Update CompanyRequestController to use FormRequests and Resources
+- [ ] Update CompanyMatchController to use FormRequests and Resources
+- [ ] Update FleetController to use FormRequests and Resources
+- [ ] Update VehicleController to use FormRequests and Resources
+- [ ] Update InvoiceController to use FormRequests and Resources
+- [ ] Update WebhookController to use FormRequests and Resources
 
-## Phase 5: Notifications & Integrations
-- [x] Integrate email/SMS notifications for requests, matches, invoices
-- [x] Connect to payment gateway (Paystack/Flutterwave)
-- [x] Implement webhook listener at /webhooks/payment
+## Tests
+- [ ] Create/Update CompanyApiTest.php
+- [ ] Create/Update CompanyRequestApiTest.php
+- [ ] Create/Update FleetApiTest.php
+- [ ] Create/Update VehicleApiTest.php
+- [ ] Create/Update InvoiceApiTest.php
+- [ ] Create/Update WebhookApiTest.php
 
-## Phase 6: Testing
-- [x] Write CompanyRequestTest
-- [x] Write FleetTest
-- [x] Write MatchingServiceTest
-- [x] Mock queue jobs and verify dispatch
-- [ ] Achieve minimum 80% coverage
+## Postman Export
+- [ ] Generate Postman JSON collection
 
-## Phase 7: Deployment
-- [x] Add CI/CD pipeline (Composer, PHPStan, PHPUnit, npm build)
-- [x] Deploy to staging branch
-- [x] Run php artisan migrate --seed
-- [ ] Ensure queue workers active for MatchDriversJob
-
-## Phase 8: Queued Jobs
-- [x] Implement MatchDriversJob
-- [x] Implement SendNotificationJob
-- [x] Implement GenerateReportJob
+## Commit
+- [ ] Commit changes with message "feature/company-portal-api-layer"

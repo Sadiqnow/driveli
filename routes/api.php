@@ -286,6 +286,11 @@ Route::prefix('company')->name('api.company.')->group(function () {
             Route::get('/{vehicle}/maintenance', [App\Http\Controllers\API\VehicleController::class, 'maintenanceHistory'])->name('maintenance');
             Route::post('/{vehicle}/assign-fleet', [App\Http\Controllers\API\VehicleController::class, 'assignToFleet'])->name('assign-fleet');
         });
+
+        // Webhook Management API Routes
+        Route::prefix('webhooks')->name('webhooks.')->group(function () {
+            Route::get('/', [App\Http\Controllers\API\WebhookController::class, 'index'])->name('index');
+        });
     });
 });
 

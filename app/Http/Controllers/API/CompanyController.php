@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Helpers\DrivelinkHelper;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\UpdateCompanyRequest;
+use App\Http\Resources\CompanyResource;
 use App\Models\Company;
 use App\Models\CompanyMember;
 use App\Services\CompanyService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 
 class CompanyController extends Controller
 {
@@ -24,43 +26,16 @@ class CompanyController extends Controller
 
         $company->load(['profile', 'members']);
 
-        return response()->json([
-            'status' => 'success',
-            'data' => $company,
-        ]);
+        return DrivelinkHelper::respondJson('success', 'Company profile retrieved successfully', new CompanyResource($company));
     }
 
-    public function update(Request $request)
+    public function update(UpdateCompanyRequest $request)
     {
         $company = $request->user();
 
-        $validator = Validator::make($request->all(), [
-            'name' => 'sometimes|string|max:255',
-            'email' => 'sometimes|email|unique:companies,email,' . $company->id,
-            'phone' => 'nullable|string|max:20',
-            'address' => 'nullable|string|max:500',
-            'website' => 'nullable|url|max:255',
-            'industry' => 'nullable|string|max:100',
-            'description' => 'nullable|string|max:1000',
-        ]);
+        $company->update($request->validated());
 
-        if ($validator->fails()) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Validation failed',
-                'errors' => $validator->errors(),
-            ], 422);
-        }
-
-        $company->update($request->only([
-            'name', 'email', 'phone', 'address', 'website', 'industry', 'description'
-        ]));
-
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Company updated successfully',
-            'data' => $company,
-        ]);
+        return DrivelinkHelper::respondJson('success', 'Company updated successfully', new CompanyResource($company));
     }
 
     public function members(Request $request)
@@ -69,10 +44,7 @@ class CompanyController extends Controller
 
         $members = $company->members()->with('user')->paginate(15);
 
-        return response()->json([
-            'status' => 'success',
-            'data' => $members,
-        ]);
+        return DrivelinkHelper::respondJson('success', 'Company members retrieved successfully', $members);
     }
 
     public function addMember(Request $request)
@@ -87,11 +59,7 @@ class CompanyController extends Controller
 
         $member = $this->companyService->addMember($company, $request->all());
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Member added successfully',
-            'data' => $member,
-        ], 201);
+        return DrivelinkHelper::respondJson('success', 'Member added successfully', $member, 201);
     }
 
     public function updateMember(Request $request, CompanyMember $member)
@@ -106,11 +74,7 @@ class CompanyController extends Controller
 
         $member->update($request->only(['role', 'permissions', 'status']));
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Member updated successfully',
-            'data' => $member,
-        ]);
+        return DrivelinkHelper::respondJson('success', 'Member updated successfully', $member);
     }
 
     public function removeMember(CompanyMember $member)
@@ -119,10 +83,7 @@ class CompanyController extends Controller
 
         $member->delete();
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Member removed successfully',
-        ]);
+        return DrivelinkHelper::respondJson('success', 'Member removed successfully');
     }
 
     public function dashboard(Request $request)
@@ -131,9 +92,6 @@ class CompanyController extends Controller
 
         $dashboard = $this->companyService->getDashboardData($company);
 
-        return response()->json([
-            'status' => 'success',
-            'data' => $dashboard,
-        ]);
+        return DrivelinkHelper::respondJson('success', 'Dashboard data retrieved successfully', $dashboard);
     }
 }

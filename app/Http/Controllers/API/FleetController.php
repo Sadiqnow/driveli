@@ -2,7 +2,14 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Helpers\DrivelinkHelper;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreFleetRequest;
+use App\Http\Requests\UpdateFleetRequest;
+use App\Http\Requests\StoreVehicleRequest;
+use App\Http\Requests\UpdateVehicleRequest;
+use App\Http\Resources\FleetResource;
+use App\Http\Resources\VehicleResource;
 use App\Models\Fleet;
 use App\Models\Vehicle;
 use App\Services\FleetService;
@@ -29,33 +36,16 @@ class FleetController extends Controller
 
         $fleets = $query->orderBy('created_at', 'desc')->paginate(15);
 
-        return response()->json([
-            'status' => 'success',
-            'data' => $fleets,
-        ]);
+        return DrivelinkHelper::respondJson('success', 'Fleets retrieved successfully', FleetResource::collection($fleets));
     }
 
-    public function store(Request $request)
+    public function store(StoreFleetRequest $request)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string|max:1000',
-            'manager_name' => 'nullable|string|max:255',
-            'manager_phone' => 'nullable|string|max:20',
-            'manager_email' => 'nullable|email|max:255',
-            'operating_regions' => 'nullable|array',
-            'base_location' => 'nullable|string|max:255',
-        ]);
-
         $company = $request->user();
 
-        $fleet = $this->fleetService->createFleet($company, $request->all());
+        $fleet = $this->fleetService->createFleet($company, $request->validated());
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Fleet created successfully',
-            'data' => $fleet,
-        ], 201);
+        return DrivelinkHelper::respondJson('success', 'Fleet created successfully', new FleetResource($fleet), 201);
     }
 
     public function show(Fleet $fleet)
@@ -66,40 +56,19 @@ class FleetController extends Controller
 
         $stats = $this->fleetService->getFleetStats($fleet);
 
-        return response()->json([
-            'status' => 'success',
-            'data' => [
-                'fleet' => $fleet,
-                'stats' => $stats,
-            ],
+        return DrivelinkHelper::respondJson('success', 'Fleet retrieved successfully', [
+            'fleet' => new FleetResource($fleet),
+            'stats' => $stats,
         ]);
     }
 
-    public function update(Request $request, Fleet $fleet)
+    public function update(UpdateFleetRequest $request, Fleet $fleet)
     {
         $this->authorize('update', $fleet);
 
-        $request->validate([
-            'name' => 'sometimes|string|max:255',
-            'description' => 'nullable|string|max:1000',
-            'manager_name' => 'nullable|string|max:255',
-            'manager_phone' => 'nullable|string|max:20',
-            'manager_email' => 'nullable|email|max:255',
-            'operating_regions' => 'nullable|array',
-            'base_location' => 'nullable|string|max:255',
-            'status' => 'sometimes|in:active,inactive',
-        ]);
+        $fleet->update($request->validated());
 
-        $fleet->update($request->only([
-            'name', 'description', 'manager_name', 'manager_phone',
-            'manager_email', 'operating_regions', 'base_location', 'status'
-        ]));
-
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Fleet updated successfully',
-            'data' => $fleet,
-        ]);
+        return DrivelinkHelper::respondJson('success', 'Fleet updated successfully', new FleetResource($fleet));
     }
 
     public function destroy(Fleet $fleet)
@@ -108,94 +77,29 @@ class FleetController extends Controller
 
         $fleet->delete();
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Fleet deleted successfully',
-        ]);
+        return DrivelinkHelper::respondJson('success', 'Fleet deleted successfully');
     }
 
-    public function addVehicle(Request $request, Fleet $fleet)
+    public function addVehicle(StoreVehicleRequest $request, Fleet $fleet)
     {
         $this->authorize('update', $fleet);
 
-        $request->validate([
-            'registration_number' => 'required|string|max:20|unique:vehicles',
-            'make' => 'required|string|max:100',
-            'model' => 'required|string|max:100',
-            'year' => 'required|integer|min:1900|max:' . (date('Y') + 1),
-            'color' => 'nullable|string|max:50',
-            'vin' => 'nullable|string|max:50',
-            'engine_number' => 'nullable|string|max:50',
-            'chassis_number' => 'nullable|string|max:50',
-            'vehicle_type' => 'required|string|max:50',
-            'seating_capacity' => 'required|integer|min:1|max:100',
-            'purchase_price' => 'nullable|numeric|min:0',
-            'purchase_date' => 'nullable|date',
-            'current_value' => 'nullable|numeric|min:0',
-            'insurance_expiry' => 'nullable|date',
-            'insurance_provider' => 'nullable|string|max:100',
-            'road_worthiness_expiry' => 'nullable|date',
-            'mileage' => 'nullable|integer|min:0',
-            'notes' => 'nullable|string|max:1000',
-            'features' => 'nullable|array',
-        ]);
+        $vehicle = $this->fleetService->addVehicle($fleet, $request->validated());
 
-        $vehicle = $this->fleetService->addVehicle($fleet, $request->all());
-
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Vehicle added successfully',
-            'data' => $vehicle,
-        ], 201);
+        return DrivelinkHelper::respondJson('success', 'Vehicle added successfully', new VehicleResource($vehicle), 201);
     }
 
-    public function updateVehicle(Request $request, Fleet $fleet, Vehicle $vehicle)
+    public function updateVehicle(UpdateVehicleRequest $request, Fleet $fleet, Vehicle $vehicle)
     {
         $this->authorize('update', $fleet);
 
         if ($vehicle->fleet_id !== $fleet->id) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Vehicle does not belong to this fleet',
-            ], 403);
+            return DrivelinkHelper::respondJson('error', 'Vehicle does not belong to this fleet', null, 403);
         }
 
-        $request->validate([
-            'registration_number' => 'sometimes|string|max:20|unique:vehicles,registration_number,' . $vehicle->id,
-            'make' => 'sometimes|string|max:100',
-            'model' => 'sometimes|string|max:100',
-            'year' => 'sometimes|integer|min:1900|max:' . (date('Y') + 1),
-            'color' => 'nullable|string|max:50',
-            'vin' => 'nullable|string|max:50',
-            'engine_number' => 'nullable|string|max:50',
-            'chassis_number' => 'nullable|string|max:50',
-            'vehicle_type' => 'sometimes|string|max:50',
-            'seating_capacity' => 'sometimes|integer|min:1|max:100',
-            'purchase_price' => 'nullable|numeric|min:0',
-            'purchase_date' => 'nullable|date',
-            'current_value' => 'nullable|numeric|min:0',
-            'insurance_expiry' => 'nullable|date',
-            'insurance_provider' => 'nullable|string|max:100',
-            'road_worthiness_expiry' => 'nullable|date',
-            'mileage' => 'nullable|integer|min:0',
-            'status' => 'sometimes|in:active,maintenance,sold',
-            'notes' => 'nullable|string|max:1000',
-            'features' => 'nullable|array',
-        ]);
+        $vehicle->update($request->validated());
 
-        $vehicle->update($request->only([
-            'registration_number', 'make', 'model', 'year', 'color', 'vin',
-            'engine_number', 'chassis_number', 'vehicle_type', 'seating_capacity',
-            'purchase_price', 'purchase_date', 'current_value', 'insurance_expiry',
-            'insurance_provider', 'road_worthiness_expiry', 'mileage', 'status',
-            'notes', 'features'
-        ]));
-
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Vehicle updated successfully',
-            'data' => $vehicle,
-        ]);
+        return DrivelinkHelper::respondJson('success', 'Vehicle updated successfully', new VehicleResource($vehicle));
     }
 
     public function removeVehicle(Fleet $fleet, Vehicle $vehicle)
@@ -203,18 +107,12 @@ class FleetController extends Controller
         $this->authorize('update', $fleet);
 
         if ($vehicle->fleet_id !== $fleet->id) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Vehicle does not belong to this fleet',
-            ], 403);
+            return DrivelinkHelper::respondJson('error', 'Vehicle does not belong to this fleet', null, 403);
         }
 
         $vehicle->delete();
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Vehicle removed successfully',
-        ]);
+        return DrivelinkHelper::respondJson('success', 'Vehicle removed successfully');
     }
 
     public function vehicles(Fleet $fleet)
@@ -223,10 +121,7 @@ class FleetController extends Controller
 
         $vehicles = $fleet->vehicles()->orderBy('created_at', 'desc')->paginate(15);
 
-        return response()->json([
-            'status' => 'success',
-            'data' => $vehicles,
-        ]);
+        return DrivelinkHelper::respondJson('success', 'Vehicles retrieved successfully', VehicleResource::collection($vehicles));
     }
 
     public function maintenanceDue(Fleet $fleet)
@@ -235,9 +130,6 @@ class FleetController extends Controller
 
         $vehicles = $this->fleetService->getVehiclesDueForMaintenance($fleet);
 
-        return response()->json([
-            'status' => 'success',
-            'data' => $vehicles,
-        ]);
+        return DrivelinkHelper::respondJson('success', 'Maintenance due vehicles retrieved successfully', $vehicles);
     }
 }
