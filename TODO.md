@@ -20,4 +20,4 @@
 - [ ] Ensure notifications are sent via email and SMS
 
 ## Commit
-- [ ] Commit changes with message: feature/company-portal-services-logic
+- [x] Commit changes with message: feature/company-portal-services-logic

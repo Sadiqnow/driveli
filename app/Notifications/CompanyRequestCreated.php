@@ -21,7 +21,12 @@ class CompanyRequestCreated extends Notification implements ShouldQueue
 
     public function via($notifiable)
     {
-        return ['mail', 'database'];
+        return ['mail', 'database', 'sms'];
+    }
+
+    public function toSms($notifiable)
+    {
+        return "Hello {$notifiable->name}! Your transport request has been created successfully. Request ID: {$this->companyRequest->request_id}. We'll notify you when drivers are matched.";
     }
 
     public function toMail($notifiable)

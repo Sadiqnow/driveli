@@ -21,7 +21,12 @@ class PaymentReceived extends Notification implements ShouldQueue
 
     public function via($notifiable)
     {
-        return ['mail', 'database'];
+        return ['mail', 'database', 'sms'];
+    }
+
+    public function toSms($notifiable)
+    {
+        return "Hello {$notifiable->name}! Payment received for invoice {$this->invoice->invoice_number}. Amount: ₦" . number_format($this->invoice->amount, 2) . ". Thank you for using Drivelink!";
     }
 
     public function toMail($notifiable)

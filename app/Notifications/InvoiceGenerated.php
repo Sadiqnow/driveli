@@ -21,7 +21,13 @@ class InvoiceGenerated extends Notification implements ShouldQueue
 
     public function via($notifiable)
     {
-        return ['mail', 'database'];
+        return ['mail', 'database', 'sms'];
+    }
+
+    public function toSms($notifiable)
+    {
+        $request = $this->invoice->companyMatch->companyRequest;
+        return "Hello {$notifiable->name}! Invoice {$this->invoice->invoice_number} generated for request {$request->request_id}. Amount: ₦" . number_format($this->invoice->amount, 2) . ". Due: {$this->invoice->due_date->format('M d')}.";
     }
 
     public function toMail($notifiable)

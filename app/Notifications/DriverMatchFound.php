@@ -21,7 +21,14 @@ class DriverMatchFound extends Notification implements ShouldQueue
 
     public function via($notifiable)
     {
-        return ['mail', 'database'];
+        return ['mail', 'database', 'sms'];
+    }
+
+    public function toSms($notifiable)
+    {
+        $request = $this->match->companyRequest;
+        $driver = $this->match->driver;
+        return "Hello {$notifiable->name}! Driver {$driver->name} matched to your request {$request->request_id}. Rate: ₦" . number_format($this->match->proposed_rate, 2) . ". Review now.";
     }
 
     public function toMail($notifiable)
