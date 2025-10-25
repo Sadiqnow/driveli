@@ -29,6 +29,13 @@ class DatabaseSeeder extends Seeder
             RolePermissionSeeder::class,
             AdminUserSeeder::class,
             CompanySeeder::class,
+            CompanyProfileSeeder::class,
+            CompanyMemberSeeder::class,
+            FleetSeeder::class,
+            VehicleSeeder::class,
+            CompanyRequestSeeder::class,
+            CompanyMatchSeeder::class,
+            CompanyInvoiceSeeder::class,
             DriverSeeder::class,
         ]);
 
