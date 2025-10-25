@@ -201,6 +201,103 @@ Route::middleware(['auth:sanctum', 'ability:admin'])->group(function () {
 });
 
 // ===================================================================================================
+// COMPANY API ROUTES
+// ===================================================================================================
+Route::prefix('company')->name('api.company.')->group(function () {
+    // Authentication endpoints with enhanced rate limiting (public)
+    Route::middleware(['enhanced.rate.limit:auth'])->group(function () {
+        Route::post('/register', [App\Http\Controllers\API\CompanyAuthController::class, 'register'])->name('register');
+        Route::post('/login', [App\Http\Controllers\API\CompanyAuthController::class, 'login'])->name('login');
+        Route::post('/verify-email', [App\Http\Controllers\API\CompanyAuthController::class, 'verifyEmail'])->name('verify-email');
+    });
+
+    // Protected company endpoints (apply secure.api and auth)
+    Route::middleware(['secure.api', 'auth:sanctum', 'ability:company'])->group(function () {
+        Route::post('/logout', [App\Http\Controllers\API\CompanyAuthController::class, 'logout'])->name('logout');
+        Route::get('/profile', [App\Http\Controllers\API\CompanyAuthController::class, 'profile'])->name('profile');
+        Route::put('/profile', [App\Http\Controllers\API\CompanyAuthController::class, 'updateProfile'])->name('profile.update');
+
+        // Company Requests API Routes
+        Route::prefix('requests')->name('requests.')->group(function () {
+            Route::get('/', [App\Http\Controllers\API\CompanyRequestController::class, 'index'])->name('index');
+            Route::post('/', [App\Http\Controllers\API\CompanyRequestController::class, 'store'])->name('store');
+            Route::get('/{companyRequest}', [App\Http\Controllers\API\CompanyRequestController::class, 'show'])->name('show');
+            Route::put('/{companyRequest}', [App\Http\Controllers\API\CompanyRequestController::class, 'update'])->name('update');
+            Route::delete('/{companyRequest}', [App\Http\Controllers\API\CompanyRequestController::class, 'destroy'])->name('destroy');
+            Route::get('/{companyRequest}/matches', [App\Http\Controllers\API\CompanyRequestController::class, 'matches'])->name('matches');
+            Route::post('/matches/{companyMatch}/accept', [App\Http\Controllers\API\CompanyRequestController::class, 'acceptMatch'])->name('matches.accept');
+            Route::post('/matches/{companyMatch}/reject', [App\Http\Controllers\API\CompanyRequestController::class, 'rejectMatch'])->name('matches.reject');
+        });
+
+        // Fleet Management API Routes
+        Route::prefix('fleets')->name('fleets.')->group(function () {
+            Route::get('/', [App\Http\Controllers\API\FleetController::class, 'index'])->name('index');
+            Route::post('/', [App\Http\Controllers\API\FleetController::class, 'store'])->name('store');
+            Route::get('/{fleet}', [App\Http\Controllers\API\FleetController::class, 'show'])->name('show');
+            Route::put('/{fleet}', [App\Http\Controllers\API\FleetController::class, 'update'])->name('update');
+            Route::delete('/{fleet}', [App\Http\Controllers\API\FleetController::class, 'destroy'])->name('destroy');
+            Route::get('/{fleet}/vehicles', [App\Http\Controllers\API\FleetController::class, 'vehicles'])->name('vehicles');
+            Route::post('/{fleet}/vehicles', [App\Http\Controllers\API\FleetController::class, 'addVehicle'])->name('vehicles.add');
+            Route::put('/{fleet}/vehicles/{vehicle}', [App\Http\Controllers\API\FleetController::class, 'updateVehicle'])->name('vehicles.update');
+            Route::delete('/{fleet}/vehicles/{vehicle}', [App\Http\Controllers\API\FleetController::class, 'removeVehicle'])->name('vehicles.remove');
+            Route::get('/{fleet}/maintenance-due', [App\Http\Controllers\API\FleetController::class, 'maintenanceDue'])->name('maintenance-due');
+        });
+
+        // Invoice Management API Routes
+        Route::prefix('invoices')->name('invoices.')->group(function () {
+            Route::get('/', [App\Http\Controllers\API\InvoiceController::class, 'index'])->name('index');
+            Route::get('/{invoice}', [App\Http\Controllers\API\InvoiceController::class, 'show'])->name('show');
+            Route::post('/{invoice}/pay', [App\Http\Controllers\API\InvoiceController::class, 'pay'])->name('pay');
+            Route::get('/{invoice}/download', [App\Http\Controllers\API\InvoiceController::class, 'download'])->name('download');
+            Route::get('/overdue', [App\Http\Controllers\API\InvoiceController::class, 'overdue'])->name('overdue');
+            Route::get('/summary', [App\Http\Controllers\API\InvoiceController::class, 'summary'])->name('summary');
+            Route::post('/{invoice}/mark-paid', [App\Http\Controllers\API\InvoiceController::class, 'markAsPaid'])->name('mark-paid');
+            Route::post('/{invoice}/dispute', [App\Http\Controllers\API\InvoiceController::class, 'dispute'])->name('dispute');
+        });
+
+        // Company Profile Management API Routes
+        Route::get('/', [App\Http\Controllers\API\CompanyController::class, 'show'])->name('show');
+        Route::put('/', [App\Http\Controllers\API\CompanyController::class, 'update'])->name('update');
+        Route::get('/dashboard', [App\Http\Controllers\API\CompanyController::class, 'dashboard'])->name('dashboard');
+
+        // Company Members Management API Routes
+        Route::prefix('members')->name('members.')->group(function () {
+            Route::get('/', [App\Http\Controllers\API\CompanyController::class, 'members'])->name('index');
+            Route::post('/', [App\Http\Controllers\API\CompanyController::class, 'addMember'])->name('store');
+            Route::put('/{member}', [App\Http\Controllers\API\CompanyController::class, 'updateMember'])->name('update');
+            Route::delete('/{member}', [App\Http\Controllers\API\CompanyController::class, 'removeMember'])->name('destroy');
+        });
+
+        // Company Matches Management API Routes
+        Route::prefix('matches')->name('matches.')->group(function () {
+            Route::get('/', [App\Http\Controllers\API\CompanyMatchController::class, 'index'])->name('index');
+            Route::get('/{companyMatch}', [App\Http\Controllers\API\CompanyMatchController::class, 'show'])->name('show');
+            Route::post('/{companyMatch}/accept', [App\Http\Controllers\API\CompanyMatchController::class, 'accept'])->name('accept');
+            Route::post('/{companyMatch}/reject', [App\Http\Controllers\API\CompanyMatchController::class, 'reject'])->name('reject');
+            Route::post('/{companyMatch}/negotiate', [App\Http\Controllers\API\CompanyMatchController::class, 'negotiate'])->name('negotiate');
+        });
+
+        // Vehicle Management API Routes
+        Route::prefix('vehicles')->name('vehicles.')->group(function () {
+            Route::get('/', [App\Http\Controllers\API\VehicleController::class, 'index'])->name('index');
+            Route::get('/{vehicle}', [App\Http\Controllers\API\VehicleController::class, 'show'])->name('show');
+            Route::put('/{vehicle}', [App\Http\Controllers\API\VehicleController::class, 'update'])->name('update');
+            Route::delete('/{vehicle}', [App\Http\Controllers\API\VehicleController::class, 'destroy'])->name('destroy');
+            Route::get('/{vehicle}/maintenance', [App\Http\Controllers\API\VehicleController::class, 'maintenanceHistory'])->name('maintenance');
+            Route::post('/{vehicle}/assign-fleet', [App\Http\Controllers\API\VehicleController::class, 'assignToFleet'])->name('assign-fleet');
+        });
+    });
+});
+
+// ===================================================================================================
+// WEBHOOK ROUTES
+// ===================================================================================================
+Route::prefix('webhooks')->name('webhooks.')->group(function () {
+    Route::post('/payment/paystack', [App\Http\Controllers\Webhooks\PaymentWebhookController::class, 'handlePaystackWebhook'])->name('payment.paystack');
+    Route::post('/payment/flutterwave', [App\Http\Controllers\Webhooks\PaymentWebhookController::class, 'handleFlutterwaveWebhook'])->name('payment.flutterwave');
+});
+
+// ===================================================================================================
 // FRONTEND EXPECTED ROUTES (matching JavaScript calls)
 // ===================================================================================================
 // Add routes that match what the frontend JavaScript is calling

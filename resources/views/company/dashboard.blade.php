@@ -1,278 +1,297 @@
-@extends('layouts.app')
-
-@section('title', 'Company Dashboard')
+@extends('company.layouts.app')
 
 @section('content')
-<div class="container-fluid">
-    <!-- Welcome Section -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card bg-primary text-white">
-                <div class="card-body">
-                    <div class="row align-items-center">
-                        <div class="col-md-8">
-                            <h3 class="mb-1">
-                                <i class="fas fa-building"></i> Welcome, {{ $company->name }}!
-                            </h3>
-                            <p class="mb-0">Company ID: {{ $company->company_id }} | Status: 
-                                <span class="badge badge-light">{{ $company->status }}</span> | 
-                                Verification: <span class="badge badge-warning">{{ $company->verification_status }}</span>
-                            </p>
-                        </div>
-                        <div class="col-md-4 text-right">
-                            <form method="POST" action="{{ route('company.logout') }}" class="d-inline">
-                                @csrf
-                                <button type="submit" class="btn btn-outline-light">
-                                    <i class="fas fa-sign-out-alt"></i> Logout
-                                </button>
-                            </form>
-                        </div>
+<div class="row mb-4">
+    <div class="col-12">
+        <h2 class="mb-0"><i class="bi bi-speedometer2"></i> Dashboard</h2>
+        <p class="text-muted">Welcome back, {{ Auth::user()->name }}!</p>
+    </div>
+</div>
+
+<!-- KPI Cards -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card bg-primary text-white h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h5 class="card-title mb-1">{{ $dashboard['total_requests'] ?? 0 }}</h5>
+                        <p class="card-text mb-0">Total Requests</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-clipboard-check" style="font-size: 2rem;"></i>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    @if(session('success'))
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="fas fa-check-circle"></i> {{ session('success') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    @endif
-
-    @if($company->verification_status === 'Pending')
-        <div class="alert alert-warning" role="alert">
-            <h5><i class="fas fa-clock"></i> Verification Pending</h5>
-            <p class="mb-0">Your company is currently under review. Our team will verify your details and activate full access within 24-48 hours. You'll receive an email notification once verification is complete.</p>
-        </div>
-    @endif
-
-    <!-- Statistics Cards -->
-    <div class="row mb-4">
-        <div class="col-xl-3 col-md-6">
-            <div class="card bg-info text-white mb-4">
-                <div class="card-body">
-                    <div class="d-flex align-items-center">
-                        <div class="flex-grow-1">
-                            <div class="text-xs font-weight-bold text-uppercase mb-1">Total Requests</div>
-                            <div class="h5 mb-0">{{ number_format($stats['total_requests']) }}</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-file-alt fa-2x"></i>
-                        </div>
+    <div class="col-md-3 mb-3">
+        <div class="card bg-success text-white h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h5 class="card-title mb-1">{{ $dashboard['active_requests'] ?? 0 }}</h5>
+                        <p class="card-text mb-0">Active Requests</p>
                     </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-xl-3 col-md-6">
-            <div class="card bg-success text-white mb-4">
-                <div class="card-body">
-                    <div class="d-flex align-items-center">
-                        <div class="flex-grow-1">
-                            <div class="text-xs font-weight-bold text-uppercase mb-1">Fulfilled Requests</div>
-                            <div class="h5 mb-0">{{ number_format($stats['fulfilled_requests']) }}</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-check-circle fa-2x"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-xl-3 col-md-6">
-            <div class="card bg-warning text-white mb-4">
-                <div class="card-body">
-                    <div class="d-flex align-items-center">
-                        <div class="flex-grow-1">
-                            <div class="text-xs font-weight-bold text-uppercase mb-1">Fulfillment Rate</div>
-                            <div class="h5 mb-0">{{ number_format($stats['fulfillment_rate'], 1) }}%</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-percentage fa-2x"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-xl-3 col-md-6">
-            <div class="card bg-secondary text-white mb-4">
-                <div class="card-body">
-                    <div class="d-flex align-items-center">
-                        <div class="flex-grow-1">
-                            <div class="text-xs font-weight-bold text-uppercase mb-1">Average Rating</div>
-                            <div class="h5 mb-0">{{ number_format($stats['average_rating'], 1) }}/5.0</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-star fa-2x"></i>
-                        </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-play-circle" style="font-size: 2rem;"></i>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Main Content -->
-    <div class="row">
-        <!-- Company Information -->
-        <div class="col-lg-8">
-            <div class="card mb-4">
-                <div class="card-header bg-light">
-                    <h5 class="mb-0"><i class="fas fa-info-circle"></i> Company Information</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <p><strong>Company Name:</strong> {{ $company->name }}</p>
-                            <p><strong>Email:</strong> {{ $company->email }}</p>
-                            <p><strong>Phone:</strong> {{ $company->phone }}</p>
-                            <p><strong>Industry:</strong> {{ $company->industry ?? 'Not specified' }}</p>
-                        </div>
-                        <div class="col-md-6">
-                            <p><strong>Registration Number:</strong> {{ $company->registration_number ?? 'Not provided' }}</p>
-                            <p><strong>Tax ID:</strong> {{ $company->tax_id ?? 'Not provided' }}</p>
-                            <p><strong>Website:</strong> 
-                                @if($company->website)
-                                    <a href="{{ $company->website }}" target="_blank">{{ $company->website }}</a>
-                                @else
-                                    Not provided
-                                @endif
-                            </p>
-                            <p><strong>Member Since:</strong> {{ $company->created_at->format('F Y') }}</p>
-                        </div>
+    <div class="col-md-3 mb-3">
+        <div class="card bg-info text-white h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h5 class="card-title mb-1">{{ $dashboard['total_matches'] ?? 0 }}</h5>
+                        <p class="card-text mb-0">Total Matches</p>
                     </div>
-                    
-                    <div class="row">
-                        <div class="col-12">
-                            <p><strong>Address:</strong> {{ $company->address }}</p>
-                            <p><strong>State:</strong> {{ $company->state }}</p>
-                        </div>
-                    </div>
-
-                    @if($company->description)
-                        <div class="row">
-                            <div class="col-12">
-                                <p><strong>Description:</strong></p>
-                                <p class="text-muted">{{ $company->description }}</p>
-                            </div>
-                        </div>
-                    @endif
-                </div>
-            </div>
-
-            <!-- Coming Soon Features -->
-            <div class="card">
-                <div class="card-header bg-warning text-dark">
-                    <h5 class="mb-0"><i class="fas fa-rocket"></i> Coming Soon Features</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-4 text-center mb-3">
-                            <div class="card border-0 bg-light">
-                                <div class="card-body">
-                                    <i class="fas fa-search fa-3x text-primary mb-2"></i>
-                                    <h6>Driver Search</h6>
-                                    <p class="small text-muted">Find and hire qualified drivers</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4 text-center mb-3">
-                            <div class="card border-0 bg-light">
-                                <div class="card-body">
-                                    <i class="fas fa-file-contract fa-3x text-success mb-2"></i>
-                                    <h6>Request Management</h6>
-                                    <p class="small text-muted">Manage your driver requests</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4 text-center mb-3">
-                            <div class="card border-0 bg-light">
-                                <div class="card-body">
-                                    <i class="fas fa-chart-line fa-3x text-info mb-2"></i>
-                                    <h6>Analytics</h6>
-                                    <p class="small text-muted">Track performance metrics</p>
-                                </div>
-                            </div>
-                        </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-hand-thumbs-up" style="font-size: 2rem;"></i>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Sidebar -->
-        <div class="col-lg-4">
-            <!-- Account Status -->
-            <div class="card mb-4">
-                <div class="card-header bg-info text-white">
-                    <h6 class="mb-0"><i class="fas fa-user-shield"></i> Account Status</h6>
-                </div>
-                <div class="card-body">
-                    <ul class="list-unstyled mb-0">
-                        <li class="mb-2">
-                            <i class="fas fa-circle text-{{ $company->status === 'Active' ? 'success' : 'warning' }}"></i>
-                            Account: {{ $company->status }}
-                        </li>
-                        <li class="mb-2">
-                            <i class="fas fa-circle text-{{ $company->verification_status === 'Verified' ? 'success' : 'warning' }}"></i>
-                            Verification: {{ $company->verification_status }}
-                        </li>
-                        @if($company->verified_at)
-                            <li class="mb-2">
-                                <i class="fas fa-check-circle text-success"></i>
-                                Verified: {{ $company->verified_at->format('M d, Y') }}
-                            </li>
-                        @endif
-                    </ul>
-                </div>
-            </div>
-
-            <!-- Contact Person -->
-            <div class="card mb-4">
-                <div class="card-header bg-secondary text-white">
-                    <h6 class="mb-0"><i class="fas fa-user"></i> Primary Contact</h6>
-                </div>
-                <div class="card-body">
-                    <p class="mb-1"><strong>{{ $company->contact_person_name }}</strong></p>
-                    @if($company->contact_person_title)
-                        <p class="text-muted mb-2">{{ $company->contact_person_title }}</p>
-                    @endif
-                    <p class="mb-1"><i class="fas fa-envelope"></i> {{ $company->contact_person_email }}</p>
-                    <p class="mb-0"><i class="fas fa-phone"></i> {{ $company->contact_person_phone }}</p>
-                </div>
-            </div>
-
-            <!-- Quick Actions -->
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h6 class="mb-0"><i class="fas fa-bolt"></i> Quick Actions</h6>
-                </div>
-                <div class="card-body">
-                    <div class="d-grid gap-2">
-                        <button class="btn btn-outline-primary btn-sm" disabled>
-                            <i class="fas fa-plus"></i> Create Driver Request
-                        </button>
-                        <button class="btn btn-outline-secondary btn-sm" disabled>
-                            <i class="fas fa-edit"></i> Update Company Profile
-                        </button>
-                        <button class="btn btn-outline-info btn-sm" disabled>
-                            <i class="fas fa-file-download"></i> Download Reports
-                        </button>
-                        <small class="text-muted mt-2">Features coming soon!</small>
+    <div class="col-md-3 mb-3">
+        <div class="card bg-warning text-white h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h5 class="card-title mb-1">{{ $dashboard['total_fleets'] ?? 0 }}</h5>
+                        <p class="card-text mb-0">Total Fleets</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-truck" style="font-size: 2rem;"></i>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card bg-secondary text-white h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h5 class="card-title mb-1">{{ $dashboard['total_vehicles'] ?? 0 }}</h5>
+                        <p class="card-text mb-0">Total Vehicles</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-car-front" style="font-size: 2rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3 mb-3">
+        <div class="card bg-danger text-white h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h5 class="card-title mb-1">{{ $dashboard['pending_invoices'] ?? 0 }}</h5>
+                        <p class="card-text mb-0">Pending Invoices</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-receipt" style="font-size: 2rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3 mb-3">
+        <div class="card bg-dark text-white h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h5 class="card-title mb-1">₦{{ number_format($dashboard['total_spent'] ?? 0, 2) }}</h5>
+                        <p class="card-text mb-0">Total Spent</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-cash" style="font-size: 2rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3 mb-3">
+        <div class="card bg-light text-dark h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h5 class="card-title mb-1">{{ $dashboard['completed_requests'] ?? 0 }}</h5>
+                        <p class="card-text mb-0">Completed</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-check-circle" style="font-size: 2rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-bar-chart"></i> Request Status Distribution</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="requestStatusChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-pie-chart"></i> Fleet Performance</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="fleetPerformanceChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity -->
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-clock-history"></i> Recent Requests</h5>
+            </div>
+            <div class="card-body">
+                @if(isset($recentRequests) && $recentRequests->count() > 0)
+                    <div class="list-group list-group-flush">
+                        @foreach($recentRequests->take(5) as $request)
+                            <div class="list-group-item px-0">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">{{ $request->request_id }}</h6>
+                                        <small class="text-muted">{{ $request->pickup_location }} → {{ $request->dropoff_location }}</small>
+                                    </div>
+                                    <span class="badge bg-{{ $request->status === 'active' ? 'success' : ($request->status === 'pending' ? 'warning' : 'secondary') }}">
+                                        {{ ucfirst($request->status) }}
+                                    </span>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @else
+                    <p class="text-muted mb-0">No recent requests found.</p>
+                @endif
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-bell"></i> Recent Matches</h5>
+            </div>
+            <div class="card-body">
+                @if(isset($recentMatches) && $recentMatches->count() > 0)
+                    <div class="list-group list-group-flush">
+                        @foreach($recentMatches->take(5) as $match)
+                            <div class="list-group-item px-0">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">{{ $match->companyRequest->request_id }}</h6>
+                                        <small class="text-muted">{{ $match->driver->name ?? 'Driver' }}</small>
+                                    </div>
+                                    <span class="badge bg-{{ $match->status === 'accepted' ? 'success' : ($match->status === 'pending' ? 'warning' : 'secondary') }}">
+                                        {{ ucfirst($match->status) }}
+                                    </span>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @else
+                    <p class="text-muted mb-0">No recent matches found.</p>
+                @endif
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
 
-@section('scripts')
+@push('scripts')
 <script>
-$(document).ready(function() {
-    // Auto-hide success alerts after 5 seconds
-    $('.alert-success').delay(5000).fadeOut();
+document.addEventListener('DOMContentLoaded', function() {
+    // Request Status Chart
+    const requestStatusCtx = document.getElementById('requestStatusChart').getContext('2d');
+    new Chart(requestStatusCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Active', 'Completed', 'Pending', 'Cancelled'],
+            datasets: [{
+                data: [
+                    {{ $dashboard['active_requests'] ?? 0 }},
+                    {{ $dashboard['completed_requests'] ?? 0 }},
+                    {{ $dashboard['total_requests'] ?? 0 - $dashboard['active_requests'] ?? 0 - $dashboard['completed_requests'] ?? 0 }},
+                    0 // cancelled
+                ],
+                backgroundColor: [
+                    '#28a745',
+                    '#007bff',
+                    '#ffc107',
+                    '#dc3545'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                }
+            }
+        }
+    });
+
+    // Fleet Performance Chart
+    const fleetPerformanceCtx = document.getElementById('fleetPerformanceChart').getContext('2d');
+    new Chart(fleetPerformanceCtx, {
+        type: 'bar',
+        data: {
+            labels: ['Fleets', 'Vehicles', 'Active Vehicles'],
+            datasets: [{
+                label: 'Count',
+                data: [
+                    {{ $dashboard['total_fleets'] ?? 0 }},
+                    {{ $dashboard['total_vehicles'] ?? 0 }},
+                    {{ $dashboard['total_vehicles'] ?? 0 }} // Assuming all are active for now
+                ],
+                backgroundColor: [
+                    '#6c757d',
+                    '#17a2b8',
+                    '#28a745'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
 });
 </script>
+@endpush
 @endsection

@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -92,6 +94,31 @@ class Company extends Authenticatable
     public function driverMatches(): HasMany
     {
         return $this->hasMany(DriverMatch::class, 'company_request_id');
+    }
+
+    public function profile(): HasOne
+    {
+        return $this->hasOne(CompanyProfile::class);
+    }
+
+    public function members(): HasMany
+    {
+        return $this->hasMany(CompanyMember::class);
+    }
+
+    public function fleets(): HasMany
+    {
+        return $this->hasMany(Fleet::class);
+    }
+
+    public function companyMatches(): HasMany
+    {
+        return $this->hasManyThrough(CompanyMatch::class, CompanyRequest::class);
+    }
+
+    public function invoices(): HasMany
+    {
+        return $this->hasMany(CompanyInvoice::class);
     }
 
     // Helper methods

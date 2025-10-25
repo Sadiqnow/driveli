@@ -96,6 +96,17 @@ class Driver extends Authenticatable
         return $this->belongsTo(AdminUser::class, 'verified_by');
     }
 
+    // Additional transactional relationships
+    public function employmentHistory()
+    {
+        return $this->hasMany(DriverEmploymentHistory::class, 'driver_id');
+    }
+
+    public function guarantors()
+    {
+        return $this->hasMany(Guarantor::class, 'driver_id');
+    }
+
     // ===========================
     // ACCESSORS & MUTATORS
     // ===========================

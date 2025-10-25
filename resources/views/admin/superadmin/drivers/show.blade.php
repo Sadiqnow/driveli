@@ -153,7 +153,7 @@
                                 <table class="table table-sm">
                                     <thead>
                                         <tr>
-                                            <th>Employer</th>
+                                            <th>Company Name</th>
                                             <th>Position</th>
                                             <th>Start Date</th>
                                             <th>End Date</th>
@@ -163,8 +163,8 @@
                                     <tbody>
                                         @foreach($driver->employmentHistory as $employment)
                                             <tr>
-                                                <td>{{ $employment->employer_name }}</td>
-                                                <td>{{ $employment->position }}</td>
+                                                <td>{{ $employment->company_name }}</td>
+                                                <td>{{ $employment->company_name ?? 'N/A' }}</td>
                                                 <td>{{ $employment->start_date?->format('M Y') }}</td>
                                                 <td>{{ $employment->end_date?->format('M Y') ?: 'Current' }}</td>
                                                 <td>

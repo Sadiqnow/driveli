@@ -85,4 +85,29 @@ class Permission extends Model
     {
         return $query->where('group_name', 'superadmin');
     }
+
+    // Static methods
+    public static function getCategories()
+    {
+        return [
+            self::CATEGORY_SYSTEM,
+            self::CATEGORY_USER,
+            self::CATEGORY_ADMIN,
+            self::CATEGORY_DRIVER,
+            self::CATEGORY_COMPANY,
+            self::CATEGORY_REPORT,
+        ];
+    }
+
+    public static function getActions()
+    {
+        return [
+            self::ACTION_MANAGE,
+            self::ACTION_VIEW,
+            self::ACTION_CREATE,
+            self::ACTION_EDIT,
+            self::ACTION_DELETE,
+            self::ACTION_APPROVE,
+        ];
+    }
 }

@@ -89,27 +89,19 @@ use Illuminate\Database\Eloquent\Builder;
      */
     public function getDriverDetails(int $driverId): ?Driver
     {
-        $cacheKey = "driver_details_{$driverId}";
-
-        return Cache::remember($cacheKey, self::CACHE_TTL_DETAILS, function () use ($driverId) {
-            return Driver::with([
-                'verifiedBy:id,name,email',
-                'primaryBankingDetail.bank:id,name,code',
-                'performance:id,total_jobs_completed,average_rating,total_earnings',
-                'documents' => function ($query) {
-                    $query->select(['id', 'driver_id', 'document_type', 'verification_status', 'created_at'])
-                          ->limit(20);
-                }
-            ])
-            ->select([
-                'id', 'driver_id', 'first_name', 'middle_name', 'surname', 'nickname',
-                'email', 'phone', 'date_of_birth', 'gender',
-                'status', 'verification_status', 'is_active', 'verified_by',
-                'profile_picture', 'created_at', 'updated_at', 'kyc_status',
-                'license_number'
-            ])
-            ->find($driverId);
-        });
+        return Driver::with([
+            'verifiedBy:id,name,email',
+            'primaryBankingDetail.bank:id,name,code',
+            'performance:id,total_jobs_completed,average_rating,total_earnings',
+            'personalInfo:id,driver_id,date_of_birth,gender',
+            'employmentHistory:id,driver_id,company_name,start_date,end_date',
+            'guarantors:id,driver_id,first_name,last_name,relationship,phone',
+            'documents' => function ($query) {
+                $query->select(['id', 'driver_id', 'document_type', 'verification_status', 'created_at'])
+                      ->limit(20);
+            }
+        ])
+        ->find($driverId);
     }
 
     /**
