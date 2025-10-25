@@ -4,11 +4,12 @@
 <div class="row mb-4">
     <div class="col-12">
         <div class="d-flex justify-content-between align-items-center">
-            <h2 class="mb-0"><i class="bi bi-truck"></i> Fleet Management</h2>
-            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createFleetModal" aria-label="Create new fleet">
+            <h2 class="mb-0"><i class="bi bi-truck" aria-hidden="true"></i> Fleet Management</h2>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createFleetModal" aria-label="Create new fleet">
                 <i class="bi bi-plus-circle" aria-hidden="true"></i> Add Fleet
             </button>
         </div>
+        <p class="text-muted mt-2">Manage your vehicle fleets and track performance</p>
     </div>
 </div>
 
@@ -26,7 +27,7 @@
         <x-ui.stats-widget
             title="Active Vehicles"
             :value="$stats['active_vehicles'] ?? 0"
-            icon="bi bi-car-front"
+            icon="bi bi-play-circle"
             variant="success"
         />
     </div>
@@ -34,7 +35,7 @@
         <x-ui.stats-widget
             title="Total Vehicles"
             :value="$stats['total_vehicles'] ?? 0"
-            icon="bi bi-car-front-fill"
+            icon="bi bi-car-front"
             variant="info"
         />
     </div>
@@ -42,70 +43,81 @@
 
 <!-- Fleets Table -->
 <div class="card">
-    <div class="card-header">
+    <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="mb-0">Your Fleets</h5>
+        <div class="btn-group" role="group" aria-label="Table actions">
+            <button type="button" class="btn btn-sm btn-outline-primary" id="refreshBtn" aria-label="Refresh fleet data">
+                <i class="bi bi-arrow-clockwise" aria-hidden="true"></i> Refresh
+            </button>
+        </div>
     </div>
     <div class="card-body">
-        @if(isset($fleets) && $fleets->count() > 0)
-            <x-ui.table
-                :headers="[
-                    ['label' => 'Fleet Name', 'sortable' => true],
-                    ['label' => 'Description'],
-                    ['label' => 'Vehicles Count'],
-                    ['label' => 'Status'],
-                    ['label' => 'Created'],
-                    ['label' => 'Actions']
-                ]"
-                :data="$fleets->map(function($fleet) {
-                    return [
-                        'name' => $fleet->name,
-                        'description' => Str::limit($fleet->description ?? '', 50),
-                        'vehicles_count' => $fleet->vehicles_count ?? 0,
-                        'status' => ucfirst($fleet->status ?? 'active'),
-                        'created_at' => $fleet->created_at->format('M d, Y')
-                    ];
-                })"
-                :actions="[
-                    [
-                        'text' => 'View',
-                        'icon' => 'bi bi-eye',
-                        'class' => 'btn-outline-primary',
-                        'data' => ['action' => 'view', 'id' => 'fleet_id']
-                    ],
-                    [
-                        'text' => 'Edit',
-                        'icon' => 'bi bi-pencil',
-                        'class' => 'btn-outline-warning',
-                        'data' => ['action' => 'edit', 'id' => 'fleet_id']
-                    ],
-                    [
-                        'text' => 'Delete',
-                        'icon' => 'bi bi-trash',
-                        'class' => 'btn-outline-danger',
-                        'data' => ['action' => 'delete', 'id' => 'fleet_id']
-                    ]
-                ]"
-                empty-message="No fleets found"
-            />
-        @else
-            <div class="text-center py-5">
-                <i class="bi bi-truck" style="font-size: 3rem; color: #6c757d;" aria-hidden="true"></i>
-                <h5 class="mt-3">No Fleets Yet</h5>
-                <p class="text-muted">Create your first fleet to organize your vehicles.</p>
-                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createFleetModal">
-                    <i class="bi bi-plus-circle" aria-hidden="true"></i> Create Fleet
-                </button>
-            </div>
+        <div class="table-responsive">
+            <table class="table table-striped table-hover" id="fleetsTable" role="table" aria-label="Fleets table">
+                <thead class="table-dark">
+                    <tr>
+                        <th scope="col" aria-sort="none">Fleet Name</th>
+                        <th scope="col" aria-sort="none">Description</th>
+                        <th scope="col" aria-sort="none">Vehicles</th>
+                        <th scope="col" aria-sort="none">Status</th>
+                        <th scope="col" aria-sort="none">Created</th>
+                        <th scope="col" aria-sort="none">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="fleetsTableBody">
+                    @forelse($fleets as $fleet)
+                    <tr data-fleet-id="{{ $fleet->id }}">
+                        <td>{{ $fleet->name }}</td>
+                        <td>{{ $fleet->description ?: 'No description' }}</td>
+                        <td>
+                            <span class="badge bg-info">{{ $fleet->vehicles_count }} vehicles</span>
+                        </td>
+                        <td>
+                            <span class="badge
+                                @if($fleet->status == 'active') bg-success
+                                @else bg-secondary
+                                @endif">
+                                {{ ucfirst($fleet->status) }}
+                            </span>
+                        </td>
+                        <td>{{ $fleet->created_at->format('M d, Y') }}</td>
+                        <td>
+                            <div class="btn-group" role="group" aria-label="Fleet actions">
+                                <button type="button" class="btn btn-sm btn-outline-primary view-fleet" data-fleet-id="{{ $fleet->id }}" aria-label="View fleet details">
+                                    <i class="bi bi-eye" aria-hidden="true"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary edit-fleet" data-fleet-id="{{ $fleet->id }}" aria-label="Edit fleet">
+                                    <i class="bi bi-pencil" aria-hidden="true"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger delete-fleet" data-fleet-id="{{ $fleet->id }}" aria-label="Delete fleet">
+                                    <i class="bi bi-trash" aria-hidden="true"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-4">
+                            <i class="bi bi-truck" style="font-size: 2rem;" aria-hidden="true"></i>
+                            <p class="mb-0 mt-2">No fleets found.</p>
+                            <button type="button" class="btn btn-primary btn-sm mt-2" data-bs-toggle="modal" data-bs-target="#createFleetModal">
+                                <i class="bi bi-plus-circle" aria-hidden="true"></i> Create Your First Fleet
+                            </button>
+                        </td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        @if($fleets->hasPages())
+        <div class="d-flex justify-content-center mt-4">
+            {{ $fleets->appends(request()->query())->links() }}
+        </div>
         @endif
     </div>
 </div>
-
-<!-- Pagination -->
-@if(isset($fleets) && $fleets->hasPages())
-<div class="d-flex justify-content-center mt-4">
-    {{ $fleets->links() }}
-</div>
-@endif
 
 <!-- Create Fleet Modal -->
 <x-ui.modal id="createFleetModal" title="Create New Fleet" size="md">
@@ -122,16 +134,20 @@
         </div>
         <div class="mb-3">
             <label for="fleetStatus" class="form-label">Status</label>
-            <select class="form-select" id="fleetStatus">
+            <select class="form-select" id="fleetStatus" aria-describedby="fleetStatusHelp">
                 <option value="active">Active</option>
                 <option value="inactive">Inactive</option>
             </select>
+            <div id="fleetStatusHelp" class="form-text">Set the initial status of the fleet</div>
         </div>
     </form>
 
     <x-slot name="footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-        <button type="button" class="btn btn-primary" id="saveFleetBtn">Create Fleet</button>
+        <button type="button" class="btn btn-primary" id="createFleetBtn">
+            <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+            Create Fleet
+        </button>
     </x-slot>
 </x-ui.modal>
 
@@ -158,20 +174,34 @@
 
     <x-slot name="footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-        <button type="button" class="btn btn-primary" id="updateFleetBtn">Update Fleet</button>
+        <button type="button" class="btn btn-primary" id="updateFleetBtn">
+            <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+            Update Fleet
+        </button>
     </x-slot>
 </x-ui.modal>
 
 <!-- Delete Confirmation Modal -->
-<x-ui.modal id="deleteFleetModal" title="Delete Fleet" size="md">
-    <p>Are you sure you want to delete this fleet? This action cannot be undone.</p>
-    <p class="text-danger"><strong>Note:</strong> All vehicles in this fleet will be unassigned.</p>
-
-    <x-slot name="footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-        <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete Fleet</button>
-    </x-slot>
-</x-ui.modal>
+<div class="modal fade" id="deleteFleetModal" tabindex="-1" aria-labelledby="deleteFleetModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteFleetModalLabel">Confirm Deletion</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this fleet? This action cannot be undone and will affect all associated vehicles.</p>
+                <div class="alert alert-warning">
+                    <strong>Warning:</strong> Deleting this fleet will remove it from all associated vehicles.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteFleet">Delete Fleet</button>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
 
 @push('scripts')
@@ -179,29 +209,8 @@
 document.addEventListener('DOMContentLoaded', function() {
     let currentFleetId = null;
 
-    // Action button handlers
-    document.querySelectorAll('[data-action]').forEach(btn => {
-        btn.addEventListener('click', function(e) {
-            e.preventDefault();
-            const action = this.getAttribute('data-action');
-            const fleetId = this.getAttribute('data-id') || this.closest('tr').getAttribute('data-fleet-id');
-
-            switch(action) {
-                case 'view':
-                    window.location.href = `/company/fleets/${fleetId}`;
-                    break;
-                case 'edit':
-                    openEditModal(fleetId);
-                    break;
-                case 'delete':
-                    openDeleteModal(fleetId);
-                    break;
-            }
-        });
-    });
-
     // Create fleet
-    document.getElementById('saveFleetBtn').addEventListener('click', function() {
+    document.getElementById('createFleetBtn').addEventListener('click', function() {
         const name = document.getElementById('fleetName').value.trim();
         const description = document.getElementById('fleetDescription').value.trim();
         const status = document.getElementById('fleetStatus').value;
@@ -211,7 +220,20 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        createFleet(name, description, status);
+        this.disabled = true;
+        this.querySelector('.spinner-border').classList.remove('d-none');
+
+        createFleet({ name, description, status });
+    });
+
+    // Edit fleet button handler
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('edit-fleet') || e.target.closest('.edit-fleet')) {
+            e.preventDefault();
+            const button = e.target.classList.contains('edit-fleet') ? e.target : e.target.closest('.edit-fleet');
+            const fleetId = button.getAttribute('data-fleet-id');
+            openEditModal(fleetId);
+        }
     });
 
     // Update fleet
@@ -225,63 +247,76 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        updateFleet(currentFleetId, name, description, status);
+        this.disabled = true;
+        this.querySelector('.spinner-border').classList.remove('d-none');
+
+        updateFleet(currentFleetId, { name, description, status });
     });
 
-    // Delete fleet
-    document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
-        deleteFleet(currentFleetId);
+    // Delete fleet handler
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('delete-fleet') || e.target.closest('.delete-fleet')) {
+            e.preventDefault();
+            const button = e.target.classList.contains('delete-fleet') ? e.target : e.target.closest('.delete-fleet');
+            const fleetId = button.getAttribute('data-fleet-id');
+
+            const modal = new bootstrap.Modal(document.getElementById('deleteFleetModal'));
+            document.getElementById('confirmDeleteFleet').onclick = function() {
+                deleteFleet(fleetId);
+                modal.hide();
+            };
+            modal.show();
+        }
     });
 
-    function openEditModal(fleetId) {
-        currentFleetId = fleetId;
-        // Fetch fleet data and populate modal
-        fetch(`/api/company/fleets/${fleetId}`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    document.getElementById('editFleetId').value = data.data.id;
-                    document.getElementById('editFleetName').value = data.data.name;
-                    document.getElementById('editFleetDescription').value = data.data.description || '';
-                    document.getElementById('editFleetStatus').value = data.data.status || 'active';
+    // View fleet handler
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('view-fleet') || e.target.closest('.view-fleet')) {
+            e.preventDefault();
+            const button = e.target.classList.contains('view-fleet') ? e.target : e.target.closest('.view-fleet');
+            const fleetId = button.getAttribute('data-fleet-id');
+            window.location.href = `/company/fleets/${fleetId}`;
+        }
+    });
 
-                    const modal = new bootstrap.Modal(document.getElementById('editFleetModal'));
-                    modal.show();
-                } else {
-                    showToast('Failed to load fleet data', 'danger');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showToast('An error occurred while loading fleet data', 'danger');
-            });
-    }
+    // Refresh button
+    document.getElementById('refreshBtn').addEventListener('click', function() {
+        this.innerHTML = '<i class="bi bi-arrow-clockwise spinning" aria-hidden="true"></i> Refreshing...';
+        this.disabled = true;
 
-    function openDeleteModal(fleetId) {
-        currentFleetId = fleetId;
-        const modal = new bootstrap.Modal(document.getElementById('deleteFleetModal'));
-        modal.show();
-    }
+        refreshFleets().finally(() => {
+            this.innerHTML = '<i class="bi bi-arrow-clockwise" aria-hidden="true"></i> Refresh';
+            this.disabled = false;
+        });
+    });
 
-    function createFleet(name, description, status) {
+    // Modal reset on hide
+    document.getElementById('createFleetModal').addEventListener('hidden.bs.modal', function() {
+        document.getElementById('createFleetForm').reset();
+        document.getElementById('createFleetBtn').disabled = false;
+        document.getElementById('createFleetBtn').querySelector('.spinner-border').classList.add('d-none');
+    });
+
+    document.getElementById('editFleetModal').addEventListener('hidden.bs.modal', function() {
+        document.getElementById('editFleetForm').reset();
+        document.getElementById('updateFleetBtn').disabled = false;
+        document.getElementById('updateFleetBtn').querySelector('.spinner-border').classList.add('d-none');
+    });
+
+    function createFleet(data) {
         fetch('/api/company/fleets', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
             },
-            body: JSON.stringify({
-                name: name,
-                description: description,
-                status: status
-            })
+            body: JSON.stringify(data)
         })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
                 showToast('Fleet created successfully!', 'success');
                 bootstrap.Modal.getInstance(document.getElementById('createFleetModal')).hide();
-                document.getElementById('createFleetForm').reset();
                 setTimeout(() => location.reload(), 1500);
             } else {
                 showToast(data.message || 'Failed to create fleet', 'danger');
@@ -290,21 +325,46 @@ document.addEventListener('DOMContentLoaded', function() {
         .catch(error => {
             console.error('Error:', error);
             showToast('An error occurred while creating the fleet', 'danger');
+        })
+        .finally(() => {
+            document.getElementById('createFleetBtn').disabled = false;
+            document.getElementById('createFleetBtn').querySelector('.spinner-border').classList.add('d-none');
         });
     }
 
-    function updateFleet(fleetId, name, description, status) {
+    function openEditModal(fleetId) {
+        currentFleetId = fleetId;
+
+        // Fetch fleet data
+        fetch(`/api/company/fleets/${fleetId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('editFleetId').value = data.data.id;
+                document.getElementById('editFleetName').value = data.data.name;
+                document.getElementById('editFleetDescription').value = data.data.description || '';
+                document.getElementById('editFleetStatus').value = data.data.status;
+
+                const modal = new bootstrap.Modal(document.getElementById('editFleetModal'));
+                modal.show();
+            } else {
+                showToast('Failed to load fleet data', 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('An error occurred while loading fleet data', 'danger');
+        });
+    }
+
+    function updateFleet(fleetId, data) {
         fetch(`/api/company/fleets/${fleetId}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
             },
-            body: JSON.stringify({
-                name: name,
-                description: description,
-                status: status
-            })
+            body: JSON.stringify(data)
         })
         .then(response => response.json())
         .then(data => {
@@ -319,6 +379,10 @@ document.addEventListener('DOMContentLoaded', function() {
         .catch(error => {
             console.error('Error:', error);
             showToast('An error occurred while updating the fleet', 'danger');
+        })
+        .finally(() => {
+            document.getElementById('updateFleetBtn').disabled = false;
+            document.getElementById('updateFleetBtn').querySelector('.spinner-border').classList.add('d-none');
         });
     }
 
@@ -333,8 +397,7 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(data => {
             if (data.success) {
                 showToast('Fleet deleted successfully!', 'success');
-                bootstrap.Modal.getInstance(document.getElementById('deleteFleetModal')).hide();
-                setTimeout(() => location.reload(), 1500);
+                document.querySelector(`tr[data-fleet-id="${fleetId}"]`).remove();
             } else {
                 showToast(data.message || 'Failed to delete fleet', 'danger');
             }
@@ -345,22 +408,37 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    function refreshFleets() {
+        return fetch(window.location.href, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            }
+        })
+        .then(response => {
+            if (response.ok) {
+                showToast('Fleets refreshed successfully!', 'success');
+            }
+        })
+        .catch(error => {
+            console.error('Error refreshing fleets:', error);
+            showToast('Failed to refresh fleets', 'danger');
+        });
+    }
+
     function showToast(message, type = 'info') {
-        let toastContainer = document.querySelector('.toast-container');
-        if (!toastContainer) {
-            toastContainer = document.createElement('div');
-            toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
-            toastContainer.style.zIndex = '9999';
-            document.body.appendChild(toastContainer);
-        }
+        const toastContainer = document.getElementById('toastContainer') || createToastContainer();
 
         const toast = document.createElement('div');
         toast.className = `toast align-items-center text-white bg-${type} border-0`;
         toast.setAttribute('role', 'alert');
+        toast.setAttribute('aria-live', 'assertive');
+        toast.setAttribute('aria-atomic', 'true');
+
         toast.innerHTML = `
             <div class="d-flex">
                 <div class="toast-body">${message}</div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
             </div>
         `;
 
@@ -372,7 +450,27 @@ document.addEventListener('DOMContentLoaded', function() {
             toast.remove();
         });
     }
+
+    function createToastContainer() {
+        const container = document.createElement('div');
+        container.id = 'toastContainer';
+        container.className = 'toast-container position-fixed top-0 end-0 p-3';
+        container.style.zIndex = '9999';
+        document.body.appendChild(container);
+        return container;
+    }
 });
 </script>
+
+<style>
+.spinning {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+</style>
 @endpush
 @endsection
