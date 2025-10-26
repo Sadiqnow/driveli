@@ -1,59 +1,50 @@
-# PHASE 4 — Frontend UI/UX (Blade System) Implementation Plan
+# Phase 5: Database Migration & Schema Consolidation
 
-## Information Gathered
-- **Existing Structure**: Company portal uses `company.layouts.app` with Bootstrap 5, sidebar navigation, and responsive design.
-- **Existing Files**: `dashboard.blade.php` exists with KPI cards, charts, and recent activity. Subdirs exist for `requests/`, `matches/`, `fleets/`, `vehicles/`, `invoices/`, `profile/`.
-- **Components**: UI components in `resources/views/components/ui/` include `card.blade.php`, `stats-widget.blade.php`, etc.
-- **AJAX Integration**: Existing AJAX in request creation (location loading) and match actions (accept/reject).
-- **Routes**: Sidebar links to routes like `company.requests.index`, assuming controllers exist.
-- **Accessibility**: Need to ensure WCAG compliance with proper ARIA labels, semantic HTML, keyboard navigation.
+## Week 1: Foundation & Safety ✅ COMPLETED
+- [x] Create migration backups table for safe rollback
+- [x] Enhance countries table with ISO codes, phone codes, currency data
+- [x] Enhance states table with state codes and country relationships
+- [x] Enhance local governments table with LGA codes and state relationships
+- [x] Enhance banks table with bank codes, SWIFT codes, and country relationships
+- [x] Create consolidated drivers table with comprehensive schema
+- [x] Create data migration backup table for tracking changes
+- [x] Create migration validation log table for integrity checks
+- [x] Commit and push changes to migration/schema-consolidation-v1 branch
 
-## Plan
-### 1. Create Partial Components
-- Create `table.blade.php` for reusable data tables.
-- Create `modal.blade.php` for confirmation and form modals.
-- Enhance existing components for accessibility.
+## Week 2: Data Migration & Consolidation
+- [ ] Create data migration scripts for existing drivers data
+- [ ] Implement backup procedures before data migration
+- [ ] Migrate existing drivers to consolidated table
+- [ ] Validate data integrity after migration
+- [ ] Update foreign key relationships
+- [ ] Clean up old driver tables (after validation)
 
-### 2. Develop Blade Templates
-- Create `resources/views/company/requests.blade.php` (index view for requests list).
-- Create `resources/views/company/matches.blade.php` (index view for matches, enhance existing if needed).
-- Create `resources/views/company/fleet.blade.php` (index view for fleets).
-- Create `resources/views/company/vehicles.blade.php` (index view for vehicles).
-- Create `resources/views/company/invoices.blade.php` (index view for invoices).
-- Create `resources/views/company/settings.blade.php` (settings/profile page).
+## Week 3: Testing & Validation
+- [ ] Create comprehensive migration tests
+- [ ] Test rollback procedures
+- [ ] Validate all foreign key constraints
+- [ ] Performance testing on consolidated schema
+- [ ] Data consistency validation
+- [ ] Create migration rollback scripts
 
-### 3. Integrate AJAX and JS
-- Add AJAX for request posting (enhance existing create form).
-- Add AJAX for match acceptance/rejection (enhance existing).
-- Add AJAX for vehicle CRUD operations.
-- Implement toast notifications using Bootstrap toasts.
-- Add real-time updates using polling or WebSockets if possible.
+## Week 4: Production Deployment
+- [ ] Final data validation
+- [ ] Production backup procedures
+- [ ] Staged deployment plan
+- [ ] Post-migration monitoring
+- [ ] Documentation updates
+- [ ] Team training on new schema
 
-### 4. Ensure Responsive Design and Accessibility
-- Use Bootstrap 5 grid system throughout.
-- Add WCAG compliance: ARIA labels, roles, keyboard support, color contrast, screen reader support.
+## Migration Safety Checklist
+- [x] Backup system established
+- [x] Validation logging implemented
+- [x] Rollback procedures documented
+- [ ] Data migration scripts tested
+- [ ] Foreign key constraints validated
+- [ ] Performance benchmarks established
 
-### 5. Testing and Validation
-- Verify all views load correctly.
-- Test AJAX interactions.
-- Ensure mobile responsiveness.
-- Validate accessibility with tools.
-
-## Dependent Files to Edit/Create
-- New: `resources/views/components/ui/table.blade.php`
-- New: `resources/views/components/ui/modal.blade.php`
-- New: `resources/views/company/requests.blade.php`
-- New: `resources/views/company/matches.blade.php` (or enhance existing index)
-- New: `resources/views/company/fleet.blade.php`
-- New: `resources/views/company/vehicles.blade.php`
-- New: `resources/views/company/invoices.blade.php`
-- New: `resources/views/company/settings.blade.php`
-- Update: `resources/views/company/dashboard.blade.php` (if needed for enhancements)
-- Update: `resources/views/company/layouts/app.blade.php` (add toast container, scripts)
-
-## Followup Steps
-- Install any missing dependencies (e.g., if using additional JS libraries).
-- Test views by running Laravel server and navigating to company routes.
-- Commit changes with message "feature/company-portal-ui".
-- Validate responsiveness on different screen sizes.
-- Run accessibility audit.
+## Next Steps
+1. Run migrations in development environment
+2. Test data migration scripts
+3. Validate foreign key relationships
+4. Prepare rollback procedures
